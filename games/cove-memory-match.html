@@ -280,9 +280,13 @@
         .card.matched .card-inner, .crewrow img, .cheer.pop { animation: none; }
         .card.matched .face.front { animation: none; }
       }
-    </style>
+          /* Cove back button — added Nov 10: iPhone home-screen web app has no browser back button */
+      .cove-back-btn{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 12px 0;border-radius:999px;background:#ffffff;color:#12303e;font-weight:800;text-decoration:none;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;}
+      .cove-back-btn:active{transform:translateY(1px);}
+</style>
   </head>
   <body>
+    <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
     <div class="wrap">
       <header class="hero">
         <h1>Cove <span class="accent">Memory</span> <span class="accent2">Match</span></h1>
