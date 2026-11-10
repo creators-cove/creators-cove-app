@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Cove Crush</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --sea-top: #8fe0f2;
+        --sea-mid: #2a9db8;
+        --sea-deep: #0d5a74;
+        --cabinet: #0b3d52;
+        --cabinet-2: #082c3d;
+        --cabinet-edge: #f2b33d;
+        --gold: #ffc93c;
+        --gold-deep: #e89b0c;
+        --coral: #ff6f61;
+        --cream: #fff8ea;
+        --ink: #12303e;
+        --panel: rgba(255, 248, 234, 0.94);
+        --panel-ink: #17384a;
+        --cell-bg: #fffdf6;
+        --shadow: 0 18px 40px rgba(4, 40, 56, 0.35);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --sea-top: #0a2e44;
+          --sea-mid: #0d4a63;
+          --sea-deep: #061e2e;
+          --cabinet: #0a2f42;
+          --cabinet-2: #051c29;
+          --panel: rgba(10, 43, 60, 0.96);
+          --panel-ink: #f3e9d2;
+          --cell-bg: #fdf6e0;
+          --shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Nunito", system-ui, sans-serif;
+        color: var(--panel-ink);
+        background:
+          radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.4), rgba(255,255,255,0) 60%),
+          linear-gradient(180deg, var(--sea-top) 0%, var(--sea-mid) 46%, var(--sea-deep) 100%);
+        min-height: 100vh;
+        padding: 0 14px 40px;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .cove-back-btn{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 0 0;border-radius:999px;background:#ffffff;color:#12303e;font-weight:800;text-decoration:none;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;}
+      .cove-back-btn:active{transform:translateY(1px);}
+      main { max-width: 560px; margin: 0 auto; }
+      .machine {
+        background: linear-gradient(180deg, var(--cabinet) 0%, var(--cabinet-2) 100%);
+        border: 3px solid var(--cabinet-edge);
+        border-radius: 28px;
+        box-shadow: var(--shadow), inset 0 2px 0 rgba(255,255,255,0.18);
+        padding: 16px 14px 20px;
+        position: relative;
+        overflow: hidden;
+        margin-top: 12px;
+      }
+      .machine::after {
+        content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 10px;
+        background: repeating-linear-gradient(90deg, #eec27a 0 26px, #e5b765 26px 52px);
+        opacity: 0.85;
+      }
+      .marquee { text-align: center; padding: 2px 0 0; }
+      .marquee h1 {
+        font-family: "Fredoka", sans-serif; font-weight: 700;
+        font-size: clamp(1.9rem, 8.5vw, 2.7rem); letter-spacing: 0.04em;
+        margin: 2px 0 0; color: var(--gold);
+        text-shadow: 0 2px 0 var(--gold-deep), 0 4px 14px rgba(0,0,0,0.45);
+      }
+      .marquee p {
+        margin: 0 0 4px; color: var(--cream); font-weight: 800;
+        letter-spacing: 0.22em; text-transform: uppercase; font-size: 0.7rem; opacity: 0.9;
+      }
+      .display {
+        margin: 12px 2px 0; min-height: 52px;
+        background: #081f2c; border: 2px solid rgba(255, 201, 60, 0.5);
+        border-radius: 14px; color: #ffe9a8;
+        display: flex; align-items: center; justify-content: center; text-align: center;
+        font-family: "Fredoka", sans-serif; font-weight: 600;
+        font-size: clamp(1rem, 4.6vw, 1.25rem); padding: 8px 12px; line-height: 1.25;
+      }
+      .display.big { color: var(--gold); font-size: clamp(1.2rem, 5.6vw, 1.55rem); }
+      .readouts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
+      .meter {
+        background: #081f2c; border: 2px solid rgba(255, 201, 60, 0.45); border-radius: 12px;
+        padding: 6px 10px; text-align: center; color: var(--cream);
+      }
+      .meter .lbl { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #ffd76a; }
+      .meter .val { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.45rem; line-height: 1.15; }
+      .meter .val small { font-size: 0.85rem; opacity: 0.8; }
+      .progress { height: 12px; background: #081f2c; border: 2px solid rgba(255,201,60,.45); border-radius: 999px; margin-top: 12px; overflow: hidden; }
+      .progress i { display: block; height: 100%; background: linear-gradient(90deg, #ffe08a, var(--gold)); width: 0%; transition: width 0.4s ease; }
+      /* ---------- Board ---------- */
+      .board-frame {
+        margin-top: 14px; position: relative;
+        background: linear-gradient(180deg, #0a2f42, #0d5a74);
+        border-radius: 18px; border: 3px solid var(--cabinet-edge);
+        box-shadow: inset 0 10px 22px rgba(0, 0, 0, 0.45);
+        padding: 8px;
+      }
+      .board {
+        display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px;
+      }
+      .tile {
+        aspect-ratio: 1; border-radius: 12px; border: none; cursor: pointer;
+        background: var(--cell-bg); font-size: clamp(1.3rem, 6.5vw, 2rem); line-height: 1;
+        display: grid; place-items: center; padding: 0;
+        box-shadow: inset 0 -3px 0 rgba(9, 50, 70, 0.14), 0 2px 4px rgba(0,0,0,0.25);
+        transition: transform 0.12s ease, background 0.12s ease;
+        position: relative;
+      }
+      .tile:active { transform: scale(0.94); }
+      .tile.selected { outline: 3px solid var(--gold); outline-offset: -2px; transform: scale(1.08); z-index: 2; }
+      .tile.pop { animation: tilePop 0.3s ease-in forwards; }
+      @keyframes tilePop { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(0.1); opacity: 0; } }
+      .tile.shake { animation: tileShake 0.3s ease; }
+      @keyframes tileShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+      .tile.drop-in { animation: dropIn 0.35s cubic-bezier(.2,.8,.35,1.15) both; }
+      @keyframes dropIn { 0% { transform: translateY(-30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+      .tile.striped-row { background: repeating-linear-gradient(0deg, #fffdf6 0 6px, #ffe9a8 6px 12px); }
+      .tile.striped-col { background: repeating-linear-gradient(90deg, #fffdf6 0 6px, #ffe9a8 6px 12px); }
+      .tile.rainbow { background: conic-gradient(#ff6f61, #ffc93c, #3d9970, #2a9db8, #7a4fa3, #ff6f61); }
+      .tile.rainbow span { filter: drop-shadow(0 0 4px #fff); }
+      /* ---------- Controls & panels ---------- */
+      .controls { display: flex; gap: 10px; margin-top: 16px; }
+      .side-btn {
+        flex: 1; min-height: 52px; border-radius: 999px; cursor: pointer;
+        border: 2px solid rgba(255, 248, 234, 0.55); background: rgba(255, 248, 234, 0.1);
+        color: var(--cream); font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 0.95rem;
+      }
+      .side-btn.gold { border-color: var(--gold-deep); background: linear-gradient(180deg, #ffe08a, var(--gold)); color: #4a2c00; }
+      .side-btn:disabled { opacity: 0.4; cursor: default; }
+      .panel {
+        background: var(--panel); border-radius: 20px; margin-top: 16px;
+        padding: 16px 18px 18px; box-shadow: 0 10px 26px rgba(4, 40, 56, 0.22);
+      }
+      .panel h2 { font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 1.25rem; margin: 0 0 10px; color: var(--panel-ink); }
+      .panel p { margin: 0 0 8px; line-height: 1.5; font-weight: 600; }
+      .panel p:last-child { margin-bottom: 0; }
+      .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+      .legend div { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.92rem; }
+      .legend .emoji { font-size: 1.4rem; }
+      .note { font-size: 0.92rem; opacity: 0.85; }
+      /* ---------- Overlay ---------- */
+      .overlay {
+        position: fixed; inset: 0; z-index: 20; display: none;
+        background: rgba(4, 28, 40, 0.72); padding: 18px; overflow-y: auto;
+      }
+      .overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+      .winner-card {
+        background: linear-gradient(180deg, #0d5a74, #0b3d52); color: var(--cream);
+        border: 3px solid var(--gold); border-radius: 24px; max-width: 430px; width: 100%;
+        padding: 22px 18px; text-align: center; box-shadow: var(--shadow); margin: auto 0;
+      }
+      .winner-card h2 { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.9rem; color: var(--gold); margin: 8px 0 2px; }
+      .winner-card .sub { letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.7rem; font-weight: 800; opacity: 0.85; margin: 0; }
+      .winner-card .wc-amount { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 2.2rem; color: #ffe9a8; margin: 8px 0 0; }
+      .winner-card .wc-detail { font-weight: 700; opacity: 0.9; margin: 2px 0 0; }
+      .overlay-wrap { width: 100%; max-width: 430px; margin: auto 0; }
+      .close-row { max-width: 430px; width: 100%; margin: 12px auto 0; }
+      .close-btn {
+        width: 100%; min-height: 52px; border-radius: 14px; border: none; cursor: pointer;
+        background: var(--cream); color: var(--ink); font-family: "Fredoka", sans-serif;
+        font-weight: 600; font-size: 1.05rem;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .tile.pop, .tile.shake, .tile.drop-in { animation: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+      <section class="machine" aria-label="Cove Crush game">
+        <div class="marquee">
+          <h1>COVE CRUSH</h1>
+          <p>Creator's Cove · Match 3</p>
+        </div>
+
+        <div class="display" id="display" role="status" aria-live="polite">Swap tiles to match 3 or more!</div>
+
+        <div class="readouts">
+          <div class="meter">
+            <div class="lbl">Level</div>
+            <div class="val" id="levelVal">1</div>
+          </div>
+          <div class="meter">
+            <div class="lbl">Score</div>
+            <div class="val"><span id="scoreVal">0</span> <small>/ <span id="targetVal">500</span></small></div>
+          </div>
+          <div class="meter">
+            <div class="lbl">Moves</div>
+            <div class="val" id="movesVal">20</div>
+          </div>
+        </div>
+        <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+
+        <div class="board-frame">
+          <div class="board" id="board" role="grid" aria-label="Cove Crush board, 8 by 8"></div>
+        </div>
+
+        <div class="controls">
+          <button class="side-btn" id="shuffleBtn" type="button">🔀 Shuffle</button>
+          <button class="side-btn" id="hintBtn" type="button">💡 Hint</button>
+          <button class="side-btn gold" id="newGameBtn" type="button">↻ New Game</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Your session">
+        <h2>Your session</h2>
+        <p>Best score this visit: <strong id="bestVal">0</strong> &nbsp;·&nbsp; Levels cleared: <strong id="levelsVal">0</strong> &nbsp;·&nbsp; Biggest chain: <strong id="chainVal">0</strong></p>
+      </section>
+
+      <section class="panel" aria-label="How to play">
+        <h2>How to play</h2>
+        <p>Tap a tile, then tap a tile next to it to swap them. If the swap makes a match of <strong>3 or more of the same tile in a row</strong>, they pop, the tiles above fall down, and new tiles drop in — chains can keep matching all on their own!</p>
+        <p><strong>Match 4</strong> in a row and you get a striped tile — match it and it clears its whole row or column. <strong>Match 5</strong> and you get a rainbow Cove Wave tile — swap it with any tile and it clears every tile of that type at once.</p>
+        <p>Reach the target score before you run out of moves to clear the level. If there are no moves left, tap <strong>Shuffle</strong> to mix the board up.</p>
+        <div class="legend">
+          <div><span class="emoji">🐚</span> Shell</div>
+          <div><span class="emoji">⭐</span> Starfish</div>
+          <div><span class="emoji">⚪</span> Pearl</div>
+          <div><span class="emoji">🎨</span> Paint Palette</div>
+          <div><span class="emoji">⚓</span> Anchor</div>
+          <div><span class="emoji">🌊</span> Cove Wave</div>
+        </div>
+        <p class="note" style="margin-top:10px;">Just for fun — screenshot your best score and post it in the Creator's Cove Facebook group!</p>
+      </section>
+    </main>
+
+    <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Level result">
+      <div class="overlay-wrap">
+        <div class="winner-card" id="winnerCard"></div>
+        <div class="close-row"><button class="close-btn" id="overlayBtn" type="button">Next level</button></div>
+      </div>
+    </div>
+
+    <script>
+      "use strict";
+      /* ================= Cove Crush — match 3 =================
+         8x8 board, 6 Cove tile types. Swap adjacent tiles; only
+         swaps that make a match of 3+ (or use a rainbow) go through.
+         Match 4 = striped tile (clears a row or column when matched).
+         Match 5 = rainbow Cove Wave tile (clears all of one type). */
+
+      var ROWS = 8, COLS = 8;
+      var TYPES = [
+        { emoji: "🐚", name: "Shell" },
+        { emoji: "⭐", name: "Starfish" },
+        { emoji: "⚪", name: "Pearl" },
+        { emoji: "🎨", name: "Paint Palette" },
+        { emoji: "⚓", name: "Anchor" },
+        { emoji: "🌊", name: "Cove Wave" }
+      ];
+      var RAINBOW_EMOJI = "🌈";
+
+      /* ---- Pure board logic (no DOM) ---- */
+      function newTile(type) { return { type: type, special: null }; }
+      function randType() { return Math.floor(Math.random() * TYPES.length); }
+
+      function makeBoard() {
+        var b = [];
+        for (var r = 0; r < ROWS; r++) {
+          b.push([]);
+          for (var c = 0; c < COLS; c++) {
+            var t;
+            do {
+              t = randType();
+            } while (
+              (c >= 2 && b[r][c - 1].type === t && b[r][c - 2].type === t) ||
+              (r >= 2 && b[r - 1][c].type === t && b[r - 2][c].type === t)
+            );
+            b[r].push(newTile(t));
+          }
+        }
+        return b;
+      }
+
+      function key(r, c) { return r + "," + c; }
+
+      /* Find all runs of 3+ in a row or column.
+         Returns { cells: Set of keys, runs: [{cells:[{r,c}], dir:'h'|'v', type}] } */
+      function findMatches(b) {
+        var cells = {};
+        var runs = [];
+        var r, c, start, len, type;
+        for (r = 0; r < ROWS; r++) {
+          c = 0;
+          while (c < COLS) {
+            type = b[r][c] ? b[r][c].type : -1;
+            if (type < 0 || b[r][c].special === "rainbow") { c++; continue; }
+            start = c; len = 0;
+            while (c < COLS && b[r][c] && b[r][c].type === type && b[r][c].special !== "rainbow") { c++; len++; }
+            if (len >= 3) {
+              var run = { cells: [], dir: "h", type: type };
+              for (var i = start; i < start + len; i++) { run.cells.push({ r: r, c: i }); cells[key(r, i)] = true; }
+              runs.push(run);
+            }
+          }
+        }
+        for (c = 0; c < COLS; c++) {
+          r = 0;
+          while (r < ROWS) {
+            type = b[r][c] ? b[r][c].type : -1;
+            if (type < 0 || b[r][c].special === "rainbow") { r++; continue; }
+            start = r; len = 0;
+            while (r < ROWS && b[r][c] && b[r][c].type === type && b[r][c].special !== "rainbow") { r++; len++; }
+            if (len >= 3) {
+              var run2 = { cells: [], dir: "v", type: type };
+              for (var j = start; j < start + len; j++) { run2.cells.push({ r: j, c: c }); cells[key(j, c)] = true; }
+              runs.push(run2);
+            }
+          }
+        }
+        return { cells: cells, runs: runs };
+      }
+
+      function hasMatch(b) { return findMatches(b).runs.length > 0; }
+
+      /* Expand a matched set with special-tile effects.
+         Striped tiles in the set clear their whole row/column.
+         A rainbow in the set clears all tiles of a random type. */
+      function expandWithSpecials(b, cells) {
+        var out = {};
+        var k;
+        for (k in cells) out[k] = true;
+        var changed = true;
+        while (changed) {
+          changed = false;
+          for (var r = 0; r < ROWS; r++) {
+            for (var c = 0; c < COLS; c++) {
+              if (!out[key(r, c)] || !b[r][c]) continue;
+              var sp = b[r][c].special;
+              if (sp === "row") {
+                for (var cc = 0; cc < COLS; cc++) { if (!out[key(r, cc)]) { out[key(r, cc)] = true; changed = true; } }
+              } else if (sp === "col") {
+                for (var rr = 0; rr < ROWS; rr++) { if (!out[key(rr, c)]) { out[key(rr, c)] = true; changed = true; } }
+              }
+            }
+          }
+        }
+        return out;
+      }
+
+      function swapCells(b, r1, c1, r2, c2) {
+        var tmp = b[r1][c1]; b[r1][c1] = b[r2][c2]; b[r2][c2] = tmp;
+      }
+
+      function isAdjacent(r1, c1, r2, c2) {
+        return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
+      }
+
+      /* Does swapping (r1,c1) with (r2,c2) create a match, or use a rainbow? */
+      function swapCreatesMatch(b, r1, c1, r2, c2) {
+        if (b[r1][c1].special === "rainbow" || b[r2][c2].special === "rainbow") return true;
+        swapCells(b, r1, c1, r2, c2);
+        var ok = hasMatch(b);
+        swapCells(b, r1, c1, r2, c2);
+        return ok;
+      }
+
+      function hasPossibleMove(b) {
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            if (c + 1 < COLS && swapCreatesMatch(b, r, c, r, c + 1)) return true;
+            if (r + 1 < ROWS && swapCreatesMatch(b, r, c, r + 1, c)) return true;
+          }
+        }
+        return false;
+      }
+
+      function findHint(b) {
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            if (c + 1 < COLS && swapCreatesMatch(b, r, c, r, c + 1)) return { r1: r, c1: c, r2: r, c2: c + 1 };
+            if (r + 1 < ROWS && swapCreatesMatch(b, r, c, r + 1, c)) return { r1: r, c1: c, r2: r + 1, c2: c };
+          }
+        }
+        return null;
+      }
+
+      function applyGravity(b) {
+        for (var c = 0; c < COLS; c++) {
+          var write = ROWS - 1;
+          for (var r = ROWS - 1; r >= 0; r--) {
+            if (b[r][c]) { b[write][c] = b[r][c]; if (write !== r) b[r][c] = null; write--; }
+          }
+          for (var rr = write; rr >= 0; rr--) b[rr][c] = null;
+        }
+      }
+
+      function refillBoard(b) {
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            if (!b[r][c]) b[r][c] = newTile(randType());
+          }
+        }
+      }
+
+      function shuffleBoard(b) {
+        var flat = [];
+        for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) flat.push(b[r][c]);
+        for (var i = flat.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = flat[i]; flat[i] = flat[j]; flat[j] = tmp;
+        }
+        var k = 0;
+        for (var rr = 0; rr < ROWS; rr++) for (var cc = 0; cc < COLS; cc++) b[rr][cc] = flat[k++];
+        if (hasMatch(b) || !hasPossibleMove(b)) {
+          // Reshuffle until the board is clean and playable (bounded tries).
+          for (var tries = 0; tries < 50; tries++) {
+            for (var i2 = flat.length - 1; i2 > 0; i2--) {
+              var j2 = Math.floor(Math.random() * (i2 + 1));
+              var tmp2 = flat[i2]; flat[i2] = flat[j2]; flat[j2] = tmp2;
+            }
+            k = 0;
+            for (var r2 = 0; r2 < ROWS; r2++) for (var c2 = 0; c2 < COLS; c2++) b[r2][c2] = flat[k++];
+            if (!hasMatch(b) && hasPossibleMove(b)) break;
+          }
+        }
+      }
+
+      /* ---- Game state ---- */
+      var board = null;
+      var level = 1, score = 0, moves = 20, target = 500;
+      var bestScore = 0, levelsCleared = 0, bestChain = 0;
+      var selected = null, busy = false, over = false;
+
+      function levelConfig(l) {
+        return { target: 500 + (l - 1) * 400, moves: 20 + ((l - 1) % 3) * 2 };
+      }
+
+      function sleep(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+
+      /* ---- DOM layer (guarded so the logic can be tested without a DOM) ---- */
+      var el = {};
+      function $(id) { return (typeof document !== "undefined") ? document.getElementById(id) : null; }
+
+      function initDom() {
+        el.display = $("display"); el.board = $("board");
+        el.scoreVal = $("scoreVal"); el.targetVal = $("targetVal");
+        el.movesVal = $("movesVal"); el.levelVal = $("levelVal");
+        el.progressBar = $("progressBar"); el.bestVal = $("bestVal");
+        el.levelsVal = $("levelsVal"); el.chainVal = $("chainVal");
+        el.overlay = $("overlay"); el.winnerCard = $("winnerCard");
+        el.overlayBtn = $("overlayBtn");
+        if (el.board) {
+          el.board.addEventListener("click", function (e) {
+            var t = e.target.closest ? e.target.closest(".tile") : null;
+            if (!t) return;
+            onTileClick(parseInt(t.dataset.r, 10), parseInt(t.dataset.c, 10));
+          });
+        }
+        var sh = $("shuffleBtn"); if (sh) sh.addEventListener("click", onShuffle);
+        var hi = $("hintBtn"); if (hi) hi.addEventListener("click", onHint);
+        var ng = $("newGameBtn"); if (ng) ng.addEventListener("click", function () { startLevel(1); });
+        if (el.overlayBtn) el.overlayBtn.addEventListener("click", onOverlayButton);
+      }
+
+      function render() {
+        if (!el.board) return;
+        var html = "";
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            var t = board[r][c];
+            var cls = "tile";
+            var emoji = t ? TYPES[t.type].emoji : "❓";
+            var label = t ? TYPES[t.type].name : "";
+            if (t && t.special === "row") { cls += " striped-row"; emoji = "➖"; }
+            if (t && t.special === "col") { cls += " striped-col"; emoji = "➖"; }
+            if (t && t.special === "rainbow") { cls += " rainbow"; emoji = RAINBOW_EMOJI; label = "Rainbow Cove Wave"; }
+            if (selected && selected.r === r && selected.c === c) cls += " selected";
+            html += '<button type="button" role="gridcell" class="' + cls + '" data-r="' + r + '" data-c="' + c + '" aria-label="' + label + ' tile, row ' + (r + 1) + ' column ' + (c + 1) + '"><span>' + emoji + '</span></button>';
+          }
+        }
+        el.board.innerHTML = html;
+        el.scoreVal.textContent = score;
+        el.targetVal.textContent = target;
+        el.movesVal.textContent = moves;
+        el.levelVal.textContent = level;
+        el.progressBar.style.width = Math.min(100, Math.round(score / target * 100)) + "%";
+        el.bestVal.textContent = bestScore;
+        el.levelsVal.textContent = levelsCleared;
+        el.chainVal.textContent = bestChain;
+      }
+
+      function setDisplay(msg, big) {
+        if (!el.display) return;
+        el.display.textContent = msg;
+        el.display.classList.toggle("big", !!big);
+      }
+
+      function markTiles(keys, cls) {
+        if (!el.board) return;
+        var cells = el.board.querySelectorAll(".tile");
+        for (var i = 0; i < cells.length; i++) {
+          var t = cells[i];
+          if (keys[key(parseInt(t.dataset.r, 10), parseInt(t.dataset.c, 10))]) t.classList.add(cls);
+        }
+      }
+
+      function startLevel(l) {
+        level = l;
+        var cfg = levelConfig(l);
+        target = cfg.target; moves = cfg.moves; score = 0;
+        board = makeBoard();
+        selected = null; busy = false; over = false;
+        if (el.overlay) el.overlay.classList.remove("open");
+        setDisplay("Level " + l + " — reach " + target + " points in " + moves + " moves!");
+        render();
+      }
+
+      function newGame() { level = 1; levelsCleared = 0; bestChain = 0; startLevel(1); }
+
+      async function onTileClick(r, c) {
+        if (busy || over || !board[r][c]) return;
+        if (!selected) { selected = { r: r, c: c }; render(); return; }
+        if (selected.r === r && selected.c === c) { selected = null; render(); return; }
+        if (!isAdjacent(selected.r, selected.c, r, c)) { selected = { r: r, c: c }; render(); return; }
+        var r1 = selected.r, c1 = selected.c, r2 = r, c2 = c;
+        selected = null;
+        await attemptSwap(r1, c1, r2, c2);
+      }
+
+      async function attemptSwap(r1, c1, r2, c2) {
+        if (busy || over) return false;
+        var a = board[r1][c1], b = board[r2][c2];
+        var usesRainbow = (a.special === "rainbow" || b.special === "rainbow");
+        if (!usesRainbow && !swapCreatesMatch(board, r1, c1, r2, c2)) {
+          render();
+          markTiles((function () { var o = {}; o[key(r1, c1)] = true; o[key(r2, c2)] = true; return o; })(), "shake");
+          setDisplay("No match there — try another swap!");
+          return false;
+        }
+        busy = true;
+        moves--;
+        swapCells(board, r1, c1, r2, c2);
+        render();
+        await sleep(180);
+        if (usesRainbow) {
+          var rainbowCell = (a.special === "rainbow") ? { r: r2, c: c2 } : { r: r1, c: c1 };
+          var other = (a.special === "rainbow") ? b : a;
+          var clearType = (other.special === "rainbow") ? randType() : other.type;
+          var cleared = {};
+          for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+            if (board[r][c] && board[r][c].type === clearType) cleared[key(r, c)] = true;
+          }
+          cleared[key(rainbowCell.r, rainbowCell.c)] = true;
+          var gained = Object.keys(cleared).length * 20;
+          score += gained;
+          if (score > bestScore) bestScore = score;
+          setDisplay("🌈 Rainbow! Cleared every " + TYPES[clearType].name + "! +" + gained, true);
+          await clearCells(cleared);
+          await cascade(1);
+        } else {
+          await cascade(1);
+        }
+        busy = false;
+        render();
+        endTurnCheck();
+        return true;
+      }
+
+      /* Resolve all matches on the board, chain after chain. Returns the chain count. */
+      async function cascade(chain) {
+        var chains = 0;
+        while (true) {
+          var found = findMatches(board);
+          if (found.runs.length === 0) break;
+          chains++;
+          if (chain + chains - 1 > bestChain) bestChain = chain + chains - 1;
+          var cells = expandWithSpecials(board, found.cells);
+          // Special-tile creation: first run of 4+ makes a striped tile, 5+ a rainbow.
+          var create = null;
+          for (var i = 0; i < found.runs.length; i++) {
+            var run = found.runs[i];
+            if (run.cells.length >= 5) { create = { cell: run.cells[0], special: "rainbow", type: run.type }; break; }
+            if (run.cells.length === 4 && !create) {
+              create = { cell: run.cells[0], special: run.dir === "h" ? "row" : "col", type: run.type };
+            }
+          }
+          var gained = Object.keys(cells).length * 20 * (chain + chains - 1);
+          if (found.runs.some(function (rn) { return rn.cells.length >= 4; })) gained += 100;
+          score += gained;
+          if (score > bestScore) bestScore = score;
+          setDisplay("Match! +" + gained + (chains > 1 ? " — chain ×" + (chain + chains - 1) + "!" : ""), chains > 1);
+          markTiles(cells, "pop");
+          await sleep(320);
+          for (var k in cells) {
+            var parts = k.split(",");
+            board[parseInt(parts[0], 10)][parseInt(parts[1], 10)] = null;
+          }
+          if (create) {
+            board[create.cell.r][create.cell.c] = { type: create.type, special: create.special };
+          }
+          applyGravity(board);
+          refillBoard(board);
+          render();
+          markTiles((function () { var o = {}; for (var rr = 0; rr < ROWS; rr++) for (var cc = 0; cc < COLS; cc++) o[key(rr, cc)] = true; return o; })(), "drop-in");
+          await sleep(300);
+        }
+        return chains;
+      }
+
+      async function clearCells(cells) {
+        markTiles(cells, "pop");
+        await sleep(320);
+        for (var k in cells) {
+          var parts = k.split(",");
+          board[parseInt(parts[0], 10)][parseInt(parts[1], 10)] = null;
+        }
+        applyGravity(board);
+        refillBoard(board);
+        render();
+        await sleep(300);
+      }
+
+      function endTurnCheck() {
+        if (score >= target) {
+          over = true;
+          levelsCleared++;
+          if (el.winnerCard) {
+            el.winnerCard.innerHTML = '<p class="sub">Cove Crush</p><h2>🎉 Level ' + level + ' cleared!</h2><div class="wc-amount">' + score + ' points</div><p class="wc-detail">Target was ' + target + ' — with ' + moves + ' moves to spare!</p><p class="wc-detail">Screenshot it and post it in the Creator\'s Cove Facebook group!</p>';
+          }
+          if (el.overlayBtn) el.overlayBtn.textContent = "Next level";
+          if (el.overlay) el.overlay.classList.add("open");
+          setDisplay("🎉 Level " + level + " cleared!", true);
+          return;
+        }
+        if (moves <= 0) {
+          over = true;
+          if (el.winnerCard) {
+            el.winnerCard.innerHTML = '<p class="sub">Cove Crush</p><h2>Out of moves!</h2><div class="wc-amount">' + score + ' / ' + target + '</div><p class="wc-detail">So close — give Level ' + level + ' another go!</p>';
+          }
+          if (el.overlayBtn) el.overlayBtn.textContent = "Try again";
+          if (el.overlay) el.overlay.classList.add("open");
+          setDisplay("Out of moves — try again!", true);
+          return;
+        }
+        if (!hasPossibleMove(board)) {
+          shuffleBoard(board);
+          render();
+          setDisplay("No moves left — shuffled the board for you!");
+        } else {
+          setDisplay("Keep crushing! " + moves + " moves left.");
+        }
+      }
+
+      function onOverlayButton() {
+        if (!el.overlay) return;
+        el.overlay.classList.remove("open");
+        if (score >= target) startLevel(level + 1);
+        else startLevel(level);
+      }
+
+      function onShuffle() {
+        if (busy || over) return;
+        shuffleBoard(board);
+        render();
+        setDisplay("Board shuffled — fresh moves to find!");
+      }
+
+      function onHint() {
+        if (busy || over) return;
+        var h = findHint(board);
+        if (!h) { setDisplay("No moves right now — tap Shuffle!"); return; }
+        render();
+        var o = {};
+        o[key(h.r1, h.c1)] = true; o[key(h.r2, h.c2)] = true;
+        markTiles(o, "selected");
+        setDisplay("💡 Try swapping those two tiles!");
+      }
+
+      /* ---- Boot ---- */
+      if (typeof document !== "undefined") {
+        initDom();
+        newGame();
+      }
+      if (typeof window !== "undefined") {
+        window.CoveCrush = {
+          TYPES: TYPES, ROWS: ROWS, COLS: COLS,
+          makeBoard: makeBoard, findMatches: findMatches, hasMatch: hasMatch,
+          swapCreatesMatch: swapCreatesMatch, hasPossibleMove: hasPossibleMove,
+          findHint: findHint, applyGravity: applyGravity, refillBoard: refillBoard,
+          shuffleBoard: shuffleBoard, levelConfig: levelConfig,
+          getBoard: function () { return board; },
+          startLevel: startLevel, attemptSwap: attemptSwap,
+          getState: function () { return { level: level, score: score, moves: moves, target: target, over: over }; }
+        };
+      }
+    </script>
+  </body>
+</html>
