@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Cove Rips — Creator's Cove</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --sea-top: #8fe0f2;
+        --sea-mid: #2a9db8;
+        --sea-deep: #0d5a74;
+        --cabinet: #0b3d52;
+        --cabinet-2: #082c3d;
+        --cabinet-edge: #f2b33d;
+        --gold: #ffc93c;
+        --gold-deep: #e89b0c;
+        --purple: #7a4fa3;
+        --coral: #ff6f61;
+        --cream: #fff8ea;
+        --panel: rgba(255, 248, 234, 0.94);
+        --panel-ink: #17384a;
+        --ink: #12303e;
+        --shadow: 0 18px 40px rgba(4, 40, 56, 0.35);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --sea-top: #0a2e44;
+          --sea-mid: #0d4a63;
+          --sea-deep: #061e2e;
+          --cabinet: #0a2f42;
+          --cabinet-2: #051c29;
+          --panel: rgba(10, 43, 60, 0.96);
+          --panel-ink: #f3e9d2;
+          --shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Nunito", system-ui, sans-serif;
+        color: var(--panel-ink);
+        background:
+          radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.4), rgba(255,255,255,0) 60%),
+          linear-gradient(180deg, var(--sea-top) 0%, var(--sea-mid) 46%, var(--sea-deep) 100%);
+        min-height: 100vh;
+        padding: 18px 14px 40px;
+      }
+      main { max-width: 560px; margin: 0 auto; }
+      .machine {
+        background: linear-gradient(180deg, var(--cabinet) 0%, var(--cabinet-2) 100%);
+        border: 3px solid var(--cabinet-edge);
+        border-radius: 28px;
+        box-shadow: var(--shadow), inset 0 2px 0 rgba(255,255,255,0.18);
+        padding: 16px 14px 20px;
+        position: relative;
+        overflow: hidden;
+      }
+      .machine::after {
+        content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 10px;
+        background: repeating-linear-gradient(90deg, #eec27a 0 26px, #e5b765 26px 52px);
+        opacity: 0.85;
+      }
+      .marquee { text-align: center; padding: 2px 10px 0; }
+      .marquee h1 {
+        font-family: "Fredoka", sans-serif; font-weight: 700;
+        font-size: clamp(1.9rem, 8.5vw, 2.7rem); letter-spacing: 0.04em;
+        margin: 2px 0 0; color: var(--gold);
+        text-shadow: 0 2px 0 var(--gold-deep), 0 4px 14px rgba(0,0,0,0.45);
+      }
+      .marquee p {
+        margin: 0 0 4px; color: var(--cream); font-weight: 800;
+        letter-spacing: 0.22em; text-transform: uppercase; font-size: 0.7rem; opacity: 0.9;
+      }
+      .display {
+        margin: 12px 2px 0; min-height: 52px;
+        background: #081f2c; border: 2px solid rgba(255, 201, 60, 0.5);
+        border-radius: 14px; color: #ffe9a8;
+        display: flex; align-items: center; justify-content: center; text-align: center;
+        font-family: "Fredoka", sans-serif; font-weight: 600;
+        font-size: clamp(1rem, 4.6vw, 1.25rem); padding: 8px 12px; line-height: 1.25;
+      }
+      .display.big { color: var(--gold); font-size: clamp(1.2rem, 5.6vw, 1.55rem); animation: pop 0.45s ease; }
+      @keyframes pop { 0% { transform: scale(0.94); } 60% { transform: scale(1.03); } 100% { transform: scale(1); } }
+
+      .readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+      .meter {
+        background: #081f2c; border: 2px solid rgba(255, 201, 60, 0.45); border-radius: 12px;
+        padding: 6px 10px; text-align: center; color: var(--cream);
+      }
+      .meter .lbl { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #ffd76a; }
+      .meter .val { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.45rem; line-height: 1.15; }
+
+      /* ---------- Pack shop ---------- */
+      .shop { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+      .pack {
+        background: var(--panel); color: var(--panel-ink);
+        border: 3px solid var(--cabinet-edge); border-radius: 18px;
+        padding: 14px 10px 12px; text-align: center; cursor: pointer;
+        font-family: inherit; transition: transform 0.12s ease, box-shadow 0.12s ease;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.25);
+      }
+      .pack:hover:not(:disabled), .pack:focus-visible { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.25), 0 0 0 3px #fff; }
+      .pack:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.25); }
+      .pack:disabled { opacity: 0.45; cursor: default; }
+      .pack .pack-art { font-size: 3rem; line-height: 1; }
+      .pack h3 { font-family: "Fredoka", sans-serif; font-size: 1.05rem; margin: 8px 0 2px; }
+      .pack .price { font-family: "Fredoka", sans-serif; font-weight: 700; color: var(--gold-deep); font-size: 1.1rem; }
+      .pack .pulls { font-size: 0.82rem; font-weight: 700; opacity: 0.85; margin-top: 4px; line-height: 1.35; }
+      .pack .tag { display: inline-block; margin-top: 6px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; background: var(--purple); color: #fff; border-radius: 999px; padding: 3px 8px; }
+      .pack.elite { border-color: var(--gold); background: linear-gradient(180deg, #fff3c4, #ffe08a); }
+
+      /* ---------- Rip stage ---------- */
+      .rip-stage { margin-top: 14px; background: rgba(255,248,234,0.12); border: 2px dashed rgba(255,201,60,0.55); border-radius: 18px; padding: 16px 10px; text-align: center; min-height: 210px; }
+      .rip-stage.hidden { display: none; }
+      .rip-pack { font-size: 5rem; line-height: 1; display: inline-block; }
+      .rip-pack.shaking { animation: shake 0.12s linear infinite; }
+      @keyframes shake { 0% { transform: rotate(-6deg) translateX(-3px); } 50% { transform: rotate(6deg) translateX(3px); } 100% { transform: rotate(-6deg) translateX(-3px); } }
+      .rip-pack.torn { animation: tear 0.5s ease forwards; }
+      @keyframes tear { 0% { transform: scale(1) rotate(0); opacity: 1; } 100% { transform: scale(1.4) rotate(12deg); opacity: 0; } }
+      .rip-hint { color: var(--cream); font-weight: 800; margin-top: 8px; }
+      .cards-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 6px; }
+      .rip-card { perspective: 600px; }
+      .rip-card-inner {
+        position: relative; width: 100%; aspect-ratio: 3 / 4.4;
+        transform-style: preserve-3d; transition: transform 0.55s ease;
+      }
+      .rip-card.flipped .rip-card-inner { transform: rotateY(180deg); }
+      .rip-face {
+        position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+        border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 4px; text-align: center;
+      }
+      .rip-face.back { background: linear-gradient(135deg, #0f5132, #c9a227); border: 2px solid var(--gold); color: #fff; font-size: 1.6rem; }
+      .rip-face.front { transform: rotateY(180deg); background: #fffdf6; border: 3px solid #b9c4c9; color: var(--ink); }
+      .rip-face.front .art { font-size: clamp(1.4rem, 7vw, 2.1rem); line-height: 1; }
+      .rip-face.front .nm { font-family: "Fredoka", sans-serif; font-weight: 600; font-size: clamp(0.55rem, 2.6vw, 0.72rem); line-height: 1.1; margin-top: 4px; }
+      .rip-face.front .rar { font-size: clamp(0.5rem, 2.4vw, 0.62rem); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 3px; }
+      .rip-card.r-common .front { border-color: #8fa6ad; }
+      .rip-card.r-rare .front { border-color: #2a9db8; box-shadow: 0 0 10px rgba(42,157,184,0.55); }
+      .rip-card.r-epic .front { border-color: var(--purple); box-shadow: 0 0 12px rgba(122,79,163,0.65); }
+      .rip-card.r-gold .front {
+        border-color: var(--gold); background: linear-gradient(180deg, #fff8d6, #ffe08a);
+        box-shadow: 0 0 16px 3px rgba(255, 201, 60, 0.85); animation: goldGlow 0.7s ease-in-out infinite alternate;
+      }
+      @keyframes goldGlow { from { box-shadow: 0 0 10px 2px rgba(255,201,60,0.6); } to { box-shadow: 0 0 22px 6px rgba(255,201,60,0.95); } }
+      .rip-actions { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+      .btn {
+        font-family: "Fredoka", sans-serif; font-weight: 700; cursor: pointer;
+        border: 2px solid var(--gold-deep); border-radius: 999px; padding: 10px 18px;
+        background: linear-gradient(180deg, #ffe08a, var(--gold)); color: #4a2c00;
+        box-shadow: 0 3px 0 var(--gold-deep); font-size: 0.95rem;
+      }
+      .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--gold-deep); }
+      .btn:disabled { opacity: 0.45; cursor: default; }
+      .btn.ghost { background: rgba(255,248,234,0.12); color: var(--cream); border-color: rgba(255,248,234,0.6); box-shadow: none; }
+
+      .refill {
+        display: none; width: 100%; margin-top: 14px; padding: 10px 12px; border-radius: 14px;
+        border: 2px dashed rgba(255, 201, 60, 0.6); background: rgba(255,248,234,0.08);
+        color: var(--cream); font-family: inherit; cursor: pointer; text-align: center;
+      }
+      .refill.show { display: block; }
+      .refill .refill-label { display: block; font-family: "Fredoka", sans-serif; font-weight: 700; }
+      .refill .refill-timer { display: block; font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.3rem; color: var(--gold); margin-top: 2px; }
+      .refill .refill-sub { display: block; font-size: 0.82rem; font-weight: 700; opacity: 0.85; }
+      .prize-banner {
+        margin-top: 14px; background: rgba(255, 201, 60, 0.16); border: 2px solid rgba(255,201,60,0.55);
+        border-radius: 12px; padding: 10px 12px; text-align: center; color: var(--cream); font-size: 0.92rem; line-height: 1.4;
+      }
+      .prize-banner strong { color: var(--gold); }
+
+      .panel {
+        margin-top: 16px; background: var(--panel); color: var(--panel-ink);
+        border-radius: 20px; padding: 16px; box-shadow: var(--shadow);
+      }
+      .panel h2 { font-family: "Fredoka", sans-serif; margin: 0 0 8px; font-size: 1.25rem; }
+      .panel p { margin: 8px 0; line-height: 1.5; }
+      .panel .note { font-size: 0.88rem; opacity: 0.85; }
+      .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+      .stats-row .num { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.6rem; }
+      .stats-row .cap { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75; }
+
+      .vault-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+      .vault-card {
+        background: #fffdf6; border: 2px solid #d8cfae; border-radius: 12px;
+        padding: 8px 4px; text-align: center; min-height: 96px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+      }
+      .vault-card .art { font-size: 1.9rem; line-height: 1; }
+      .vault-card .nm { font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 0.68rem; line-height: 1.1; margin-top: 4px; }
+      .vault-card .cnt { font-size: 0.7rem; font-weight: 800; margin-top: 2px; }
+      .vault-card .best { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+      .vault-card.missing { opacity: 0.45; background: #ece7d8; }
+      .vault-card.missing .art { filter: grayscale(1); }
+      .vault-card.best-gold { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,201,60,0.7); }
+      .vault-card.best-epic { border-color: var(--purple); }
+      .vault-card.best-rare { border-color: #2a9db8; }
+      .rar-common { color: #5b7a84; } .rar-rare { color: #2a9db8; } .rar-epic { color: var(--purple); } .rar-gold { color: #b97e14; }
+
+      .overlay { position: fixed; inset: 0; background: rgba(4, 25, 36, 0.82); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+      .overlay.show { display: flex; }
+      .overlay-wrap { max-width: 480px; width: 100%; }
+      .winner-card {
+        background: linear-gradient(180deg, #0b3d52, #082c3d); border: 3px solid var(--gold);
+        border-radius: 24px; padding: 22px 16px; text-align: center; color: var(--cream);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      }
+      .winner-card h2 { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.9rem; color: var(--gold); margin: 8px 0 2px; }
+      .winner-card .sub { letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.7rem; font-weight: 800; opacity: 0.85; margin: 0; }
+      .winner-card .wc-cards { display: flex; justify-content: center; gap: 7px; margin: 16px 0 6px; flex-wrap: wrap; }
+      .winner-card .wc-cards .wc-tile { width: 74px; }
+      .winner-card .wc-cards .wc-tile .art { width: 100%; aspect-ratio: 3 / 4; display: grid; place-items: center; background: #fffdf6; border-radius: 12px; border: 2px solid var(--gold); font-size: 1.8rem; }
+      .winner-card .wc-cards .wc-tile .nm { font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 0.62rem; margin-top: 4px; color: var(--cream); }
+      .winner-card .wc-amount { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.5rem; color: #ffe9a8; margin: 8px 0 0; }
+      .winner-card .wc-detail { font-weight: 700; opacity: 0.9; margin: 2px 0 0; }
+      .winner-card .wc-date { font-size: 0.85rem; opacity: 0.75; margin: 6px 0 0; font-weight: 700; }
+      .close-row { text-align: center; margin-top: 12px; }
+      .close-btn { font-family: "Fredoka", sans-serif; font-weight: 700; cursor: pointer; border-radius: 999px; padding: 10px 20px; border: 2px solid var(--gold-deep); background: linear-gradient(180deg, #ffe08a, var(--gold)); color: #4a2c00; }
+      button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+      @media (prefers-reduced-motion: reduce) {
+        .rip-pack.shaking, .rip-pack.torn, .rip-card.r-gold .front, .display.big { animation: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="machine" aria-label="Cove Rips pack shop">
+        <div class="marquee">
+          <h1>COVE RIPS</h1>
+          <p>Creator's Cove · Card Packs</p>
+        </div>
+
+        <div class="display" id="display" role="status" aria-live="polite">Pick a pack and rip it open!</div>
+
+        <div class="readouts">
+          <div class="meter">
+            <div class="lbl">Coins</div>
+            <div class="val">🪙 <span id="coinVal">100</span></div>
+          </div>
+          <div class="meter">
+            <div class="lbl">Vault</div>
+            <div class="val"><span id="vaultVal">0 / 12</span></div>
+          </div>
+        </div>
+
+        <div class="shop" id="shop" aria-label="Pack shop"></div>
+
+        <div class="rip-stage hidden" id="ripStage" aria-live="polite"></div>
+
+        <button class="refill" id="refillBtn" type="button">
+          <span class="refill-label" id="refillLabel">Out of coins — next 100 free coins tomorrow</span>
+          <span class="refill-timer" id="refillTimer" aria-live="polite">--:--:--</span>
+          <span class="refill-sub" id="refillSub">Come back tomorrow to claim them</span>
+        </button>
+        <div class="prize-banner">Your coins are make-believe — there's nothing to buy. Pull a <strong>Gold card</strong>? Screenshot it and post it in the Creator's Cove Facebook group to enter — prizes are picked in the group, not in the app.</div>
+      </section>
+
+      <section class="panel" aria-label="Your session">
+        <h2>Your session</h2>
+        <div class="stats-row">
+          <div><div class="num" id="statPacks">0</div><div class="cap">Packs ripped</div></div>
+          <div><div class="num" id="statGold">0</div><div class="cap">Gold pulls</div></div>
+          <div><div class="num" id="statBest">—</div><div class="cap">Best pull</div></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Your vault">
+        <h2>🏆 Your Vault — <span id="vaultCount">0 / 12 collected</span></h2>
+        <p class="note">Every card you pull lives here, saved on this device. Can you collect all 12 Cove cards?</p>
+        <div class="vault-grid" id="vaultGrid"></div>
+      </section>
+
+      <section class="panel" aria-label="How to play">
+        <h2>How it works in the group</h2>
+        <p>Rip packs just for fun — the coins are make-believe and there's nothing to buy. Every pack has <strong>5 cards</strong>. Most pulls are Common, some are Rare, a few are Epic — and a lucky few are <strong>Gold</strong>, and Gold cards glow.</p>
+        <p><strong>Elite Pack</strong> costs more coins, but it boosts your Epic and Gold odds — and it always has at least one Epic or better inside.</p>
+        <p><strong>Your pulls are how you earn your way toward prizes.</strong> Pull a Gold card, tap <strong>WINNER CARD</strong>, take a screenshot, and post it in the Creator's Cove Facebook group — that's your entry. Winners are picked from the screenshots posted in the group.</p>
+        <p class="note">Run out of coins? Your next 100 free coins arrive tomorrow — when you hit zero, a countdown timer appears showing exactly how long is left until midnight. Come back tomorrow, tap to claim your 100, and you're ripping again. Your coin balance and your Vault are saved on this device, so they're right where you left them when you come back — your session scores start fresh each visit.</p>
+      </section>
+    </main>
+
+    <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Winner card">
+      <div class="overlay-wrap">
+        <div class="winner-card" id="winnerCard"></div>
+        <div class="close-row"><button class="close-btn" id="closeCardBtn" type="button">Back to the game</button></div>
+      </div>
+    </div>
+
+    <script>
+      "use strict";
+      /* ================= Cards (all Cove-original, no real licensed cards) ================= */
+      var CARDS = [
+        { id: "kim",      name: "Kim",          art: "🖌️", hint: "paintbrush" },
+        { id: "trish",    name: "Trish",        art: "🎩", hint: "witch hat" },
+        { id: "sandy",    name: "Sandy",        art: "⭐", hint: "purple starfish" },
+        { id: "gladys",   name: "Gladys",       art: "👓", hint: "glasses" },
+        { id: "sprocket", name: "Sprocket",     art: "🤖", hint: "robot" },
+        { id: "grinch",   name: "Grinch",       art: "💚", hint: "green grouch" },
+        { id: "wave",     name: "Cove Wave",    art: "🌊", hint: "wave" },
+        { id: "canvas",   name: "Salty Canvas", art: "🎨", hint: "art studio" },
+        { id: "shell",    name: "Shell",        art: "🐚", hint: "seashell" },
+        { id: "anchor",   name: "Anchor",       art: "⚓", hint: "anchor" },
+        { id: "snowman",  name: "Snowman",      art: "⛄", hint: "snowman" },
+        { id: "treecake", name: "Tree Cake",    art: "🎄", hint: "tree cake" }
+      ];
+      var CARD_BY_ID = {};
+      CARDS.forEach(function (c) { CARD_BY_ID[c.id] = c; });
+
+      var RARITIES = [
+        { id: "common", label: "Common", weight: 60 },
+        { id: "rare",   label: "Rare",   weight: 25 },
+        { id: "epic",   label: "Epic",   weight: 12 },
+        { id: "gold",   label: "Gold",   weight: 3 }
+      ];
+      var RARITY_RANK = { common: 0, rare: 1, epic: 2, gold: 3 };
+      var ELITE_WEIGHTS = { common: 30, rare: 35, epic: 25, gold: 10 };
+
+      /* ================= Packs ================= */
+      var PACKS = [
+        { id: "crew",      name: "Crew Pack",      art: "🎒", price: 10,  pool: ["kim", "trish", "sandy", "gladys", "sprocket"], tag: "" },
+        { id: "christmas", name: "Christmas Grails", art: "🎄", price: 25, pool: ["grinch", "snowman", "treecake", "canvas", "shell"], tag: "Holiday" },
+        { id: "mermaid",   name: "Mermaid Pack",   art: "🧜‍♀️", price: 25, pool: ["kim", "trish", "sandy", "wave", "anchor"], tag: "Under the sea" },
+        { id: "elite",     name: "Elite Pack",     art: "👑", price: 100, pool: CARDS.map(function (c) { return c.id; }), tag: "Epic or better guaranteed", elite: true }
+      ];
+
+      /* ================= Coins + refill (same pattern as Cove Slots) ================= */
+      var COIN_KEY = "cove-rips-coins";
+      var REFILL_KEY = "cove-rips-next-refill";
+      var VAULT_KEY = "cove-rips-vault";
+      var CHEAPEST = 10;
+
+      function loadCoins() {
+        try {
+          var v = parseInt(window.localStorage.getItem(COIN_KEY), 10);
+          if (!isNaN(v) && v >= 0) return v;
+        } catch (e) { /* ignore */ }
+        return 100;
+      }
+      function saveCoins() {
+        try { window.localStorage.setItem(COIN_KEY, String(coins)); } catch (e) { /* ignore */ }
+      }
+      function nextMidnight() {
+        var d = new Date();
+        d.setHours(24, 0, 0, 0);
+        return d.getTime();
+      }
+      function loadRefillAt() {
+        try {
+          var v = parseInt(window.localStorage.getItem(REFILL_KEY), 10);
+          if (!isNaN(v) && v > 0) return v;
+        } catch (e) { /* ignore */ }
+        return 0;
+      }
+      function saveRefillAt() {
+        try {
+          if (refillAt) window.localStorage.setItem(REFILL_KEY, String(refillAt));
+          else window.localStorage.removeItem(REFILL_KEY);
+        } catch (e) { /* ignore */ }
+      }
+      function refillReady() {
+        return coins < CHEAPEST && refillAt > 0 && Date.now() >= refillAt;
+      }
+
+      /* ================= Vault ================= */
+      function loadVault() {
+        try {
+          var v = JSON.parse(window.localStorage.getItem(VAULT_KEY) || "{}");
+          if (v && typeof v === "object") return v;
+        } catch (e) { /* ignore */ }
+        return {};
+      }
+      function saveVault() {
+        try { window.localStorage.setItem(VAULT_KEY, JSON.stringify(vault)); } catch (e) { /* ignore */ }
+      }
+
+      /* ================= State ================= */
+      var coins = loadCoins();
+      var refillAt = loadRefillAt();
+      var vault = loadVault();
+      var ripping = false;
+      var lastPull = null;      /* array of {card, rarity} from the latest rip */
+      var lastPack = null;
+      var stats = { packs: 0, gold: 0, best: null }; /* session-only */
+
+      var displayEl = document.getElementById("display");
+      var coinValEl = document.getElementById("coinVal");
+      var vaultValEl = document.getElementById("vaultVal");
+      var shopEl = document.getElementById("shop");
+      var ripStageEl = document.getElementById("ripStage");
+      var refillBtn = document.getElementById("refillBtn");
+      var refillLabel = document.getElementById("refillLabel");
+      var refillTimer = document.getElementById("refillTimer");
+      var refillSub = document.getElementById("refillSub");
+      var overlay = document.getElementById("overlay");
+
+      function setDisplay(text, big) {
+        displayEl.textContent = text;
+        displayEl.classList.toggle("big", !!big);
+      }
+      function rarityLabel(id) {
+        for (var i = 0; i < RARITIES.length; i++) if (RARITIES[i].id === id) return RARITIES[i].label;
+        return id;
+      }
+      function rollRarity(pack) {
+        var weights = pack.elite ? ELITE_WEIGHTS : null;
+        var roll = Math.random() * 100, acc = 0;
+        for (var i = 0; i < RARITIES.length; i++) {
+          var w = weights ? weights[RARITIES[i].id] : RARITIES[i].weight;
+          acc += w;
+          if (roll < acc) return RARITIES[i].id;
+        }
+        return "common";
+      }
+      function pickCard(pack) {
+        var pool = pack.pool;
+        var card = CARD_BY_ID[pool[Math.floor(Math.random() * pool.length)]];
+        return { card: card, rarity: rollRarity(pack) };
+      }
+      function vaultCount() {
+        var n = 0;
+        CARDS.forEach(function (c) { if (vault[c.id] && vault[c.id].count > 0) n++; });
+        return n;
+      }
+
+      /* ================= Rendering ================= */
+      function renderShop() {
+        shopEl.innerHTML = "";
+        PACKS.forEach(function (pack) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "pack" + (pack.elite ? " elite" : "");
+          btn.disabled = ripping || coins < pack.price;
+          var poolNames = pack.pool.map(function (id) { return CARD_BY_ID[id].name; }).join(", ");
+          btn.innerHTML =
+            '<div class="pack-art" aria-hidden="true">' + pack.art + '</div>' +
+            "<h3>" + pack.name + "</h3>" +
+            '<div class="price">🪙 ' + pack.price + " coins</div>" +
+            '<div class="pulls">5 cards · ' + poolNames + "</div>" +
+            (pack.elite ? '<div class="tag">Epic or better guaranteed</div>' : (pack.tag ? '<div class="tag">' + pack.tag + "</div>" : ""));
+          btn.addEventListener("click", function () { ripPack(pack); });
+          shopEl.appendChild(btn);
+        });
+      }
+      function renderVault() {
+        var grid = document.getElementById("vaultGrid");
+        grid.innerHTML = "";
+        var owned = vaultCount();
+        document.getElementById("vaultCount").textContent = owned + " / 12 collected";
+        vaultValEl.textContent = owned + " / 12";
+        CARDS.forEach(function (c) {
+          var entry = vault[c.id];
+          var div = document.createElement("div");
+          if (entry && entry.count > 0) {
+            div.className = "vault-card best-" + entry.best;
+            div.innerHTML =
+              '<div class="art" aria-hidden="true">' + c.art + "</div>" +
+              '<div class="nm">' + c.name + "</div>" +
+              '<div class="cnt">×' + entry.count + "</div>" +
+              '<div class="best rar-' + entry.best + '">Best: ' + rarityLabel(entry.best) + "</div>";
+          } else {
+            div.className = "vault-card missing";
+            div.innerHTML =
+              '<div class="art" aria-hidden="true">❓</div>' +
+              '<div class="nm">' + c.name + "</div>" +
+              '<div class="cnt">Not found yet</div>';
+          }
+          grid.appendChild(div);
+        });
+      }
+      function renderStats() {
+        document.getElementById("statPacks").textContent = stats.packs;
+        document.getElementById("statGold").textContent = stats.gold;
+        document.getElementById("statBest").textContent = stats.best ? stats.best : "—";
+      }
+      function renderRefill() {
+        var broke = coins < CHEAPEST;
+        if (!broke) { refillBtn.classList.remove("show"); return; }
+        refillBtn.classList.add("show");
+        if (refillReady()) {
+          refillLabel.textContent = "Your 100 free coins are ready!";
+          refillTimer.textContent = "Tap to claim 100 coins";
+          refillSub.textContent = "Tap the button to claim them";
+        } else {
+          refillLabel.textContent = "Out of coins — next 100 free coins tomorrow";
+          refillSub.textContent = "Come back tomorrow to claim them";
+        }
+      }
+      function renderAll() {
+        coinValEl.textContent = coins;
+        renderShop();
+        renderVault();
+        renderStats();
+        renderRefill();
+      }
+
+      /* ================= Rip flow ================= */
+      function ripPack(pack) {
+        if (ripping) return;
+        if (coins < pack.price) { setDisplay("Not enough coins for the " + pack.name + " — come back tomorrow for 100 free coins!"); return; }
+        ripping = true;
+        lastPack = pack;
+        coins -= pack.price;
+        saveCoins();
+        if (coins < CHEAPEST && !refillAt) { refillAt = nextMidnight(); saveRefillAt(); }
+        /* Roll 5 cards now; Elite guarantees at least 1 Epic or better */
+        var pulls = [];
+        for (var i = 0; i < 5; i++) pulls.push(pickCard(pack));
+        if (pack.elite) {
+          var hasEpicPlus = pulls.some(function (p) { return RARITY_RANK[p.rarity] >= 2; });
+          if (!hasEpicPlus) {
+            var idx = Math.floor(Math.random() * pulls.length);
+            pulls[idx].rarity = Math.random() < 0.3 ? "gold" : "epic";
+          }
+        }
+        lastPull = pulls;
+        renderAll();
+        setDisplay("Ripping your " + pack.name + "…");
+        /* Stage 1: shaking pack */
+        ripStageEl.classList.remove("hidden");
+        ripStageEl.innerHTML =
+          '<div class="rip-pack shaking" id="ripPackArt" aria-hidden="true">' + pack.art + '</div>' +
+          '<div class="rip-hint">Ripping…</div>';
+        setTimeout(function () {
+          var art = document.getElementById("ripPackArt");
+          if (art) { art.classList.remove("shaking"); art.classList.add("torn"); }
+          setTimeout(function () { revealCards(pulls, pack); }, 520);
+        }, 900);
+      }
+      function revealCards(pulls, pack) {
+        var goldPulls = pulls.filter(function (p) { return p.rarity === "gold"; });
+        var best = pulls.slice().sort(function (a, b) { return RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity]; })[0];
+        /* Save to vault + stats */
+        pulls.forEach(function (p) {
+          var entry = vault[p.card.id] || { count: 0, best: "common" };
+          entry.count += 1;
+          if (RARITY_RANK[p.rarity] > RARITY_RANK[entry.best]) entry.best = p.rarity;
+          vault[p.card.id] = entry;
+        });
+        saveVault();
+        stats.packs += 1;
+        stats.gold += goldPulls.length;
+        if (!stats.best || RARITY_RANK[best.rarity] > RARITY_RANK[stats.bestRarity || "common"]) {
+          stats.best = rarityLabel(best.rarity) + " " + best.card.name;
+          stats.bestRarity = best.rarity;
+        }
+        /* Render face-down cards, flip one by one */
+        var html = '<div class="cards-row" id="cardsRow">';
+        pulls.forEach(function (p) {
+          html += '<div class="rip-card r-' + p.rarity + '">' +
+            '<div class="rip-card-inner">' +
+            '<div class="rip-face back">🌊</div>' +
+            '<div class="rip-face front"><div class="art">' + p.card.art + '</div><div class="nm">' + p.card.name + '</div><div class="rar rar-' + p.rarity + '">' + rarityLabel(p.rarity) + "</div></div>" +
+            "</div></div>";
+        });
+        html += "</div>";
+        html += '<div class="rip-actions">' +
+          '<button class="btn" id="ripAgainBtn" type="button">Rip Another</button>' +
+          '<button class="btn ghost" id="winnerCardBtn" type="button"' + (goldPulls.length ? "" : " disabled") + ">WINNER CARD</button>" +
+          "</div>";
+        ripStageEl.innerHTML = html;
+        var cards = ripStageEl.querySelectorAll(".rip-card");
+        cards.forEach(function (cardEl, i) {
+          setTimeout(function () { cardEl.classList.add("flipped"); }, 350 + i * 550);
+        });
+        var totalDelay = 350 + pulls.length * 550 + 500;
+        setTimeout(function () {
+          if (goldPulls.length) {
+            var names = goldPulls.map(function (p) { return p.card.name; }).join(", ");
+            setDisplay("✨ GOLD! You pulled " + names + "! Screenshot it for the group!", true);
+          } else {
+            setDisplay("You pulled a " + rarityLabel(best.rarity) + " " + best.card.name + " — nice rip!", false);
+          }
+          renderAll();
+          ripping = false;
+          renderShop();
+        }, totalDelay);
+        document.getElementById("ripAgainBtn").addEventListener("click", function () {
+          ripStageEl.classList.add("hidden");
+          ripStageEl.innerHTML = "";
+          setDisplay("Pick a pack and rip it open!");
+          renderShop();
+        });
+        var wcBtn = document.getElementById("winnerCardBtn");
+        if (wcBtn) wcBtn.addEventListener("click", showWinnerCard);
+      }
+
+      /* ================= Winner Card ================= */
+      function showWinnerCard() {
+        if (!lastPull) return;
+        var golds = lastPull.filter(function (p) { return p.rarity === "gold"; });
+        var shown = golds.length ? golds : lastPull.slice().sort(function (a, b) { return RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity]; }).slice(0, 3);
+        var tiles = shown.map(function (p) {
+          return '<div class="wc-tile"><div class="art">' + p.card.art + '</div><div class="nm">' + p.card.name + " · " + rarityLabel(p.rarity) + "</div></div>";
+        }).join("");
+        var today = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+        document.getElementById("winnerCard").innerHTML =
+          '<p class="sub">Creator\'s Cove</p>' +
+          "<h2>COVE RIPS</h2>" +
+          '<p class="sub">' + (lastPack ? lastPack.name : "Pack") + "</p>" +
+          '<div class="wc-cards">' + tiles + "</div>" +
+          '<p class="wc-amount">' + (golds.length ? "✨ GOLD PULL! ✨" : "Nice rip!") + "</p>" +
+          '<p class="wc-detail">Coin total: ' + coins + " coins · Vault: " + vaultCount() + " / 12</p>" +
+          '<p class="wc-date">' + today + "</p>" +
+          '<p class="wc-detail" style="font-size:0.85rem; margin-top:10px;">Screenshot this and post it in the Creator\'s Cove Facebook group to enter — prizes are picked in the group, not in the app. Coins are make-believe.</p>';
+        overlay.classList.add("show");
+      }
+      document.getElementById("closeCardBtn").addEventListener("click", function () {
+        overlay.classList.remove("show");
+      });
+      overlay.addEventListener("click", function (e) {
+        if (e.target === overlay) overlay.classList.remove("show");
+      });
+
+      /* ================= Refill ================= */
+      refillBtn.addEventListener("click", function () {
+        if (!refillReady()) return;
+        coins += 100;
+        refillAt = 0;
+        saveCoins();
+        saveRefillAt();
+        setDisplay("Here's your 100 free coins — welcome back!");
+        renderAll();
+      });
+      function tickRefill() {
+        if (coins >= CHEAPEST) return;
+        if (!refillAt) { refillAt = nextMidnight(); saveRefillAt(); }
+        if (refillReady()) { renderRefill(); return; }
+        var ms = refillAt - Date.now();
+        var s = Math.max(0, Math.floor(ms / 1000));
+        var h = String(Math.floor(s / 3600)).padStart(2, "0");
+        var m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+        var ss = String(s % 60).padStart(2, "0");
+        refillTimer.textContent = h + ":" + m + ":" + ss;
+      }
+      setInterval(tickRefill, 1000);
+
+      /* ================= Init ================= */
+      if (coins >= CHEAPEST && refillAt) { refillAt = 0; saveRefillAt(); }
+      if (coins < CHEAPEST && !refillAt) { refillAt = nextMidnight(); saveRefillAt(); }
+      renderAll();
+      tickRefill();
+      if (coins < CHEAPEST) {
+        setDisplay(refillReady() ? "Welcome back! Your 100 free coins are ready — tap below to claim them." : "Out of coins — your next 100 free coins arrive tomorrow. Timer below!");
+      }
+    </script>
+  </body>
+</html>
