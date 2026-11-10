@@ -116,7 +116,7 @@
         overflow: hidden;
       }
       .board {
-        display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px;
+        display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); aspect-ratio: 1 / 1; gap: 5px;
         touch-action: manipulation; -webkit-user-select: none; user-select: none;
         -webkit-touch-callout: none; overscroll-behavior: none;
       }
@@ -132,12 +132,12 @@
       }
       .tile:active { transform: scale(0.94); }
       .tile.selected { outline: 3px solid var(--gold); outline-offset: -2px; transform: scale(1.08); z-index: 2; }
-      .tile.pop { animation: tilePop 0.3s ease-in forwards; }
-      @keyframes tilePop { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(0.1); opacity: 0; } }
+      .tile.pop { animation: tilePop 0.15s ease-in forwards; }
+      @keyframes tilePop { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.05); opacity: 0; } }
       .tile.shake { animation: tileShake 0.3s ease; }
       @keyframes tileShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
-      .tile.drop-in { animation: dropIn 0.35s cubic-bezier(.2,.8,.35,1.15) both; }
-      @keyframes dropIn { 0% { transform: translateY(-30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+      .tile.drop-in { animation: tileFade 0.15s ease both; }
+      @keyframes tileFade { 0% { opacity: 0; } 100% { opacity: 1; } }
       .tile.striped-row { background: repeating-linear-gradient(0deg, #fffdf6 0 6px, #ffe9a8 6px 12px); }
       .tile.striped-col { background: repeating-linear-gradient(90deg, #fffdf6 0 6px, #ffe9a8 6px 12px); }
       .tile.rainbow { background: conic-gradient(#ff6f61, #ffc93c, #3d9970, #2a9db8, #7a4fa3, #ff6f61); }
@@ -411,11 +411,13 @@
       }
 
       function refillBoard(b) {
+        var filled = {};
         for (var r = 0; r < ROWS; r++) {
           for (var c = 0; c < COLS; c++) {
-            if (!b[r][c]) b[r][c] = newTile(randType());
+            if (!b[r][c]) { b[r][c] = newTile(randType()); filled[key(r, c)] = true; }
           }
         }
+        return filled;
       }
 
       function shuffleBoard(b) {
@@ -478,9 +480,30 @@
         if (el.overlayBtn) el.overlayBtn.addEventListener("click", onOverlayButton);
       }
 
+      var tileEls = null;
+      function buildBoardDom() {
+        if (!el.board) return;
+        while (el.board.firstChild) el.board.removeChild(el.board.firstChild);
+        tileEls = [];
+        for (var r = 0; r < ROWS; r++) {
+          tileEls.push([]);
+          for (var c = 0; c < COLS; c++) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.setAttribute("role", "gridcell");
+            btn.className = "tile";
+            btn.dataset.r = r;
+            btn.dataset.c = c;
+            btn.appendChild(document.createElement("span"));
+            el.board.appendChild(btn);
+            tileEls[r].push(btn);
+          }
+        }
+      }
+
       function render() {
         if (!el.board) return;
-        var html = "";
+        if (!tileEls) buildBoardDom();
         for (var r = 0; r < ROWS; r++) {
           for (var c = 0; c < COLS; c++) {
             var t = board[r][c];
@@ -491,10 +514,16 @@
             if (t && t.special === "col") { cls += " striped-col"; emoji = "➖"; }
             if (t && t.special === "rainbow") { cls += " rainbow"; emoji = RAINBOW_EMOJI; label = "Rainbow Cove Wave"; }
             if (selected && selected.r === r && selected.c === c) cls += " selected";
-            html += '<button type="button" role="gridcell" class="' + cls + '" data-r="' + r + '" data-c="' + c + '" aria-label="' + label + ' tile, row ' + (r + 1) + ' column ' + (c + 1) + '"><span>' + emoji + '</span></button>';
+            var btn = tileEls[r][c];
+            var sig = cls + "|" + emoji + "|" + label;
+            if (btn._sig !== sig) {
+              btn.className = cls;
+              btn.setAttribute("aria-label", label + " tile, row " + (r + 1) + " column " + (c + 1));
+              btn.firstChild.textContent = emoji;
+              btn._sig = sig;
+            }
           }
         }
-        el.board.innerHTML = html;
         el.scoreVal.textContent = score;
         el.targetVal.textContent = target;
         el.movesVal.textContent = moves;
@@ -606,7 +635,7 @@
           if (score > bestScore) bestScore = score;
           setDisplay("Match! +" + gained + (chains > 1 ? " — chain ×" + (chain + chains - 1) + "!" : ""), chains > 1);
           markTiles(cells, "pop");
-          await sleep(320);
+          await sleep(180);
           for (var k in cells) {
             var parts = k.split(",");
             board[parseInt(parts[0], 10)][parseInt(parts[1], 10)] = null;
@@ -615,25 +644,26 @@
             board[create.cell.r][create.cell.c] = { type: create.type, special: create.special };
           }
           applyGravity(board);
-          refillBoard(board);
+          var fresh = refillBoard(board);
           render();
-          markTiles((function () { var o = {}; for (var rr = 0; rr < ROWS; rr++) for (var cc = 0; cc < COLS; cc++) o[key(rr, cc)] = true; return o; })(), "drop-in");
-          await sleep(300);
+          markTiles(fresh, "drop-in");
+          await sleep(200);
         }
         return chains;
       }
 
       async function clearCells(cells) {
         markTiles(cells, "pop");
-        await sleep(320);
+        await sleep(180);
         for (var k in cells) {
           var parts = k.split(",");
           board[parseInt(parts[0], 10)][parseInt(parts[1], 10)] = null;
         }
         applyGravity(board);
-        refillBoard(board);
+        var fresh = refillBoard(board);
         render();
-        await sleep(300);
+        markTiles(fresh, "drop-in");
+        await sleep(200);
       }
 
       function endTurnCheck() {
