@@ -88,18 +88,18 @@
         letter-spacing: 0.22em; text-transform: uppercase; font-size: 0.7rem; opacity: 0.9;
       }
       .display {
-        margin: 12px 2px 0; min-height: 68px;
+        margin: 12px 2px 0; height: 56px; overflow: hidden;
         background: #081f2c; border: 2px solid rgba(255, 201, 60, 0.5);
         border-radius: 14px; color: #ffe9a8;
         display: flex; align-items: center; justify-content: center; text-align: center;
         font-family: "Fredoka", sans-serif; font-weight: 600;
-        font-size: clamp(1rem, 4.6vw, 1.25rem); padding: 8px 12px; line-height: 1.25;
+        font-size: clamp(1rem, 4.6vw, 1.25rem); padding: 8px 12px; line-height: 1.2;
       }
-      .display.big { color: var(--gold); transform: scale(1.04); }
+      .display.big { color: var(--gold); }
       .readouts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
       .meter {
         background: #081f2c; border: 2px solid rgba(255, 201, 60, 0.45); border-radius: 12px;
-        padding: 6px 10px; text-align: center; color: var(--cream);
+        padding: 6px 10px; text-align: center; color: var(--cream); height: 64px; overflow: hidden;
       }
       .meter .lbl { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #ffd76a; }
       .meter .val { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.45rem; line-height: 1.15; }
@@ -527,7 +527,7 @@
         board = makeBoard();
         selected = null; busy = false; over = false;
         if (el.overlay) el.overlay.classList.remove("open");
-        setDisplay("Level " + l + " — reach " + target + " points in " + moves + " moves!");
+        setDisplay("Level " + l + " — " + target + " pts in " + moves + " moves!");
         render();
       }
 
@@ -550,7 +550,7 @@
         if (!usesRainbow && !swapCreatesMatch(board, r1, c1, r2, c2)) {
           render();
           markTiles((function () { var o = {}; o[key(r1, c1)] = true; o[key(r2, c2)] = true; return o; })(), "shake");
-          setDisplay("No match there — try another swap!");
+          setDisplay("No match — try another swap!");
           return false;
         }
         busy = true;
@@ -570,7 +570,7 @@
           var gained = Object.keys(cleared).length * 20;
           score += gained;
           if (score > bestScore) bestScore = score;
-          setDisplay("🌈 Rainbow! Cleared every " + TYPES[clearType].name + "! +" + gained, true);
+          setDisplay("🌈 Cleared all " + TYPES[clearType].name + "! +" + gained, true);
           await clearCells(cleared);
           await cascade(1);
         } else {
@@ -661,7 +661,7 @@
         if (!hasPossibleMove(board)) {
           shuffleBoard(board);
           render();
-          setDisplay("No moves left — shuffled the board for you!");
+          setDisplay("No moves left — board shuffled!");
         } else {
           setDisplay("Keep crushing! " + moves + " moves left.");
         }
@@ -678,7 +678,7 @@
         if (busy || over) return;
         shuffleBoard(board);
         render();
-        setDisplay("Board shuffled — fresh moves to find!");
+        setDisplay("Board shuffled — fresh moves!");
       }
 
       function onHint() {
