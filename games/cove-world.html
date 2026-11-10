@@ -265,6 +265,23 @@
           /* Cove back button — added Nov 10: iPhone home-screen web app has no browser back button */
       .cove-back-btn{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 12px 0;border-radius:999px;background:#ffffff;color:#12303e;font-weight:800;text-decoration:none;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;}
       .cove-back-btn:active{transform:translateY(1px);}
+      /* Jobs + golden shell — added Nov 10: Today at the Cove */
+      .jobs-panel{margin:0 0 12px;padding:14px 16px;}
+      .jobs-panel h2{font-family:"Baloo 2",cursive;font-weight:800;font-size:1.25rem;margin:0 0 6px;}
+      .jobs-list{list-style:none;margin:0;padding:0;display:grid;gap:8px;}
+      .jobs-list li{display:flex;align-items:center;gap:10px;background:var(--chip);border:2px solid var(--panel-edge);border-radius:12px;padding:9px 12px;font-weight:700;}
+      .jobs-list li .tick{width:26px;height:26px;flex:none;border-radius:50%;border:2px solid var(--teal);display:grid;place-items:center;font-size:.95rem;color:transparent;}
+      .jobs-list li.done{opacity:.85;}
+      .jobs-list li.done .tick{background:var(--good);border-color:var(--good);color:#fff;}
+      .jobs-list li .prog{margin-left:auto;font-size:.82rem;font-weight:800;color:var(--ink-soft);white-space:nowrap;}
+      .jobs-note{margin:8px 0 0;font-size:.9rem;color:var(--ink-soft);font-weight:600;}
+      .celebration{display:none;margin:0 0 12px;padding:16px;border-radius:18px;background:linear-gradient(135deg,#ffe08a,#ffc93c);border:3px solid #e89b0c;text-align:center;color:#4a2c00;box-shadow:var(--shadow);}
+      .celebration.show{display:block;}
+      .celebration h2{font-family:"Baloo 2",cursive;font-size:1.4rem;margin:0 0 4px;}
+      .celebration p{margin:0 0 10px;font-weight:700;}
+      .golden-shell{position:absolute;z-index:8;width:34px;height:34px;transform:translate(-50%,-50%);border:none;border-radius:50%;background:radial-gradient(circle at 35% 32%,#fff3b0,#ffc93c 55%,#e89b0c);box-shadow:0 0 14px 4px rgba(255,201,60,.85);font-size:1.1rem;line-height:1;cursor:pointer;animation:goldGlint 1.2s ease-in-out infinite alternate;padding:0;}
+      @keyframes goldGlint{from{transform:scale(1);opacity:.75;}to{transform:scale(1.25);opacity:1;}}
+      .golden-shell.found{display:none;}
 </style>
   </head>
   <body>
@@ -295,6 +312,16 @@
         </div>
       </div>
 
+      <div class="panel jobs-panel" id="jobsPanel" aria-label="Today at the Cove">
+        <h2>☀️ Today at the Cove</h2>
+        <ul class="jobs-list" id="jobsList"></ul>
+        <p class="jobs-note">Finish all three and the crew celebrates — screenshot it for the Creator's Cove Facebook group! ✨ Keep an eye out for a tiny golden sparkle on the beach…</p>
+      </div>
+      <div class="celebration" id="celebration" role="status">
+        <h2>🎉 All of today's jobs done!</h2>
+        <p>What a day at the Cove — take a group photo and screenshot this moment for the Creator's Cove Facebook group!</p>
+        <button class="btn gold" id="celebrationPhotoBtn" type="button">Take the group photo 📸</button>
+      </div>
       <!-- Scene -->
       <div class="scene-shell">
         <div class="scene" id="scene">
@@ -463,7 +490,8 @@
         /* ---------------- State ---------------- */
         var state = {
           day: 1, minutes: 9 * 60, shells: 12, bond: 20,
-          selected: "painter", paintings: [], paintingsMade: 0, sleeping: false
+          selected: "painter", paintings: [], paintingsMade: 0, sleeping: false,
+          shellsEarned: 0, jobs: [], jobProgress: {}, jobsDone: false, goldenFound: false, visited: {}
         };
         var girls = {};
         GIRLS.forEach(function (g) {
@@ -530,6 +558,83 @@
           li.innerHTML = '<span class="when">Day ' + state.day + " · " + fmtTime() + "</span>" + html;
           diaryEl.insertBefore(li, diaryEl.firstChild);
           while (diaryEl.children.length > 30) diaryEl.removeChild(diaryEl.lastChild);
+        }
+        /* ---------------- Today at the Cove: jobs + golden shell hunt (Nov 10) ---------------- */
+        var JOB_POOL = [
+          { id: "shells5", label: "Collect 5 shells", target: 5 },
+          { id: "paint1", label: "Paint a picture at The Salty Canvas", target: 1 },
+          { id: "photo1", label: "Take a group photo at the studio", target: 1 },
+          { id: "treat1", label: "Treat the whole crew to shaved ice", target: 1 },
+          { id: "splash1", label: "Splash in the waves at The Shore", target: 1 },
+          { id: "tidy1", label: "Tidy the studio", target: 1 },
+          { id: "crab1", label: "Watch for glowing crabs", target: 1 },
+          { id: "chat1", label: "Have two girls chat", target: 1 },
+          { id: "visit3", label: "Visit 3 different spots", target: 1 },
+          { id: "golden1", label: "Find the golden shell hiding on the beach", target: 1 }
+        ];
+        var GOLD_HIDES = [
+          { x: 18, y: 88, hint: "behind the easels" },
+          { x: 12, y: 68, hint: "under the cottage porch" },
+          { x: 76, y: 70, hint: "by the Snack Shack" },
+          { x: 52, y: 70, hint: "by the studio door" },
+          { x: 88, y: 84, hint: "down at the shore" }
+        ];
+        var goldenHide = GOLD_HIDES[Math.floor(Math.random() * GOLD_HIDES.length)];
+        function pickJobs() {
+          var pool = JOB_POOL.slice();
+          for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp; }
+          state.jobs = pool.slice(0, 3);
+          state.jobProgress = {};
+          state.jobs.forEach(function (jb) { state.jobProgress[jb.id] = 0; });
+          state.jobsDone = false;
+        }
+        function renderJobs() {
+          var list = document.getElementById("jobsList"); if (!list) return;
+          list.innerHTML = "";
+          state.jobs.forEach(function (jb) {
+            var done = (state.jobProgress[jb.id] || 0) >= jb.target;
+            var li = document.createElement("li");
+            if (done) li.className = "done";
+            var prog = jb.target > 1 ? Math.min(state.jobProgress[jb.id] || 0, jb.target) + "/" + jb.target : "";
+            li.innerHTML = '<span class="tick">\u2713</span><span>' + jb.label + '</span>' + (prog ? '<span class="prog">' + prog + "</span>" : "");
+            list.appendChild(li);
+          });
+        }
+        function bumpJob(id, n) {
+          if (!(id in state.jobProgress)) return;
+          state.jobProgress[id] = Math.min(state.jobProgress[id] + (n || 1), JOB_POOL.filter(function (j) { return j.id === id; })[0].target);
+          renderJobs(); checkJobsDone();
+        }
+        function completeJob(id) { if (id in state.jobProgress) { state.jobProgress[id] = JOB_POOL.filter(function (j) { return j.id === id; })[0].target; renderJobs(); checkJobsDone(); } }
+        function checkJobsDone() {
+          if (state.jobsDone || !state.jobs.length) return;
+          var all = state.jobs.every(function (jb) { return (state.jobProgress[jb.id] || 0) >= jb.target; });
+          if (!all) return;
+          state.jobsDone = true;
+          document.getElementById("celebration").classList.add("show");
+          diary("Every job on today's list is done — the whole crew is glowing. Screenshot this moment for the Creator's Cove Facebook group!");
+          toast("\u2728 All of today's jobs done! Take a group photo \u2728");
+        }
+        var goldenBtn = null;
+        function placeGoldenShell() {
+          goldenBtn = document.createElement("button");
+          goldenBtn.type = "button"; goldenBtn.className = "golden-shell";
+          goldenBtn.setAttribute("aria-label", "A tiny golden sparkle — tap it");
+          goldenBtn.textContent = "\u2728";
+          goldenBtn.style.left = goldenHide.x + "%"; goldenBtn.style.top = goldenHide.y + "%";
+          goldenBtn.addEventListener("click", findGoldenShell);
+          scene.appendChild(goldenBtn);
+        }
+        function findGoldenShell() {
+          if (state.goldenFound || state.sleeping) return;
+          state.goldenFound = true;
+          if (goldenBtn) goldenBtn.classList.add("found");
+          state.shells += 5; state.shellsEarned += 5;
+          bumpJob("golden1", 1); bumpJob("shells5", 5);
+          diary("A golden shell was hiding " + goldenHide.hint + " — worth 5 shells! The cove really does provide.");
+          toast("\u2728 Golden Shell Found! +5 shells \u2728");
+          say(state.selected, "A golden shell! Did you see it sparkle?", 4200);
+          renderPanel();
         }
         function say(girlId, text, holdMs) {
           var g = girls[girlId], bub = bubbleEls[girlId], tok = tokenEls[girlId];
@@ -633,6 +738,7 @@
             spotEls[key].classList.toggle("here", girls[state.selected].spot === key);
           });
           document.getElementById("shellCount").textContent = state.shells;
+          renderJobs();
           document.getElementById("bondNum").textContent = clamp(state.bond);
           document.getElementById("bondFill").style.width = clamp(state.bond) + "%";
           var ph = phase();
@@ -663,6 +769,8 @@
           var g = girls[girlId];
           if (state.sleeping || g.busy || g.spot === spotKey) { if (g.spot === spotKey && announce) renderPanel(); return; }
           g.spot = spotKey; g.busy = true;
+          state.visited[spotKey] = true;
+          if (Object.keys(state.visited).length >= 3) completeJob("visit3");
           tokenEls[girlId].classList.add("walking");
           refreshAllTokens();
           renderPanel();
@@ -701,12 +809,16 @@
           advanceTime(action.mins);
           applyFx(g, action.fx);
           if (action.shells) {
-            state.shells += action.shells;
+            state.shells += action.shells; state.shellsEarned += action.shells;
+            bumpJob("shells5", action.shells);
             diary('<span class="who-name">' + g.def.name + "</span> earned " + action.shells + " shells at " + SPOTS[g.spot].name + ".");
           }
           say(girlId, pickLine(girlId, action.line), 4600);
 
+          if (action.id === "tidy") bumpJob("tidy1", 1);
+          if (action.id === "splash") bumpJob("splash1", 1);
           if (action.paint) {
+            bumpJob("paint1", 1); bumpJob("shells5", 5); state.shellsEarned += 5;
             var title = PAINTING_TITLES[state.paintingsMade % PAINTING_TITLES.length];
             state.paintingsMade++;
             state.paintings.unshift({ title: title, by: g.def.name });
@@ -720,9 +832,11 @@
             } else {
               diary('<span class="who-name">' + g.def.name + '</span> finished “' + title + '” at The Salty Canvas. It’s hanging in today’s gallery.');
             }
-          } else if (action.id === "crabwatch" && Math.random() < 0.5) {
-            state.shells += 3;
+          } else if (action.id === "crabwatch") { bumpJob("crab1", 1); if (Math.random() < 0.5) {
+            state.shells += 3; state.shellsEarned += 3;
+            bumpJob("shells5", 3);
             diary("A glowing crab led <span class=\"who-name\">" + g.def.name + "</span> straight to 3 shiny shells. The cove provides.");
+          }
           } else if (action.id === "nap") {
             diary('<span class="who-name">' + g.def.name + "</span> had a proper porch nap and woke up a new woman.");
           } else if (action.id === "lemonade" || action.id === "shavedice") {
@@ -741,6 +855,7 @@
           advanceTime(20);
           [a, b].forEach(function (g) { g.needs.fun = clamp(g.needs.fun + 12); g.needs.creative = clamp(g.needs.creative + 3); });
           state.bond = clamp(state.bond + 4);
+          bumpJob("chat1", 1);
           say(aId, pickLine(aId, "chat"), 4200);
           setTimeout(function () { say(bId, pickLine(bId, "chat"), 4200); }, 1600);
           diary('<span class="who-name">' + a.def.name + "</span> and <span class=\"who-name\">" + b.def.name + "</span> had a good long chat at " + SPOTS[a.spot].name + ". Crew bond +4.");
@@ -758,6 +873,7 @@
             advanceTime(15);
             diary("Group photo in front of The Salty Canvas! Everyone said “salty!” Crew bond +8.");
             toast("Say “salty!” — group photo taken");
+            bumpJob("photo1", 1);
             say("beach", "Frame it. Frame ALL of them.", 3600);
             renderPanel(); checkSleep();
           }, 1800);
@@ -772,6 +888,7 @@
           state.bond = clamp(state.bond + 5);
           advanceTime(20);
           diary("Shaved-ice round for the whole crew, on the house shells. Brain freezes all around. Crew bond +5.");
+          bumpJob("treat1", 1);
           say(state.selected, pickLine(state.selected, "ice"), 4000);
           renderPanel(); checkSleep();
         });
@@ -832,6 +949,8 @@
         }, 16000);
 
         /* ---------------- Init ---------------- */
+        pickJobs(); placeGoldenShell();
+        document.getElementById("celebrationPhotoBtn").addEventListener("click", function () { document.getElementById("photoBtn").click(); });
         GIRLS.forEach(function (g) { placeToken(g.id, true); });
         diary("Welcome to Cove World — the whole crew, all moved in by the sea. The Salty Canvas is open, the lemonade is cold, and the day is young.");
         diary('<span class="who-name">The Bookworm</span> has already alphabetized the paint tubes. It is going to be a good day.');
