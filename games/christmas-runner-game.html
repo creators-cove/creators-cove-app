@@ -521,6 +521,28 @@
     function startMusic() { if (musicTimer) return; musicIdx = 0; musicTick(); }
     function stopMusic() { if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; } }
 
+      /* Stop audio when the page is hidden (app closed / switched away) —
+         Android Chrome keeps the page alive in the background, so without
+         this the music keeps playing after the app is closed. iOS suspends
+         it on its own. Resume only if sound is on and audio was already
+         unlocked by a tap (audioCtx exists). */
+      function suspendAudio() {
+        if (audioCtx && audioCtx.state === "running") { try { audioCtx.suspend(); } catch (e) {} }
+        stopMusic();
+      }
+      function resumeAudio() {
+        if (!soundOn || !audioCtx) return;
+        if (audioCtx.state === "suspended") { try { audioCtx.resume(); } catch (e) {} }
+        if (!musicTimer) startMusic();
+      }
+      if (typeof document !== "undefined" && document.addEventListener) {
+        document.addEventListener("visibilitychange", function () {
+          if (document.hidden) suspendAudio(); else resumeAudio();
+        });
+        if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("pagehide", suspendAudio);
+      }
+
+
     /* ---------- Game state ---------- */
     var STATE = "menu"; // menu | playing | paused | over
     var player, obstacles, pickups, cheerers, cameos, snowflakes, particles;

@@ -257,6 +257,34 @@
           musicTimer = setInterval(function () { if (!muted && ctx) scheduleStep(); }, 200);
           scheduleStep();
         }
+
+      /* stopMusic was missing here — the music scheduler had no off switch
+         except the mute flag, so add one for the hidden-page handler below. */
+      function stopMusic() {
+        if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+      }
+
+      /* Stop audio when the page is hidden (app closed / switched away) —
+         Android Chrome keeps the page alive in the background, so without
+         this the music keeps playing after the app is closed. iOS suspends
+         it on its own. Resume only if sound is on and audio was already
+         unlocked by a tap (ctx exists). */
+      function suspendAudio() {
+        if (ctx && ctx.state === "running") { try { ctx.suspend(); } catch (e) {} }
+        stopMusic();
+      }
+      function resumeAudio() {
+        if (muted || !ctx) return;
+        if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
+        if (!musicTimer) startMusic();
+      }
+      if (typeof document !== "undefined" && document.addEventListener) {
+        document.addEventListener("visibilitychange", function () {
+          if (document.hidden) suspendAudio(); else resumeAudio();
+        });
+        if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("pagehide", suspendAudio);
+      }
+
         function setMuted(m) {
           muted = !!m;
           try { window.localStorage.setItem(MUTE_KEY, muted ? "1" : "0"); } catch (e) { /* ignore */ }
