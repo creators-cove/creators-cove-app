@@ -229,10 +229,13 @@
           /* Cove back button — added Nov 10: iPhone home-screen web app has no browser back button */
       .cove-back-btn{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 12px 0;border-radius:999px;background:#ffffff;color:#12303e;font-weight:800;text-decoration:none;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;}
       .cove-back-btn:active{transform:translateY(1px);}
+      .sound-toggle{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 0 0 8px;border-radius:999px;background:#0b3d52;color:#ffe9a8;font-weight:800;font-size:1rem;font-family:inherit;border:2px solid #f2b33d;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;}
+      .sound-toggle:active{transform:translateY(1px);}
 </style>
   </head>
   <body>
     <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+    <button id="muteBtn" class="sound-toggle" type="button" aria-pressed="true">🔊 Sound On</button>
     <main>
       <section class="machine" aria-label="Cove Rips pack shop">
         <div class="marquee">
@@ -298,6 +301,139 @@
 
     <script>
       "use strict";
+
+      /* ================= Cove Sound — Web Audio, synthesized in-browser, no audio files ================= */
+      var Sfx = (function () {
+        var MUTE_KEY = "cove-rips-muted";
+        var ctx = null, master = null, musicBus = null;
+        var muted = false;
+        try { muted = window.localStorage.getItem(MUTE_KEY) === "1"; } catch (e) { /* ignore */ }
+        /* Simple original major-key loop: [MIDI note, beats]; 0 = rest. */
+        var MELODY = [[72,1],[76,1],[79,1],[76,1],[81,1],[79,1],[76,1],[74,1],[77,1],[81,1],[79,1],[77,1],[76,1],[74,1],[72,2],[0,1]];
+        var BEAT = 60 / 104;
+        var musicTimer = null, nextTime = 0, step = 0, lastJingle = 0;
+
+        function midi(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+        function ensureCtx() {
+          if (!ctx) {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            ctx = new AC();
+            master = ctx.createGain();
+            master.gain.value = muted ? 0 : 1;
+            master.connect(ctx.destination);
+            musicBus = ctx.createGain();
+            musicBus.gain.value = 0.5;
+            musicBus.connect(master);
+          }
+          if (ctx.state === "suspended") ctx.resume();
+          return ctx;
+        }
+        function tone(freq, dur, type, vol, delay, slideTo, dest) {
+          if (!ctx || muted) return;
+          var t = ctx.currentTime + (delay || 0);
+          var o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = type || "sine";
+          o.frequency.setValueAtTime(Math.max(30, freq), t);
+          if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t + dur);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          o.connect(g); g.connect(dest || master);
+          o.start(t); o.stop(t + dur + 0.05);
+        }
+        function noiseBurst(dur, vol, fromFreq, toFreq) {
+          if (!ctx || muted) return;
+          var t = ctx.currentTime;
+          var len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+          var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+          var data = buf.getChannelData(0);
+          for (var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+          var src = ctx.createBufferSource(); src.buffer = buf;
+          var f = ctx.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 1.1;
+          f.frequency.setValueAtTime(fromFreq, t);
+          f.frequency.exponentialRampToValueAtTime(Math.max(40, toFreq), t + dur);
+          var g = ctx.createGain();
+          g.gain.setValueAtTime(vol, t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          src.connect(f); f.connect(g); g.connect(master);
+          src.start(t); src.stop(t + dur);
+        }
+        function scheduleStep() {
+          if (!ctx) return;
+          var now = ctx.currentTime;
+          while (nextTime < now + 0.6) {
+            var pair = MELODY[step % MELODY.length];
+            var m = pair[0], beats = pair[1];
+            if (m > 0) {
+              var t = nextTime;
+              var o = ctx.createOscillator(), g = ctx.createGain();
+              o.type = "triangle"; o.frequency.value = midi(m);
+              g.gain.setValueAtTime(0.0001, t);
+              g.gain.linearRampToValueAtTime(0.055, t + 0.03);
+              g.gain.setValueAtTime(0.055, Math.max(t + 0.03, t + beats * BEAT - 0.06));
+              g.gain.linearRampToValueAtTime(0.0001, t + beats * BEAT);
+              o.connect(g); g.connect(musicBus);
+              o.start(t); o.stop(t + beats * BEAT + 0.05);
+            }
+            nextTime += beats * BEAT;
+            step++;
+          }
+        }
+        function startMusic() {
+          if (!ensureCtx() || musicTimer || muted) return;
+          nextTime = ctx.currentTime + 0.1; step = 0;
+          musicTimer = setInterval(function () { if (!muted && ctx) scheduleStep(); }, 200);
+          scheduleStep();
+        }
+        function setMuted(m) {
+          muted = !!m;
+          try { window.localStorage.setItem(MUTE_KEY, muted ? "1" : "0"); } catch (e) { /* ignore */ }
+          if (master) master.gain.value = muted ? 0 : 1;
+          var b = document.getElementById("muteBtn");
+          if (b) { b.textContent = muted ? "\uD83D\uDD07 Sound Off" : "\uD83D\uDD0A Sound On"; b.setAttribute("aria-pressed", String(!muted)); }
+          if (!muted) { ensureCtx(); startMusic(); }
+        }
+        function bindMuteButton() {
+          var b = document.getElementById("muteBtn");
+          if (!b) return;
+          b.textContent = muted ? "\uD83D\uDD07 Sound Off" : "\uD83D\uDD0A Sound On";
+          b.setAttribute("aria-pressed", String(!muted));
+          b.addEventListener("click", function () { ensureCtx(); setMuted(!muted); });
+        }
+        /* First tap anywhere wakes audio (browsers require a user gesture). */
+        document.addEventListener("pointerdown", function () { ensureCtx(); startMusic(); });
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindMuteButton);
+        else bindMuteButton();
+
+        return {
+          ensure: ensureCtx,
+          startMusic: startMusic,
+          setMuted: setMuted,
+          isMuted: function () { return muted; },
+          rip: function () {
+            ensureCtx();
+            noiseBurst(0.45, 0.5, 3200, 500);
+            tone(220, 0.18, "sawtooth", 0.05, 0, 90);
+          },
+          flip: function (rarity) {
+            ensureCtx();
+            var base = { common: 660, rare: 784, epic: 988, gold: 1319 }[rarity] || 660;
+            tone(base, 0.22, "sine", 0.16);
+            tone(base * 2, 0.3, "sine", 0.07, 0.05);
+            if (rarity === "gold") tone(base * 3, 0.4, "sine", 0.05, 0.1);
+          },
+          goldFanfare: function () {
+            ensureCtx();
+            var seq = [72, 76, 79, 84, 79, 84];
+            seq.forEach(function (m, i) { tone(midi(m), 0.32, "triangle", 0.18, i * 0.11); });
+            tone(midi(84), 0.7, "triangle", 0.18, seq.length * 0.11);
+            tone(midi(88), 0.5, "sine", 0.08, seq.length * 0.11 + 0.05);
+          }
+
+        };
+      })();
+
       /* ================= Cards (all Cove-original, no real licensed cards) ================= */
       var CARDS = [
         { id: "kim",      name: "Kim",          art: "🖌️", hint: "paintbrush" },
@@ -533,6 +669,7 @@
         setTimeout(function () {
           var art = document.getElementById("ripPackArt");
           if (art) { art.classList.remove("shaking"); art.classList.add("torn"); }
+          Sfx.rip();
           setTimeout(function () { revealCards(pulls, pack); }, 520);
         }, 900);
       }
@@ -570,11 +707,12 @@
         ripStageEl.innerHTML = html;
         var cards = ripStageEl.querySelectorAll(".rip-card");
         cards.forEach(function (cardEl, i) {
-          setTimeout(function () { cardEl.classList.add("flipped"); }, 350 + i * 550);
+          setTimeout(function () { cardEl.classList.add("flipped"); Sfx.flip(pulls[i].rarity); }, 350 + i * 550);
         });
         var totalDelay = 350 + pulls.length * 550 + 500;
         setTimeout(function () {
           if (goldPulls.length) {
+            Sfx.goldFanfare();
             var names = goldPulls.map(function (p) { return p.card.name; }).join(", ");
             setDisplay("✨ GOLD! You pulled " + names + "! Screenshot it for the group!", true);
           } else {

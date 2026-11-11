@@ -44,6 +44,9 @@
       }
       .cove-back-btn{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 0 0;border-radius:999px;background:#ffffff;color:#12303e;font-weight:800;text-decoration:none;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;}
       .cove-back-btn:active{transform:translateY(1px);}
+      .sound-toggle{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 0 0 8px;border-radius:999px;background:#0b3d52;color:#ffe9a8;font-weight:800;font-size:1rem;font-family:inherit;border:2px solid #f2b33d;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;}
+      .sound-toggle:active{transform:translateY(1px);}
+
       main { max-width: 720px; margin: 0 auto; }
       header { text-align: center; color: var(--cream); padding: 8px 0 4px; }
       header h1 { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: clamp(1.8rem, 8vw, 2.5rem); margin: 2px 0 0; color: var(--gold); text-shadow: 0 2px 0 var(--gold-deep), 0 4px 14px rgba(0,0,0,.45); letter-spacing: .04em; }
@@ -111,6 +114,7 @@
   </head>
   <body>
     <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+    <button id="muteBtn" class="sound-toggle" type="button" aria-pressed="true">🔊 Sound On</button>
     <main>
       <header>
         <h1>COVE SOLITAIRE</h1>
@@ -168,6 +172,141 @@
 
     <script>
       "use strict";
+
+      /* ================= Cove Sound — Web Audio, synthesized in-browser, no audio files ================= */
+      var Sfx = (function () {
+        var MUTE_KEY = "cove-solitaire-muted";
+        var ctx = null, master = null, musicBus = null;
+        var muted = false;
+        try { muted = window.localStorage.getItem(MUTE_KEY) === "1"; } catch (e) { /* ignore */ }
+        /* Simple original major-key loop: [MIDI note, beats]; 0 = rest. */
+        var MELODY = [[67,1],[71,1],[74,1],[71,1],[69,1],[71,1],[67,1],[62,1],[64,1],[67,1],[71,2],[69,1],[67,1],[66,2],[0,1]];
+        var BEAT = 60 / 92;
+        var musicTimer = null, nextTime = 0, step = 0, lastJingle = 0;
+
+        function midi(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+        function ensureCtx() {
+          if (!ctx) {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            ctx = new AC();
+            master = ctx.createGain();
+            master.gain.value = muted ? 0 : 1;
+            master.connect(ctx.destination);
+            musicBus = ctx.createGain();
+            musicBus.gain.value = 0.5;
+            musicBus.connect(master);
+          }
+          if (ctx.state === "suspended") ctx.resume();
+          return ctx;
+        }
+        function tone(freq, dur, type, vol, delay, slideTo, dest) {
+          if (!ctx || muted) return;
+          var t = ctx.currentTime + (delay || 0);
+          var o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = type || "sine";
+          o.frequency.setValueAtTime(Math.max(30, freq), t);
+          if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t + dur);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          o.connect(g); g.connect(dest || master);
+          o.start(t); o.stop(t + dur + 0.05);
+        }
+        function noiseBurst(dur, vol, fromFreq, toFreq) {
+          if (!ctx || muted) return;
+          var t = ctx.currentTime;
+          var len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+          var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+          var data = buf.getChannelData(0);
+          for (var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+          var src = ctx.createBufferSource(); src.buffer = buf;
+          var f = ctx.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 1.1;
+          f.frequency.setValueAtTime(fromFreq, t);
+          f.frequency.exponentialRampToValueAtTime(Math.max(40, toFreq), t + dur);
+          var g = ctx.createGain();
+          g.gain.setValueAtTime(vol, t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          src.connect(f); f.connect(g); g.connect(master);
+          src.start(t); src.stop(t + dur);
+        }
+        function scheduleStep() {
+          if (!ctx) return;
+          var now = ctx.currentTime;
+          while (nextTime < now + 0.6) {
+            var pair = MELODY[step % MELODY.length];
+            var m = pair[0], beats = pair[1];
+            if (m > 0) {
+              var t = nextTime;
+              var o = ctx.createOscillator(), g = ctx.createGain();
+              o.type = "triangle"; o.frequency.value = midi(m);
+              g.gain.setValueAtTime(0.0001, t);
+              g.gain.linearRampToValueAtTime(0.055, t + 0.03);
+              g.gain.setValueAtTime(0.055, Math.max(t + 0.03, t + beats * BEAT - 0.06));
+              g.gain.linearRampToValueAtTime(0.0001, t + beats * BEAT);
+              o.connect(g); g.connect(musicBus);
+              o.start(t); o.stop(t + beats * BEAT + 0.05);
+            }
+            nextTime += beats * BEAT;
+            step++;
+          }
+        }
+        function startMusic() {
+          if (!ensureCtx() || musicTimer || muted) return;
+          nextTime = ctx.currentTime + 0.1; step = 0;
+          musicTimer = setInterval(function () { if (!muted && ctx) scheduleStep(); }, 200);
+          scheduleStep();
+        }
+        function setMuted(m) {
+          muted = !!m;
+          try { window.localStorage.setItem(MUTE_KEY, muted ? "1" : "0"); } catch (e) { /* ignore */ }
+          if (master) master.gain.value = muted ? 0 : 1;
+          var b = document.getElementById("muteBtn");
+          if (b) { b.textContent = muted ? "\uD83D\uDD07 Sound Off" : "\uD83D\uDD0A Sound On"; b.setAttribute("aria-pressed", String(!muted)); }
+          if (!muted) { ensureCtx(); startMusic(); }
+        }
+        function bindMuteButton() {
+          var b = document.getElementById("muteBtn");
+          if (!b) return;
+          b.textContent = muted ? "\uD83D\uDD07 Sound Off" : "\uD83D\uDD0A Sound On";
+          b.setAttribute("aria-pressed", String(!muted));
+          b.addEventListener("click", function () { ensureCtx(); setMuted(!muted); });
+        }
+        /* First tap anywhere wakes audio (browsers require a user gesture). */
+        document.addEventListener("pointerdown", function () { ensureCtx(); startMusic(); });
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindMuteButton);
+        else bindMuteButton();
+
+        return {
+          ensure: ensureCtx,
+          startMusic: startMusic,
+          setMuted: setMuted,
+          isMuted: function () { return muted; },
+          place: function () {
+            ensureCtx();
+            tone(520, 0.07, "square", 0.07);
+            tone(780, 0.09, "sine", 0.1, 0.03);
+          },
+          flip: function () {
+            ensureCtx();
+            noiseBurst(0.12, 0.16, 2500, 1200);
+            tone(880, 0.12, "sine", 0.08);
+          },
+          thud: function () {
+            ensureCtx();
+            tone(140, 0.18, "sine", 0.22, 0, 70);
+            noiseBurst(0.1, 0.1, 300, 120);
+          },
+          win: function () {
+            ensureCtx();
+            var seq = [72, 76, 79, 84, 79, 84, 88, 91];
+            seq.forEach(function (m, i) { tone(midi(m), 0.3, "triangle", 0.16, i * 0.12); });
+            tone(midi(91), 0.8, "triangle", 0.16, seq.length * 0.12);
+          }
+
+        };
+      })();
+
       var SUITS = [
         { id: "hearts",   sym: "♥", color: "red"   },
         { id: "diamonds", sym: "♦", color: "red"   },
@@ -260,7 +399,7 @@
 
       function flipTop(col) {
         var pile = state.tableau[col];
-        if (pile.length && !pile[pile.length - 1].faceUp) pile[pile.length - 1].faceUp = true;
+        if (pile.length && !pile[pile.length - 1].faceUp) { pile[pile.length - 1].faceUp = true; Sfx.flip(); }
       }
       function clearSelection() { selected = null; render(); }
 
@@ -312,6 +451,7 @@
       function afterMove(msg) {
         render();
         if (checkWin(state)) {
+          Sfx.win();
           stopTimer();
           var w = document.getElementById("winDetail");
           if (w) w.textContent = "All four foundations complete in " + moves + " moves and " +
@@ -320,6 +460,7 @@
           if (o) o.classList.add("open");
           setDisplay("🎉 You win! Screenshot it for the Cove!");
         } else {
+          Sfx.place();
           setDisplay(msg);
         }
       }
@@ -329,6 +470,7 @@
           var c = state.stock.pop();
           c.faceUp = true;
           state.waste.push(c);
+          Sfx.flip();
           bumpMove(); startTimer(); selected = null;
           setDisplay("Drew a " + c.label + c.sym + ".");
           render();
@@ -339,6 +481,7 @@
             w.faceUp = false;
             state.stock.push(w);
           }
+          Sfx.flip();
           bumpMove(); startTimer(); selected = null;
           setDisplay("Waste turned back over — the deck is full again.");
           render();
@@ -363,8 +506,8 @@
         if (selected) {
           // tapping the selected card again deselects it
           if (selected.from === from && selected.col === col && selected.idx === idx) { clearSelection(); return; }
-          if (from === "tableau") { if (tryMoveToTableau(col)) return; }
-          if (from === "foundation") { if (tryMoveToFoundation(col)) return; }
+          if (from === "tableau") { if (tryMoveToTableau(col)) return; Sfx.thud(); }
+          if (from === "foundation") { if (tryMoveToFoundation(col)) return; Sfx.thud(); }
           // not a legal destination: re-select the tapped card instead
           selected = { from: from, col: col, idx: (from === "tableau" ? idx : (pile ? pile.length - 1 : 0)) };
           render();
@@ -374,10 +517,10 @@
         render();
       }
       function onEmptyTableauTap(col) {
-        if (selected) { if (!tryMoveToTableau(col)) setDisplay("Only a King can start an empty column."); }
+        if (selected) { if (!tryMoveToTableau(col)) { Sfx.thud(); setDisplay("Only a King can start an empty column."); } }
       }
       function onFoundationTap(fi) {
-        if (selected) { if (!tryMoveToFoundation(fi)) setDisplay("That card doesn't belong on that foundation yet."); }
+        if (selected) { if (!tryMoveToFoundation(fi)) { Sfx.thud(); setDisplay("That card doesn't belong on that foundation yet."); } }
         else {
           // no selection: try to auto-send the waste top card here
           if (state.waste.length) {

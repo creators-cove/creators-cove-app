@@ -677,6 +677,30 @@
         } catch (e) { /* already gone */ }
       }
 
+      /* Quiet spooky music-box waltz loop, in D minor to match the win waltz.
+         Melody on the music box, a low root note under each bar. */
+      var WALTZ = [
+        [587.33, 1], [698.46, 1], [880.00, 1], [698.46, 1], [587.33, 1], [440.00, 1],
+        [587.33, 1], [698.46, 1], [880.00, 1], [698.46, 1], [659.25, 1], [587.33, 1],
+        [523.25, 1], [587.33, 1], [659.25, 1], [587.33, 1], [523.25, 1], [440.00, 1],
+        [587.33, 1], [698.46, 1], [880.00, 1], [698.46, 1], [587.33, 1], [880.00, 1]
+      ];
+      var WALTZ_ROOTS = [146.83, 146.83, 110.00, 146.83]; /* D, D, A, D — one per 6-note bar */
+      var WALTZ_BEAT = 0.42, musicTimer = null, musicIdx = 0;
+      function musicTick() {
+        if (!soundOn || !started) { musicTimer = null; return; }
+        var n = WALTZ[musicIdx % WALTZ.length];
+        if (musicIdx % 6 === 0) {
+          var root = WALTZ_ROOTS[Math.floor(musicIdx / 6) % WALTZ_ROOTS.length];
+          tone({ freq: root, dur: 2.4, vol: 0.016, when: 0 });
+        }
+        musicBox(n[0], 0, 0.042);
+        musicIdx++;
+        musicTimer = setTimeout(musicTick, n[1] * WALTZ_BEAT * 1000);
+      }
+      function startMusic() { if (musicTimer) return; musicIdx = 0; musicTick(); }
+      function stopMusic() { if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; } }
+
       // The house makes its own noises now and then: an owl, a howl, a creak.
       function scheduleSpook() {
         clearTimeout(owlTimer);
@@ -803,7 +827,7 @@
       function flipCard(btn, face) {
         if (lockBoard) return;
         if (btn.classList.contains("flipped") || btn.classList.contains("matched")) return;
-        if (!started) { started = true; startTimer(); startWind(); }
+        if (!started) { started = true; startTimer(); startWind(); startMusic(); }
         btn.classList.add("flipped");
         btn.setAttribute("aria-label", face.name);
         sndFlip();
@@ -928,9 +952,10 @@
         renderSound();
         if (soundOn) {
           sndCackle(0);                 // a little preview of the haunted house
-          if (started) startWind();
+          if (started) { startWind(); startMusic(); }
         } else {
           stopWind();
+          stopMusic();
         }
       });
       renderSound();

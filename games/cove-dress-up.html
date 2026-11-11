@@ -171,10 +171,13 @@
           /* Cove back button — added Nov 10: iPhone home-screen web app has no browser back button */
       .cove-back-btn{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 12px 0;border-radius:999px;background:#ffffff;color:#12303e;font-weight:800;text-decoration:none;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;}
       .cove-back-btn:active{transform:translateY(1px);}
+      .sound-btn{position:fixed;top:12px;right:12px;z-index:9999;min-width:48px;min-height:48px;padding:0 12px;border:none;border-radius:999px;background:#ffffff;color:#12303e;font-size:1.25rem;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer;}
+      .sound-btn:active{transform:translateY(1px);}
 </style>
   </head>
   <body>
     <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+    <button class="sound-btn" id="btnSound" type="button" aria-label="Sound on or off" aria-pressed="true">🔊</button>
     <div class="wrap">
       <header class="intro">
         <h1>Cove Dress-Up</h1>
@@ -733,6 +736,45 @@
     </script>
     <script>
       "use strict";
+      /* ---------- sound: tiny WebAudio pops, chimes + a quiet music loop ---------- */
+      var audioCtx = null, soundOn = true;
+      function ensureAudio() {
+        if (!audioCtx) {
+          try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+        }
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      }
+      function beep(freq, dur, type, vol, when) {
+        if (!audioCtx || !soundOn) return;
+        var t = audioCtx.currentTime + (when || 0);
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = type || "sine"; o.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(vol || 0.1, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t); o.stop(t + dur + 0.02);
+      }
+      function sndPop() { beep(740, 0.07, "triangle", 0.09); beep(1108, 0.1, "sine", 0.07, 0.04); }
+      function sndSparkle() { [1046, 1318, 1568, 2093].forEach(function (f, i) { beep(f, 0.22, "sine", 0.09, i * 0.07); }); }
+      function sndSurprise() { [523, 659, 784, 1046, 784, 1046].forEach(function (f, i) { beep(f, 0.12, "triangle", 0.09, i * 0.07); }); }
+      /* Gentle original C-major loop for a day at the Cove. */
+      var MUSIC = [
+        [523, 2], [659, 2], [784, 2], [659, 2], [880, 4], [784, 2], [659, 2], [523, 2],
+        [587, 2], [659, 2], [784, 2], [659, 2], [587, 4], [523, 2], [0, 2],
+        [659, 2], [784, 2], [880, 2], [784, 2], [1046, 4], [880, 2], [784, 2], [659, 2],
+        [784, 2], [659, 2], [587, 2], [523, 2], [659, 4], [0, 2], [523, 2], [659, 2]
+      ];
+      var MUSIC_BEAT = 0.26, musicTimer = null, musicIdx = 0;
+      function musicTick() {
+        if (!soundOn) { musicTimer = null; return; }
+        ensureAudio();
+        var n = MUSIC[musicIdx % MUSIC.length];
+        if (n[0] > 0) beep(n[0], n[1] * MUSIC_BEAT * 0.92, "sine", 0.03);
+        musicIdx++;
+        musicTimer = setTimeout(musicTick, n[1] * MUSIC_BEAT * 1000);
+      }
+      function startMusic() { if (musicTimer) return; musicIdx = 0; musicTick(); }
+      function stopMusic() { if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; } }
       var stageEl = document.getElementById("stage");
       var toastTimer = null;
       function toast(msg) {
@@ -772,6 +814,7 @@
           state.scene = keepScene;
           buildPanels();
           render();
+          sndPop();
         });
         picker.appendChild(b);
       });
@@ -790,7 +833,7 @@
         var b = document.createElement("button");
         b.type = "button"; b.className = "tab-btn"; b.textContent = t.label;
         b.setAttribute("data-tab", t.id); b.setAttribute("role", "tab");
-        b.addEventListener("click", function () { activeTab = t.id; refreshPanels(); });
+        b.addEventListener("click", function () { activeTab = t.id; refreshPanels(); sndPop(); });
         tabsEl.appendChild(b);
       });
 
@@ -836,7 +879,7 @@
           b.style.background = c.value; b.title = c.name;
           b.setAttribute("aria-label", "Color: " + c.name);
           b.setAttribute("data-color", c.value);
-          b.addEventListener("click", function () { state.color = c.value; render(); });
+          b.addEventListener("click", function () { state.color = c.value; render(); sndPop(); });
           sw.appendChild(b);
         });
         p.appendChild(sw);
@@ -898,6 +941,7 @@
               if (ix >= 0) state.extras.splice(ix, 1); else state.extras.push(id);
             }
             render();
+            sndPop();
           });
         }
       }
@@ -921,6 +965,7 @@
         state.scene = pick(SCENES).id;
         state.extras = EXTRAS.filter(function () { return Math.random() < 0.4; }).map(function (e) { return e.id; });
         render();
+        sndSurprise();
         toast(GIRLS[state.girl].name + " is ready — ta-da!");
       });
 
@@ -957,6 +1002,7 @@
                 a.download = state.girl + "-cove-look.png";
                 document.body.appendChild(a); a.click(); a.remove();
                 setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+                sndSparkle();
                 toast("Saved! Share " + GIRLS[state.girl].name + "'s look in the group!");
               }, "image/png");
             };
@@ -967,6 +1013,22 @@
           rd.readAsDataURL(blob);
         }).catch(fail);
       });
+
+      /* ---------- sound toggle + music starts on the first tap ---------- */
+      var soundBtn = document.getElementById("btnSound");
+      function renderSound() {
+        soundBtn.textContent = soundOn ? "🔊" : "🔇";
+        soundBtn.setAttribute("aria-pressed", soundOn ? "true" : "false");
+      }
+      soundBtn.addEventListener("click", function () {
+        soundOn = !soundOn;
+        renderSound();
+        if (soundOn) { ensureAudio(); startMusic(); sndPop(); } else stopMusic();
+      });
+      renderSound();
+      document.addEventListener("pointerdown", function () {
+        if (soundOn) { ensureAudio(); startMusic(); }
+      }, { passive: true });
 
       buildPanels();
       render();

@@ -147,6 +147,8 @@
       .reel { position: relative; overflow: hidden; border-right: 2px solid rgba(13, 90, 116, 0.22); }
       .reel:last-child { border-right: none; }
       .strip { will-change: transform; }
+      .reel.anticipate { animation: reelShake 0.1s linear infinite; }
+      @keyframes reelShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
       .tile { display: flex; align-items: center; justify-content: center; padding: 5px 3px; }
       .tile .art { width: 88%; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; }
       .tile .art img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 2px solid var(--gold); box-shadow: 0 2px 5px rgba(9,50,70,0.3); display: block; }
@@ -286,7 +288,7 @@
         font-weight: 600; font-size: 1.05rem;
       }
       @media (prefers-reduced-motion: reduce) {
-        .bulbs i, .tile.winner .art, .display.big, .bonus-bar.active { animation: none; }
+        .bulbs i, .tile.winner .art, .display.big, .bonus-bar.active, .reel.anticipate { animation: none; }
         .coin-fx { display: none; }
       }
           /* Cove back button — added Nov 10: iPhone home-screen web app has no browser back button */
@@ -518,6 +520,75 @@
         [523, 659, 784, 1047, 784, 1047, 1319, 1568].forEach(function (f, i) { tone(f, i * 0.11, 0.3, "triangle", 0.18); });
         [262, 330, 392].forEach(function (f, i) { tone(f, i * 0.11, 0.3, "sine", 0.08); });
       }
+      /* ---- Extra sounds: reel ticks, coin chimes, anticipation, music ---- */
+      function sndTick() { tone(1400, 0, 0.04, "triangle", 0.07); }
+      function sndReelStop() { tone(1200, 0, 0.05, "square", 0.07); tone(180, 0, 0.09, "sine", 0.18, 90); }
+      function sndCoinWin(ratio) {
+        var steps = ratio >= 100 ? 8 : ratio >= 25 ? 6 : ratio >= 8 ? 4 : 3;
+        var base = ratio >= 100 ? 784 : ratio >= 25 ? 659 : 523;
+        for (var i = 0; i < steps; i++) tone(base * Math.pow(1.122, i), i * 0.08, 0.22, "triangle", 0.16);
+        tone(base / 2, 0, 0.3, "sine", 0.07);
+      }
+      function sndBonusFanfare() {
+        [523, 659, 784, 1047, 1319, 1568, 2093].forEach(function (f, i) { tone(f, i * 0.12, 0.34, "triangle", 0.18); });
+        [262, 330, 392, 523].forEach(function (f, i) { tone(f, i * 0.12, 0.4, "sine", 0.08); });
+      }
+      /* ---- Bonus anticipation: rising tension + shake until the result lands ---- */
+      var anticipationTimer = null, anticipationStep = 0, anticipationEls = [];
+      function startAnticipation(els) {
+        if (anticipationTimer) return;
+        anticipationStep = 0;
+        anticipationEls = els || [];
+        anticipationEls.forEach(function (el) { if (el) el.classList.add("anticipate"); });
+        anticipationTimer = setInterval(function () {
+          var f = 440 + (anticipationStep % 8) * 55;
+          tone(f, 0, 0.1, "square", 0.05);
+          tone(f * 2, 0, 0.08, "sine", 0.04);
+          anticipationStep++;
+        }, 130);
+      }
+      function stopAnticipation() {
+        if (anticipationTimer) { clearInterval(anticipationTimer); anticipationTimer = null; }
+        anticipationEls.forEach(function (el) { if (el) el.classList.remove("anticipate"); });
+        anticipationEls = [];
+      }
+      /* ---- Background music: quiet original major-key loop, no files ---- */
+      var MUSIC_NOTES = [523, 659, 784, 659, 880, 784, 659, 587, 523, 587, 659, 784, 880, 1047, 880, 784];
+      var MUSIC_BASS = [262, 175, 196, 262];
+      var musicTimer = null, musicStep = 0, musicNextTime = 0, musicGain = null;
+      function musicNote(freq, when, dur, type, vol) {
+        if (!soundOn) return;
+        var c = ac(); if (!c) return;
+        if (!musicGain) { musicGain = c.createGain(); musicGain.gain.value = 0.05; musicGain.connect(c.destination); }
+        var o = c.createOscillator(), g = c.createGain();
+        o.type = type || "triangle";
+        o.frequency.setValueAtTime(freq, when);
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.exponentialRampToValueAtTime(vol || 0.5, when + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+        o.connect(g); g.connect(musicGain); o.start(when); o.stop(when + dur + 0.05);
+      }
+      function startMusic() {
+        if (musicTimer || !soundOn) return;
+        var c = ac(); if (!c) return;
+        musicStep = 0;
+        musicNextTime = c.currentTime + 0.1;
+        musicTimer = setInterval(function () {
+          if (!soundOn) return;
+          var c2 = ac(); if (!c2) return;
+          while (musicNextTime < c2.currentTime + 0.25) {
+            var beat = 0.24;
+            musicNote(MUSIC_NOTES[musicStep % MUSIC_NOTES.length], musicNextTime, beat * 0.9, "triangle", 0.5);
+            if (musicStep % 4 === 0) musicNote(MUSIC_BASS[(musicStep / 4) % MUSIC_BASS.length], musicNextTime, beat * 3.2, "sine", 0.6);
+            musicNextTime += beat;
+            musicStep++;
+          }
+        }, 90);
+      }
+      function stopMusic() {
+        if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+      }
+
       var SOUND_ON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>';
       var SOUND_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>';
       var soundBtn = document.getElementById("soundBtn");
@@ -526,7 +597,11 @@
         soundBtn.setAttribute("aria-label", soundOn ? "Turn sound off" : "Turn sound on");
         soundBtn.setAttribute("aria-pressed", soundOn ? "true" : "false");
       }
-      soundBtn.addEventListener("click", function () { soundOn = !soundOn; renderSoundBtn(); if (soundOn) sndClick(); });
+      soundBtn.addEventListener("click", function () {
+        soundOn = !soundOn; renderSoundBtn();
+        if (soundOn) { if (musicGain) musicGain.gain.value = 0.05; startMusic(); sndClick(); }
+        else { stopMusic(); stopAnticipation(); if (musicGain) musicGain.gain.value = 0; }
+      });
       renderSoundBtn();
 
       /* ================= DOM refs ================= */
@@ -707,7 +782,7 @@
         lastWin = null; cardBtn.disabled = true;
         display.classList.remove("big");
         setDisplay(wasFree ? "Free spin — wins pay " + mult + "×! (" + freeSpinsLeft + " left after this one)" : "Spinning… good luck!");
-        sndSpinStart();
+        sndSpinStart(); startMusic();
         renderMeters();
 
         var grid = [];
@@ -732,10 +807,20 @@
           st.style.transition = "transform " + dur + "ms cubic-bezier(.12,.72,.16,1)";
           st.style.transform = "translateY(0px)";
           setTimeout(function () {
-            sndThunk();
+            sndThunk(); sndReelStop();
             stopped++;
+            /* Bonus anticipation: 2 Cove Waves in the stopped reels and
+               reels still spinning = one wave away from free spins. */
+            var wavesSoFar = 0;
+            for (var w = 0; w < stopped; w++) grid[w].forEach(function (s) { if (s.id === "wave") wavesSoFar++; });
+            if (wavesSoFar === 2 && stopped < 5) {
+              var rest = [];
+              for (var rr = stopped; rr < 5; rr++) rest.push(strips[rr].parentElement);
+              startAnticipation(rest);
+            } else if (wavesSoFar >= 3) { stopAnticipation(); }
             if (stopped === 5) {
               clearInterval(tickTimer);
+              stopAnticipation();
               finishSpin(grid, bet, wasFree, mult);
             }
           }, dur + 40);
@@ -790,7 +875,7 @@
           } else {
             setDisplay("BONUS! " + scatters + " Cove Waves — 10 FREE SPINS at " + bonusMult + "×!", true);
           }
-          sndJackpot(); coinShower(36);
+          sndBonusFanfare(); coinShower(36);
         } else if (total > 0) {
           var ratio = total / bet;
           var multTag = mult > 1 ? " (" + mult + "× multiplier!)" : "";
@@ -799,10 +884,10 @@
             sndJackpot(); coinShower(42);
           } else if (res.wins.length > 1) {
             setDisplay(res.wins.length + " lines hit — you won " + total + " coins!" + multTag, ratio >= 25);
-            sndWin(false); coinShower(22);
+            sndCoinWin(ratio); coinShower(22);
           } else {
             setDisplay(bestWin.run + " × " + bestWin.sym.name + " — you won " + total + " coins!" + multTag, ratio >= 25);
-            if (ratio >= 25) { sndWin(false); coinShower(22); } else { sndWin(true); coinShower(8); }
+            sndCoinWin(ratio); if (ratio >= 25) coinShower(22); else coinShower(8);
           }
           if (wasFree && freeSpinsLeft === 0) {
             setDisplay(display.textContent + " Free spins done — bonus total: " + bonusTotal + " coins!", true);

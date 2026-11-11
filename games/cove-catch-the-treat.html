@@ -274,6 +274,7 @@ h1 span{color:#ffb347}
   <div class="controls">
     <button class="ctrlBtn" id="pauseBtn">⏸ Pause</button>
     <button class="ctrlBtn" id="restartBtn">↻ Restart Round</button>
+    <button class="ctrlBtn" id="soundBtn" type="button" aria-label="Sound on or off" aria-pressed="true">🔊 Sound on</button>
   </div>
 
   <div class="legend" id="legend" aria-label="The four treat shapes"></div>
@@ -369,6 +370,50 @@ h1 span{color:#ffb347}
     c.innerHTML=svgFor(t,false)+SHAPES[t].name+' +25';
     legend.appendChild(c);
   });
+
+  /* ---- Sound: tiny WebAudio effects + a quiet music loop (no audio files) ---- */
+  var audioCtx=null, soundOn=true;
+  function ensureAudio(){
+    if(!audioCtx){
+      try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; }
+    }
+    if(audioCtx && audioCtx.state==="suspended") audioCtx.resume();
+  }
+  function beep(freq,dur,type,vol,when){
+    if(!audioCtx||!soundOn) return;
+    var t=audioCtx.currentTime+(when||0);
+    var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||"sine"; o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(vol||0.1,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t+dur+0.02);
+  }
+  function sndCatch(){ beep(660,0.09,"triangle",0.12); beep(990,0.14,"triangle",0.12,0.06); }   /* catch pop */
+  function sndMiss(){ beep(180,0.22,"sawtooth",0.09); beep(120,0.26,"sawtooth",0.08,0.05); }      /* wrong-treat thud */
+  function sndBonus(){ [523,659,784,1046].forEach(function(f,i){ beep(f,0.15,"triangle",0.11,i*0.08); }); }
+  function sndWin(){ [523,659,784,1046,1318].forEach(function(f,i){ beep(f,0.22,"sine",0.11,i*0.11); }); }
+  /* Quiet original C-major loop, bouncy like the swirling treats. */
+  var MUSIC=[[523,1],[659,1],[784,1],[659,1],[880,2],[784,1],[659,1],[587,2],
+             [523,1],[659,1],[784,1],[880,1],[1046,2],[880,1],[784,1],[659,2],
+             [587,1],[659,1],[784,1],[659,1],[587,2],[523,1],[587,1],[659,2],
+             [523,2],[0,1],[659,1],[784,2],[659,1],[523,2],[0,2]];
+  var MUSIC_BEAT=0.19, musicTimer=null, musicIdx=0;
+  function musicTick(){
+    if(!soundOn||!playing){ musicTimer=null; return; }
+    ensureAudio();
+    var n=MUSIC[musicIdx%MUSIC.length];
+    if(n[0]>0) beep(n[0], n[1]*MUSIC_BEAT*0.92, "triangle", 0.032);
+    musicIdx++;
+    musicTimer=setTimeout(musicTick, n[1]*MUSIC_BEAT*1000);
+  }
+  function startMusic(){ if(musicTimer) return; musicIdx=0; musicTick(); }
+  function stopMusic(){ if(musicTimer){ clearTimeout(musicTimer); musicTimer=null; } }
+  function renderSound(){
+    var b=document.getElementById('soundBtn');
+    b.textContent=soundOn?'🔊 Sound on':'🔇 Muted';
+    b.setAttribute('aria-pressed', soundOn?'true':'false');
+  }
 
   var POINTS=25, TREAT_COUNT=12;
   var best=0, score=0, caught=0, streak=0, timeLeft=60, playing=false, paused=false;
@@ -479,8 +524,9 @@ h1 span{color:#ffb347}
     if(it.type===targetType){
       score+=POINTS; caught++; streak++;
       var pos=sparkle(it.px||0, it.py||0);
+      sndCatch();
       var bonus=0;
-      if(streak>0 && streak%5===0){ bonus=25; score+=bonus; }
+      if(streak>0 && streak%5===0){ bonus=25; score+=bonus; sndBonus(); }
       floatText(pos.x-16, pos.y-58, '+'+POINTS+(bonus?' +'+bonus+' streak!':''), '#7dff8a');
       if(bonus) showBubble('🔥 '+streak+' in a row! Bonus +25!',1800);
       else if(caught%10===0) showBubble(caught+' treats caught! The crew goes wild! 🎉',1800);
@@ -489,6 +535,7 @@ h1 span{color:#ffb347}
       pickTarget();
     } else {
       streak=0;
+      sndMiss();
       it.el.classList.remove('wrong'); void it.el.offsetWidth; it.el.classList.add('wrong');
       showBubble("That's a "+SHAPES[it.type].name+" — not the outline shape!",1700);
     }
@@ -515,11 +562,11 @@ h1 span{color:#ffb347}
     targetType=null; pickTarget();
     updateHUD();
     startOverlay.classList.add('hidden'); endOverlay.classList.add('hidden');
-    playing=true; showBubble('Go! Match the glowing outline!',2000);
+    playing=true; ensureAudio(); startMusic(); showBubble('Go! Match the glowing outline!',2000);
     cancelAnimationFrame(rafId); rafId=requestAnimationFrame(loop);
   }
   function endGame(){
-    playing=false; cancelAnimationFrame(rafId); clearItems();
+    playing=false; stopMusic(); sndWin(); cancelAnimationFrame(rafId); clearItems();
     var isBest=score>best; if(isBest) best=score; updateHUD();
     document.getElementById('finalScore').textContent=score;
     document.getElementById('endTitle').textContent= score>=500?'Shape Master! 🏆': score>=300?"Time's up — great matching!": score>=125?"Time's up!":"Time's up, sweet try!";
@@ -531,9 +578,14 @@ h1 span{color:#ffb347}
   document.getElementById('againBtn').addEventListener('click', startGame);
   document.getElementById('pauseBtn').addEventListener('click', function(){
     if(!playing) return; paused=!paused; this.textContent=paused?'▶ Keep Going':'⏸ Pause';
-    if(!paused){ lastTs=0; rafId=requestAnimationFrame(loop); showBubble('Back to it!',1200); } else showBubble('Paused — take a breather',1500);
+    if(!paused){ lastTs=0; rafId=requestAnimationFrame(loop); startMusic(); showBubble('Back to it!',1200); } else { stopMusic(); showBubble('Paused — take a breather',1500); }
   });
   document.getElementById('restartBtn').addEventListener('click', startGame);
+  document.getElementById('soundBtn').addEventListener('click', function(){
+    soundOn=!soundOn; renderSound();
+    if(soundOn){ ensureAudio(); sndCatch(); if(playing) startMusic(); } else stopMusic();
+  });
+  renderSound();
   window.addEventListener('resize', function(){ items.forEach(place); });
 
   /* Idle preview behind the start panel: decorative treats slowly swirling */

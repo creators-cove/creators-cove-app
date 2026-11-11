@@ -265,6 +265,9 @@
           /* Cove back button — added Nov 10: iPhone home-screen web app has no browser back button */
       .cove-back-btn{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 12px 0;border-radius:999px;background:#ffffff;color:#12303e;font-weight:800;text-decoration:none;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;}
       .cove-back-btn:active{transform:translateY(1px);}
+      .sound-toggle{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 0 0 8px;border-radius:999px;background:#0b3d52;color:#ffe9a8;font-weight:800;font-size:1rem;font-family:inherit;border:2px solid #f2b33d;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;}
+      .sound-toggle:active{transform:translateY(1px);}
+
       /* Jobs + golden shell — added Nov 10: Today at the Cove */
       .jobs-panel{margin:0 0 12px;padding:14px 16px;}
       .jobs-panel h2{font-family:"Baloo 2",cursive;font-weight:800;font-size:1.25rem;margin:0 0 6px;}
@@ -286,6 +289,7 @@
   </head>
   <body>
     <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+    <button id="muteBtn" class="sound-toggle" type="button" aria-pressed="true">🔊 Sound On</button>
     <div class="wrap">
       <!-- HUD -->
       <div class="hud">
@@ -379,6 +383,142 @@
     <script>
       (function () {
         "use strict";
+
+      /* ================= Cove Sound — Web Audio, synthesized in-browser, no audio files ================= */
+      var Sfx = (function () {
+        var MUTE_KEY = "cove-world-muted";
+        var ctx = null, master = null, musicBus = null;
+        var muted = false;
+        try { muted = window.localStorage.getItem(MUTE_KEY) === "1"; } catch (e) { /* ignore */ }
+        /* Simple original major-key loop: [MIDI note, beats]; 0 = rest. */
+        var MELODY = [[65,1],[69,1],[72,1],[69,1],[67,1],[69,1],[65,1],[60,1],[62,1],[65,1],[69,2],[67,1],[65,1],[64,2],[0,1]];
+        var BEAT = 60 / 96;
+        var musicTimer = null, nextTime = 0, step = 0, lastJingle = 0;
+
+        function midi(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+        function ensureCtx() {
+          if (!ctx) {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            ctx = new AC();
+            master = ctx.createGain();
+            master.gain.value = muted ? 0 : 1;
+            master.connect(ctx.destination);
+            musicBus = ctx.createGain();
+            musicBus.gain.value = 0.5;
+            musicBus.connect(master);
+          }
+          if (ctx.state === "suspended") ctx.resume();
+          return ctx;
+        }
+        function tone(freq, dur, type, vol, delay, slideTo, dest) {
+          if (!ctx || muted) return;
+          var t = ctx.currentTime + (delay || 0);
+          var o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = type || "sine";
+          o.frequency.setValueAtTime(Math.max(30, freq), t);
+          if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t + dur);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          o.connect(g); g.connect(dest || master);
+          o.start(t); o.stop(t + dur + 0.05);
+        }
+        function noiseBurst(dur, vol, fromFreq, toFreq) {
+          if (!ctx || muted) return;
+          var t = ctx.currentTime;
+          var len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+          var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+          var data = buf.getChannelData(0);
+          for (var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+          var src = ctx.createBufferSource(); src.buffer = buf;
+          var f = ctx.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 1.1;
+          f.frequency.setValueAtTime(fromFreq, t);
+          f.frequency.exponentialRampToValueAtTime(Math.max(40, toFreq), t + dur);
+          var g = ctx.createGain();
+          g.gain.setValueAtTime(vol, t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          src.connect(f); f.connect(g); g.connect(master);
+          src.start(t); src.stop(t + dur);
+        }
+        function scheduleStep() {
+          if (!ctx) return;
+          var now = ctx.currentTime;
+          while (nextTime < now + 0.6) {
+            var pair = MELODY[step % MELODY.length];
+            var m = pair[0], beats = pair[1];
+            if (m > 0) {
+              var t = nextTime;
+              var o = ctx.createOscillator(), g = ctx.createGain();
+              o.type = "triangle"; o.frequency.value = midi(m);
+              g.gain.setValueAtTime(0.0001, t);
+              g.gain.linearRampToValueAtTime(0.055, t + 0.03);
+              g.gain.setValueAtTime(0.055, Math.max(t + 0.03, t + beats * BEAT - 0.06));
+              g.gain.linearRampToValueAtTime(0.0001, t + beats * BEAT);
+              o.connect(g); g.connect(musicBus);
+              o.start(t); o.stop(t + beats * BEAT + 0.05);
+            }
+            nextTime += beats * BEAT;
+            step++;
+          }
+        }
+        function startMusic() {
+          if (!ensureCtx() || musicTimer || muted) return;
+          nextTime = ctx.currentTime + 0.1; step = 0;
+          musicTimer = setInterval(function () { if (!muted && ctx) scheduleStep(); }, 200);
+          scheduleStep();
+        }
+        function setMuted(m) {
+          muted = !!m;
+          try { window.localStorage.setItem(MUTE_KEY, muted ? "1" : "0"); } catch (e) { /* ignore */ }
+          if (master) master.gain.value = muted ? 0 : 1;
+          var b = document.getElementById("muteBtn");
+          if (b) { b.textContent = muted ? "\uD83D\uDD07 Sound Off" : "\uD83D\uDD0A Sound On"; b.setAttribute("aria-pressed", String(!muted)); }
+          if (!muted) { ensureCtx(); startMusic(); }
+        }
+        function bindMuteButton() {
+          var b = document.getElementById("muteBtn");
+          if (!b) return;
+          b.textContent = muted ? "\uD83D\uDD07 Sound Off" : "\uD83D\uDD0A Sound On";
+          b.setAttribute("aria-pressed", String(!muted));
+          b.addEventListener("click", function () { ensureCtx(); setMuted(!muted); });
+        }
+        /* First tap anywhere wakes audio (browsers require a user gesture). */
+        document.addEventListener("pointerdown", function () { ensureCtx(); startMusic(); });
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindMuteButton);
+        else bindMuteButton();
+
+        return {
+          ensure: ensureCtx,
+          startMusic: startMusic,
+          setMuted: setMuted,
+          isMuted: function () { return muted; },
+          shell: function () {
+            ensureCtx();
+            tone(1568, 0.25, "sine", 0.14);
+            tone(2093, 0.35, "sine", 0.09, 0.06);
+          },
+          sparkle: function () {
+            ensureCtx();
+            [88, 91, 96, 100].forEach(function (m, i) { tone(midi(m), 0.3, "sine", 0.12, i * 0.07); });
+            tone(midi(103), 0.6, "sine", 0.1, 0.3);
+          },
+          jobJingle: function () {
+            ensureCtx();
+            var now = Date.now();
+            if (now - lastJingle < 400) return;
+            lastJingle = now;
+            [76, 79, 84].forEach(function (m, i) { tone(midi(m), 0.25, "triangle", 0.14, i * 0.1); });
+          },
+          celebration: function () {
+            ensureCtx();
+            var seq = [72, 72, 76, 79, 84, 79, 76, 79, 84];
+            seq.forEach(function (m, i) { tone(midi(m), 0.3, "triangle", 0.16, i * 0.13); });
+            tone(midi(84), 0.9, "triangle", 0.16, seq.length * 0.13);
+          }
+
+        };
+      })();
 
         /* ---------------- Data ---------------- */
         var SPOTS = {
@@ -602,15 +742,19 @@
         }
         function bumpJob(id, n) {
           if (!(id in state.jobProgress)) return;
-          state.jobProgress[id] = Math.min(state.jobProgress[id] + (n || 1), JOB_POOL.filter(function (j) { return j.id === id; })[0].target);
+          var target = JOB_POOL.filter(function (j) { return j.id === id; })[0].target;
+          var wasDone = state.jobProgress[id] >= target;
+          state.jobProgress[id] = Math.min(state.jobProgress[id] + (n || 1), target);
+          if (!wasDone && state.jobProgress[id] >= target) Sfx.jobJingle();
           renderJobs(); checkJobsDone();
         }
-        function completeJob(id) { if (id in state.jobProgress) { state.jobProgress[id] = JOB_POOL.filter(function (j) { return j.id === id; })[0].target; renderJobs(); checkJobsDone(); } }
+        function completeJob(id) { if (id in state.jobProgress) { var target = JOB_POOL.filter(function (j) { return j.id === id; })[0].target; var wasDone = state.jobProgress[id] >= target; state.jobProgress[id] = target; if (!wasDone) Sfx.jobJingle(); renderJobs(); checkJobsDone(); } }
         function checkJobsDone() {
           if (state.jobsDone || !state.jobs.length) return;
           var all = state.jobs.every(function (jb) { return (state.jobProgress[jb.id] || 0) >= jb.target; });
           if (!all) return;
           state.jobsDone = true;
+          Sfx.celebration();
           document.getElementById("celebration").classList.add("show");
           diary("Every job on today's list is done — the whole crew is glowing. Screenshot this moment for the Creator's Cove Facebook group!");
           toast("\u2728 All of today's jobs done! Take a group photo \u2728");
@@ -628,6 +772,7 @@
         function findGoldenShell() {
           if (state.goldenFound || state.sleeping) return;
           state.goldenFound = true;
+          Sfx.sparkle();
           if (goldenBtn) goldenBtn.classList.add("found");
           state.shells += 5; state.shellsEarned += 5;
           bumpJob("golden1", 1); bumpJob("shells5", 5);
@@ -799,6 +944,7 @@
 
         function doAction(girlId, action) {
           var g = girls[girlId];
+          var shellsBefore = state.shells;
           if (state.sleeping || g.busy) return;
           if (action.cost && state.shells < action.cost) {
             say(girlId, "We're short on shells — time to paint something!", 3000);
@@ -844,6 +990,7 @@
           } else if (action.id === "splash") {
             diary('<span class="who-name">' + g.def.name + "</span> splashed in the waves until her worries gave up.");
           }
+          if (state.shells > shellsBefore) Sfx.shell();
           decayAll(0.4);
           renderPanel();
           checkSleep();

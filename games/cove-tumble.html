@@ -159,6 +159,8 @@
         display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;
         overflow: hidden;
       }
+      .grid-frame.anticipate { animation: reelShake 0.1s linear infinite; }
+      @keyframes reelShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
       .col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
       .cell {
         aspect-ratio: 1; border-radius: 12px; background: var(--cell-bg);
@@ -308,7 +310,7 @@
         font-weight: 600; font-size: 1.05rem;
       }
       @media (prefers-reduced-motion: reduce) {
-        .bulbs i, .cell.winner .art, .cell.bonus-hit .art, .display.big, .bonus-bar.show, .cell.drop-in, .cell.settle, .cell.pop .art { animation: none; }
+        .bulbs i, .cell.winner .art, .cell.bonus-hit .art, .display.big, .bonus-bar.show, .cell.drop-in, .cell.settle, .cell.pop .art, .grid-frame.anticipate { animation: none; }
         .coin-fx { display: none; }
       }
           /* Cove back button — added Nov 10: iPhone home-screen web app has no browser back button */
@@ -530,6 +532,75 @@
         [523, 659, 784, 1047, 784, 1047, 1319, 1568].forEach(function (f, i) { tone(f, i * 0.11, 0.3, "triangle", 0.18); });
         [262, 330, 392].forEach(function (f, i) { tone(f, i * 0.11, 0.3, "sine", 0.08); });
       }
+      /* ---- Extra sounds: reel ticks, coin chimes, anticipation, music ---- */
+      function sndTick() { tone(1400, 0, 0.04, "triangle", 0.07); }
+      function sndReelStop() { tone(1200, 0, 0.05, "square", 0.07); tone(180, 0, 0.09, "sine", 0.18, 90); }
+      function sndCoinWin(ratio) {
+        var steps = ratio >= 100 ? 8 : ratio >= 25 ? 6 : ratio >= 8 ? 4 : 3;
+        var base = ratio >= 100 ? 784 : ratio >= 25 ? 659 : 523;
+        for (var i = 0; i < steps; i++) tone(base * Math.pow(1.122, i), i * 0.08, 0.22, "triangle", 0.16);
+        tone(base / 2, 0, 0.3, "sine", 0.07);
+      }
+      function sndBonusFanfare() {
+        [523, 659, 784, 1047, 1319, 1568, 2093].forEach(function (f, i) { tone(f, i * 0.12, 0.34, "triangle", 0.18); });
+        [262, 330, 392, 523].forEach(function (f, i) { tone(f, i * 0.12, 0.4, "sine", 0.08); });
+      }
+      /* ---- Bonus anticipation: rising tension + shake until the result lands ---- */
+      var anticipationTimer = null, anticipationStep = 0, anticipationEls = [];
+      function startAnticipation(els) {
+        if (anticipationTimer) return;
+        anticipationStep = 0;
+        anticipationEls = els || [];
+        anticipationEls.forEach(function (el) { if (el) el.classList.add("anticipate"); });
+        anticipationTimer = setInterval(function () {
+          var f = 440 + (anticipationStep % 8) * 55;
+          tone(f, 0, 0.1, "square", 0.05);
+          tone(f * 2, 0, 0.08, "sine", 0.04);
+          anticipationStep++;
+        }, 130);
+      }
+      function stopAnticipation() {
+        if (anticipationTimer) { clearInterval(anticipationTimer); anticipationTimer = null; }
+        anticipationEls.forEach(function (el) { if (el) el.classList.remove("anticipate"); });
+        anticipationEls = [];
+      }
+      /* ---- Background music: quiet original major-key loop, no files ---- */
+      var MUSIC_NOTES = [523, 659, 784, 659, 880, 784, 659, 587, 523, 587, 659, 784, 880, 1047, 880, 784];
+      var MUSIC_BASS = [262, 175, 196, 262];
+      var musicTimer = null, musicStep = 0, musicNextTime = 0, musicGain = null;
+      function musicNote(freq, when, dur, type, vol) {
+        if (!soundOn) return;
+        var c = ac(); if (!c) return;
+        if (!musicGain) { musicGain = c.createGain(); musicGain.gain.value = 0.05; musicGain.connect(c.destination); }
+        var o = c.createOscillator(), g = c.createGain();
+        o.type = type || "triangle";
+        o.frequency.setValueAtTime(freq, when);
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.exponentialRampToValueAtTime(vol || 0.5, when + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+        o.connect(g); g.connect(musicGain); o.start(when); o.stop(when + dur + 0.05);
+      }
+      function startMusic() {
+        if (musicTimer || !soundOn) return;
+        var c = ac(); if (!c) return;
+        musicStep = 0;
+        musicNextTime = c.currentTime + 0.1;
+        musicTimer = setInterval(function () {
+          if (!soundOn) return;
+          var c2 = ac(); if (!c2) return;
+          while (musicNextTime < c2.currentTime + 0.25) {
+            var beat = 0.24;
+            musicNote(MUSIC_NOTES[musicStep % MUSIC_NOTES.length], musicNextTime, beat * 0.9, "triangle", 0.5);
+            if (musicStep % 4 === 0) musicNote(MUSIC_BASS[(musicStep / 4) % MUSIC_BASS.length], musicNextTime, beat * 3.2, "sine", 0.6);
+            musicNextTime += beat;
+            musicStep++;
+          }
+        }, 90);
+      }
+      function stopMusic() {
+        if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+      }
+
       var SOUND_ON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>';
       var SOUND_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>';
       var soundBtn = document.getElementById("soundBtn");
@@ -538,7 +609,11 @@
         soundBtn.setAttribute("aria-label", soundOn ? "Turn sound off" : "Turn sound on");
         soundBtn.setAttribute("aria-pressed", soundOn ? "true" : "false");
       }
-      soundBtn.addEventListener("click", function () { soundOn = !soundOn; renderSoundBtn(); if (soundOn) sndClick(); });
+      soundBtn.addEventListener("click", function () {
+        soundOn = !soundOn; renderSoundBtn();
+        if (soundOn) { if (musicGain) musicGain.gain.value = 0.05; startMusic(); sndClick(); }
+        else { stopMusic(); stopAnticipation(); if (musicGain) musicGain.gain.value = 0; }
+      });
       renderSoundBtn();
 
       /* ================= DOM refs ================= */
@@ -707,6 +782,17 @@
           if (grid[c][r].id === "wave") { var el = cellEl(c, r); if (el) el.classList.add("bonus-hit"); }
         }
       }
+      /* True when some symbol is one short of a paying cluster (8 to match). */
+      function nearMatch() {
+        var counts = {};
+        for (var c = 0; c < COLS; c++) for (var r = 0; r < ROWS; r++) { var id = grid[c][r].id; counts[id] = (counts[id] || 0) + 1; }
+        var wild = counts["wave"] || 0, best = 0;
+        SYMBOLS.forEach(function (s) {
+          var eff = s.id === "wave" ? (counts["wave"] || 0) : (counts[s.id] || 0) + wild;
+          if (eff > best) best = eff;
+        });
+        return best === MIN_MATCH - 1;
+      }
 
       /* ================= The tumble ================= */
       async function tumble() {
@@ -722,12 +808,18 @@
         display.classList.remove("big");
         renderChain(0);
         setDisplay(isFree ? "Free spin — here they come…" : "Here they come…");
-        sndDrop();
+        sndDrop(); startMusic();
         renderMeters();
 
         freshGrid();
         renderGrid("dropAll");
+        for (var tc = 0; tc < COLS; tc++) (function (c) { setTimeout(function () { sndTick(); }, 120 + c * 50); })(tc);
+        /* Anticipation while the board drops: 2 waves (one away from the
+           bonus) or a symbol one short of a paying cluster. */
+        var dropAnti = (countWaves() === BONUS_MIN - 1 || nearMatch());
+        if (dropAnti) startAnticipation([gridFrame]);
         await sleep(reducedMotion() ? 60 : 620);
+        if (dropAnti) stopAnticipation();
 
         var chain = 0, spinWin = 0, bestCluster = null, bonusQueued = 0;
         while (true) {
@@ -793,7 +885,11 @@
           }
           sndFall();
           renderGrid({ newCounts: newCounts, moved: moved });
+          for (var rc = 0; rc < COLS; rc++) if (newCounts[rc] > 0) (function (c) { setTimeout(function () { sndTick(); }, 60 + c * 40); })(rc);
+          var refillAnti = bonusQueued === 0 && (countWaves() === BONUS_MIN - 1 || nearMatch());
+          if (refillAnti) startAnticipation([gridFrame]);
           await sleep(reducedMotion() ? 60 : 560);
+          if (refillAnti) stopAnticipation();
         }
 
         spinning = false;
@@ -809,7 +905,7 @@
         if (bonusQueued > 0) {
           freeSpins += bonusQueued;
           setDisplay("BONUS! 3+ Cove Waves — you won " + bonusQueued + " FREE SPINS!" + (spinWin > 0 ? " Plus " + spinWin + " coins!" : ""), true);
-          sndBonus(); coinShower(34);
+          sndBonusFanfare(); coinShower(34);
         } else if (spinWin > 0) {
           var ratio = spinWin / bet;
           if (ratio >= 100) {
@@ -817,9 +913,10 @@
             sndJackpot(); coinShower(42);
           } else if (chain >= 3) {
             setDisplay("What a tumble! " + chain + " chains — you won " + spinWin + " coins!", true);
-            coinShower(26);
+            sndCoinWin(ratio); coinShower(26);
           } else {
             setDisplay((isFree ? "Free spin win — " : "") + "You won " + spinWin + " coins!", ratio >= 25);
+            sndCoinWin(ratio);
             if (ratio >= 25) coinShower(18); else coinShower(8);
           }
         } else {

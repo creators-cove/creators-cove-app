@@ -414,6 +414,7 @@
       var timerId = null;
       var started = false;
       var soundOn = true;
+      var combo = 0; // consecutive matches without a miss — raises the match chime
       var best = {}; // per difficulty, this visit only: {moves, seconds}
       var audioCtx = null;
 
@@ -436,9 +437,31 @@
         } catch (e) { /* sound is a bonus, never a blocker */ }
       }
       function sndFlip()  { beep(520, 0.12, "triangle", 0.08); }
-      function sndMatch() { beep(660, 0.14, "sine", 0.12); beep(880, 0.2, "sine", 0.12, 0.1); }
+      function sndMatch(comboCount) { // higher with every combo in a row
+        var s = Math.pow(1.0595, Math.min(comboCount || 0, 8));
+        beep(660 * s, 0.14, "sine", 0.12); beep(880 * s, 0.2, "sine", 0.12, 0.1);
+        if ((comboCount || 0) >= 3) beep(1318 * s, 0.22, "sine", 0.1, 0.2);
+      }
       function sndMiss()  { beep(300, 0.16, "triangle", 0.07); beep(240, 0.2, "triangle", 0.07, 0.09); }
       function sndWin()   { [523, 659, 784, 1047].forEach(function (f, i) { beep(f, 0.3, "sine", 0.13, i * 0.13); }); }
+
+      /* Quiet original C-major loop, starts on the first flip. */
+      var MUSIC = [
+        [523, 2], [659, 2], [784, 2], [659, 2], [880, 4], [784, 2], [659, 2], [523, 2],
+        [587, 2], [659, 2], [784, 2], [659, 2], [587, 4], [523, 2], [0, 2],
+        [659, 2], [784, 2], [880, 2], [784, 2], [1046, 4], [880, 2], [784, 2], [659, 2],
+        [784, 2], [659, 2], [587, 2], [523, 2], [659, 4], [0, 2], [523, 2], [659, 2]
+      ];
+      var MUSIC_BEAT = 0.26, musicTimer = null, musicIdx = 0;
+      function musicTick() {
+        if (!soundOn) { musicTimer = null; return; }
+        var n = MUSIC[musicIdx % MUSIC.length];
+        if (n[0] > 0) beep(n[0], n[1] * MUSIC_BEAT * 0.92, "sine", 0.03);
+        musicIdx++;
+        musicTimer = setTimeout(musicTick, n[1] * MUSIC_BEAT * 1000);
+      }
+      function startMusic() { if (musicTimer) return; musicIdx = 0; musicTick(); }
+      function stopMusic() { if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; } }
 
       /* ============ helpers ============ */
       function shuffle(arr) {
@@ -484,7 +507,7 @@
 
       function newGame() {
         stopTimer();
-        seconds = 0; moves = 0; matchedPairs = 0;
+        seconds = 0; moves = 0; matchedPairs = 0; combo = 0;
         openCards = []; lockBoard = false; started = false;
         overlayEl.classList.remove("show");
         confettiEl.classList.remove("show");
@@ -529,7 +552,7 @@
       function flipCard(btn, face) {
         if (lockBoard) return;
         if (btn.classList.contains("flipped") || btn.classList.contains("matched")) return;
-        if (!started) { started = true; startTimer(); }
+        if (!started) { started = true; startTimer(); startMusic(); }
         btn.classList.add("flipped");
         btn.setAttribute("aria-label", face.name);
         sndFlip();
@@ -549,8 +572,9 @@
           b.btn.setAttribute("aria-label", b.face.name + " — matched");
           openCards = [];
           matchedPairs++;
+          combo++;
           updateStats();
-          sndMatch();
+          sndMatch(combo);
           if (matchedPairs === DIFFS[difficulty].pairs) {
             setCheer("That's every last pair!");
             setTimeout(winGame, 650);
@@ -559,6 +583,7 @@
           }
         } else {
           lockBoard = true;
+          combo = 0;
           sndMiss();
           setCheer("Not quite — " + a.face.name + " and " + b.face.name + " don't match. Remember where they are!");
           setTimeout(function () {
@@ -645,7 +670,8 @@
       soundBtn.addEventListener("click", function () {
         soundOn = !soundOn;
         renderSound();
-        if (soundOn) sndMatch();
+        if (soundOn) { if (started) startMusic(); sndMatch(0); }
+        else stopMusic();
       });
       renderSound();
 

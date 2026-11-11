@@ -188,6 +188,8 @@
       .tile .art img.logo { object-fit: contain; padding: 4px; background: #fff; }
       .tile .art svg { width: 100%; height: 100%; }
       .tile.spinning .art { animation: tileBlur 0.12s linear infinite alternate; opacity: 0.75; }
+      .tile.anticipate { animation: reelShake 0.1s linear infinite; }
+      @keyframes reelShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
       @keyframes tileBlur { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
       .tile.winner .art { animation: winPulse 0.45s ease-in-out infinite alternate; }
       .tile.winner { box-shadow: inset 0 0 0 3px var(--gold-deep), 0 0 14px 3px rgba(255, 201, 60, 0.65); }
@@ -361,7 +363,7 @@
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .bulbs i, .tile.winner .art, .display.big, .bonus-bar.active, .bg-bubbles i, .tile.spinning .art, .coin-fx i { animation: none; }
+        .bulbs i, .tile.winner .art, .display.big, .bonus-bar.active, .bg-bubbles i, .tile.spinning .art, .coin-fx i, .tile.anticipate { animation: none; }
         .bg-bubbles { display: none; }
       }
           /* Cove back button — added Nov 10: iPhone home-screen web app has no browser back button */
@@ -614,6 +616,75 @@
         [523, 659, 784, 1047, 784, 1047, 1319, 1568].forEach(function (f, i) { tone(f, i * 0.11, 0.3, "triangle", 0.18); });
         [262, 330, 392].forEach(function (f, i) { tone(f, i * 0.11, 0.3, "sine", 0.08); });
       }
+      /* ---- Extra sounds: reel ticks, coin chimes, anticipation, music ---- */
+      function sndTick() { tone(1400, 0, 0.04, "triangle", 0.07); }
+      function sndReelStop() { tone(1200, 0, 0.05, "square", 0.07); tone(180, 0, 0.09, "sine", 0.18, 90); }
+      function sndCoinWin(ratio) {
+        var steps = ratio >= 100 ? 8 : ratio >= 25 ? 6 : ratio >= 8 ? 4 : 3;
+        var base = ratio >= 100 ? 784 : ratio >= 25 ? 659 : 523;
+        for (var i = 0; i < steps; i++) tone(base * Math.pow(1.122, i), i * 0.08, 0.22, "triangle", 0.16);
+        tone(base / 2, 0, 0.3, "sine", 0.07);
+      }
+      function sndBonusFanfare() {
+        [523, 659, 784, 1047, 1319, 1568, 2093].forEach(function (f, i) { tone(f, i * 0.12, 0.34, "triangle", 0.18); });
+        [262, 330, 392, 523].forEach(function (f, i) { tone(f, i * 0.12, 0.4, "sine", 0.08); });
+      }
+      /* ---- Bonus anticipation: rising tension + shake until the result lands ---- */
+      var anticipationTimer = null, anticipationStep = 0, anticipationEls = [];
+      function startAnticipation(els) {
+        if (anticipationTimer) return;
+        anticipationStep = 0;
+        anticipationEls = els || [];
+        anticipationEls.forEach(function (el) { if (el) el.classList.add("anticipate"); });
+        anticipationTimer = setInterval(function () {
+          var f = 440 + (anticipationStep % 8) * 55;
+          tone(f, 0, 0.1, "square", 0.05);
+          tone(f * 2, 0, 0.08, "sine", 0.04);
+          anticipationStep++;
+        }, 130);
+      }
+      function stopAnticipation() {
+        if (anticipationTimer) { clearInterval(anticipationTimer); anticipationTimer = null; }
+        anticipationEls.forEach(function (el) { if (el) el.classList.remove("anticipate"); });
+        anticipationEls = [];
+      }
+      /* ---- Background music: quiet original major-key loop, no files ---- */
+      var MUSIC_NOTES = [523, 659, 784, 659, 880, 784, 659, 587, 523, 587, 659, 784, 880, 1047, 880, 784];
+      var MUSIC_BASS = [262, 175, 196, 262];
+      var musicTimer = null, musicStep = 0, musicNextTime = 0, musicGain = null;
+      function musicNote(freq, when, dur, type, vol) {
+        if (!soundOn) return;
+        var c = ac(); if (!c) return;
+        if (!musicGain) { musicGain = c.createGain(); musicGain.gain.value = 0.05; musicGain.connect(c.destination); }
+        var o = c.createOscillator(), g = c.createGain();
+        o.type = type || "triangle";
+        o.frequency.setValueAtTime(freq, when);
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.exponentialRampToValueAtTime(vol || 0.5, when + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+        o.connect(g); g.connect(musicGain); o.start(when); o.stop(when + dur + 0.05);
+      }
+      function startMusic() {
+        if (musicTimer || !soundOn) return;
+        var c = ac(); if (!c) return;
+        musicStep = 0;
+        musicNextTime = c.currentTime + 0.1;
+        musicTimer = setInterval(function () {
+          if (!soundOn) return;
+          var c2 = ac(); if (!c2) return;
+          while (musicNextTime < c2.currentTime + 0.25) {
+            var beat = 0.24;
+            musicNote(MUSIC_NOTES[musicStep % MUSIC_NOTES.length], musicNextTime, beat * 0.9, "triangle", 0.5);
+            if (musicStep % 4 === 0) musicNote(MUSIC_BASS[(musicStep / 4) % MUSIC_BASS.length], musicNextTime, beat * 3.2, "sine", 0.6);
+            musicNextTime += beat;
+            musicStep++;
+          }
+        }, 90);
+      }
+      function stopMusic() {
+        if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+      }
+
       var SOUND_ON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>';
       var SOUND_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>';
       var soundBtn = document.getElementById("soundBtn");
@@ -622,7 +693,11 @@
         soundBtn.setAttribute("aria-label", soundOn ? "Turn sound off" : "Turn sound on");
         soundBtn.setAttribute("aria-pressed", soundOn ? "true" : "false");
       }
-      soundBtn.addEventListener("click", function () { soundOn = !soundOn; renderSoundBtn(); if (soundOn) sndClick(); });
+      soundBtn.addEventListener("click", function () {
+        soundOn = !soundOn; renderSoundBtn();
+        if (soundOn) { if (musicGain) musicGain.gain.value = 0.05; startMusic(); sndClick(); }
+        else { stopMusic(); stopAnticipation(); if (musicGain) musicGain.gain.value = 0; }
+      });
       renderSoundBtn();
 
       /* ================= DOM refs ================= */
@@ -807,7 +882,7 @@
       }
 
       /* ================= Spin animation ================= */
-      function animateSpin(finalGrid, lockedMask, done) {
+      function animateSpin(finalGrid, lockedMask, done, onStop) {
         var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         var intervals = [];
         for (var r = 0; r < 5; r++) {
@@ -831,7 +906,8 @@
                 renderTile(reel, c);
                 tileEls[reel][c].classList.remove("spinning");
               }
-              sndThunk();
+              sndThunk(); sndReelStop();
+              if (onStop) onStop(reel);
               if (reel === 4) setTimeout(done, 60);
             }, (reduced ? 60 : 380) + reel * (reduced ? 20 : 140));
           })(r);
@@ -857,7 +933,7 @@
         setDisplay("Spinning…");
         lastWin = null;
         renderMeters(); updateControls(); renderRefill();
-        sndSpinStart();
+        sndSpinStart(); startMusic();
 
         var finalGrid = [], bubbleCells = [];
         for (var r = 0; r < 5; r++) {
@@ -873,7 +949,17 @@
             }
           }
         }
+        var spinAnti = function (reel) {
+          var bubbles = 0;
+          for (var r = 0; r <= reel; r++) for (var c = 0; c < 3; c++) if (finalGrid[r][c].bubble) bubbles++;
+          if (bubbles === 5 && reel < 4) {
+            var els = [];
+            for (var rr = reel + 1; rr < 5; rr++) for (var cc = 0; cc < 3; cc++) els.push(tileEls[rr][cc]);
+            startAnticipation(els);
+          } else if (bubbles >= 6) { stopAnticipation(); }
+        };
         animateSpin(finalGrid, null, function () {
+          stopAnticipation();
           spinning = false;
           if (bubbleCells.length >= 6) {
             startBonus(bubbleCells, bet);
@@ -897,14 +983,14 @@
             lastWin = { amount: winAmt, kind: "line", syms: syms, bet: bet };
             countUpWin(winAmt);
             if (winAmt >= bet * 25) { setDisplay("BIG WIN! " + winAmt + " coins!", true); sndJackpot(); coinBurst(14); }
-            else { setDisplay("You won " + winAmt + " coins!", winAmt >= bet * 8); sndWin(winAmt < bet * 8); if (winAmt >= bet * 8) coinBurst(8); }
+            else { setDisplay("You won " + winAmt + " coins!", winAmt >= bet * 8); sndCoinWin(winAmt / bet); if (winAmt >= bet * 8) coinBurst(8); }
           } else if (bubbleCells.length >= 4) {
             setDisplay(bubbleCells.length + " bubbles — so close! 6 start Hold & Win");
           } else {
             setDisplay("No win that time — spin again!");
           }
           renderMeters(); updateControls(); renderRefill();
-        });
+        }, spinAnti);
       }
 
       /* ================= Hold & Win bonus ================= */
@@ -926,7 +1012,7 @@
         }
         bubbleCells.forEach(function (pos, i) { setTimeout(function () { sndBubblePop(0); }, i * 90); });
         setDisplay("HOLD & WIN! Bubbles locked — tap RESPIN to catch more!", true);
-        sndJackpot(); coinBurst(10);
+        sndBonusFanfare(); coinBurst(10);
         renderMeters(); updateBonusBar(); updateControls();
       }
       function doRespin() {
@@ -935,7 +1021,15 @@
         stats.spins++;
         setDisplay("Respins reset to 3 with every new bubble…");
         updateControls();
-        sndSpinStart();
+        sndSpinStart(); startMusic();
+        /* One or two bubbles away from a full board (GRAND): shake the
+           open tiles while the respin runs. */
+        var respinAnti = heldCount >= 13;
+        if (respinAnti) {
+          var openEls = [];
+          for (var ar = 0; ar < 5; ar++) for (var ac2 = 0; ac2 < 3; ac2++) if (!(grid[ar][ac2].bubble && grid[ar][ac2].held)) openEls.push(tileEls[ar][ac2]);
+          startAnticipation(openEls);
+        }
         var finalGrid = [], lockedMask = [], newBubbles = [];
         for (var r = 0; r < 5; r++) {
           finalGrid.push([]); lockedMask.push([]);
@@ -956,6 +1050,7 @@
           }
         }
         animateSpin(finalGrid, lockedMask, function () {
+          stopAnticipation();
           spinning = false;
           for (var r = 0; r < 5; r++) for (var c = 0; c < 3; c++) {
             var cell = grid[r][c];

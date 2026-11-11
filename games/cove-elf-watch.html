@@ -362,10 +362,13 @@
           /* Cove back button — added Nov 10: iPhone home-screen web app has no browser back button */
       .cove-back-btn{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 12px 0;border-radius:999px;background:#ffffff;color:#12303e;font-weight:800;text-decoration:none;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;}
       .cove-back-btn:active{transform:translateY(1px);}
+      .sound-btn{position:fixed;top:12px;right:12px;z-index:9999;min-width:48px;min-height:48px;padding:0 12px;border:none;border-radius:999px;background:#ffffff;color:#12303e;font-size:1.25rem;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer;}
+      .sound-btn:active{transform:translateY(1px);}
 </style>
   </head>
   <body>
     <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+    <button class="sound-btn" id="btnSound" type="button" aria-label="Sound on or off" aria-pressed="true">🔊</button>
     <div class="wrap">
       <header class="masthead">
         <div class="wordmark">Creator's Cove <span class="dot">•</span> Buy <span class="dot">•</span> Sell <span class="dot">•</span> Trade</div>
@@ -554,6 +557,46 @@
       var currentElf = null;
       var currentScene = -1;
 
+      /* ---------- sound: tiny WebAudio chimes + a quiet music loop ---------- */
+      var audioCtx = null, soundOn = true;
+      function ensureAudio() {
+        if (!audioCtx) {
+          try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+        }
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      }
+      function beep(freq, dur, type, vol, when) {
+        if (!audioCtx || !soundOn) return;
+        var t = audioCtx.currentTime + (when || 0);
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = type || "sine"; o.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(vol || 0.1, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t); o.stop(t + dur + 0.02);
+      }
+      function sndSpot() { beep(880, 0.1, "triangle", 0.11); beep(1174, 0.16, "sine", 0.1, 0.07); beep(1568, 0.22, "sine", 0.08, 0.14); }
+      function sndJingle() { [523, 659, 784, 1046].forEach(function (f, i) { beep(f, 0.16, "triangle", 0.1, i * 0.09); }); }
+      function sndSwitch() { beep(520, 0.07, "square", 0.05); beep(392, 0.09, "square", 0.05, 0.06); }
+      /* Gentle original G-major music-box loop for the workshop cameras. */
+      var MUSIC = [
+        [392, 2], [494, 2], [587, 2], [494, 2], [659, 4], [587, 2], [494, 2], [392, 2],
+        [440, 2], [494, 2], [587, 2], [494, 2], [440, 4], [392, 2], [0, 2],
+        [494, 2], [587, 2], [659, 2], [587, 2], [784, 4], [659, 2], [587, 2], [494, 2],
+        [587, 2], [494, 2], [440, 2], [392, 2], [494, 4], [0, 2], [392, 2], [494, 2]
+      ];
+      var MUSIC_BEAT = 0.26, musicTimer = null, musicIdx = 0;
+      function musicTick() {
+        if (!soundOn) { musicTimer = null; return; }
+        ensureAudio();
+        var n = MUSIC[musicIdx % MUSIC.length];
+        if (n[0] > 0) beep(n[0], n[1] * MUSIC_BEAT * 0.92, "sine", 0.03);
+        musicIdx++;
+        musicTimer = setTimeout(musicTick, n[1] * MUSIC_BEAT * 1000);
+      }
+      function startMusic() { if (musicTimer) return; musicIdx = 0; musicTick(); }
+      function stopMusic() { if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; } }
+
       // Build the pick cards
       ELVES.forEach(function (elf) {
         var btn = document.createElement("button");
@@ -594,6 +637,9 @@
         currentScene = Math.floor(Math.random() * elf.scenes.length);
         watchWho.textContent = "Now watching: " + elf.fullName;
         showScene(false);
+        ensureAudio();
+        sndSpot(); sndJingle();
+        startMusic();
         pickScreen.hidden = true;
         watchScreen.hidden = false;
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -625,6 +671,7 @@
           next = Math.floor(Math.random() * currentElf.scenes.length);
         }
         currentScene = next;
+        sndSwitch();
         showScene(true);
       });
 
@@ -634,6 +681,19 @@
         currentElf = null;
         window.scrollTo({ top: 0, behavior: "smooth" });
       });
+
+      /* ---------- sound toggle: mutes effects and music together ---------- */
+      var soundBtn = document.getElementById("btnSound");
+      function renderSound() {
+        soundBtn.textContent = soundOn ? "🔊" : "🔇";
+        soundBtn.setAttribute("aria-pressed", soundOn ? "true" : "false");
+      }
+      soundBtn.addEventListener("click", function () {
+        soundOn = !soundOn;
+        renderSound();
+        if (soundOn) { ensureAudio(); if (currentElf) startMusic(); sndSpot(); } else stopMusic();
+      });
+      renderSound();
     </script>
   </body>
 </html>

@@ -478,12 +478,48 @@
       o.connect(g); g.connect(audioCtx.destination);
       o.start(t); o.stop(t + dur + 0.02);
     }
-    function sndJump() { beep(300, 0.16, "sine", 0.10); beep(520, 0.14, "sine", 0.08, 0.05); }
+    function sndJump() { swoosh(); beep(520, 0.12, "sine", 0.07, 0.06); }
     function sndPickup() { beep(880, 0.09, "triangle", 0.12); beep(1318, 0.14, "triangle", 0.12, 0.07); }
     function sndPip() { beep(660, 0.08, "square", 0.07); beep(880, 0.08, "square", 0.07, 0.08); beep(1100, 0.16, "square", 0.07, 0.16); }
     function sndHit() { beep(160, 0.28, "sawtooth", 0.12); beep(110, 0.3, "sawtooth", 0.10, 0.05); }
     function sndCheer() { [523, 659, 784, 1046].forEach(function (f, i) { beep(f, 0.16, "triangle", 0.10, i * 0.09); }); }
     function sndOver() { [392, 330, 262].forEach(function (f, i) { beep(f, 0.22, "triangle", 0.10, i * 0.16); }); }
+    /* A quick rising slide: the jump whoosh. */
+    function swoosh() {
+      if (!audioCtx || !soundOn) return;
+      var t = audioCtx.currentTime;
+      var o = audioCtx.createOscillator();
+      var g = audioCtx.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(240, t);
+      o.frequency.exponentialRampToValueAtTime(720, t + 0.16);
+      g.gain.setValueAtTime(0.09, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t); o.stop(t + 0.2);
+    }
+    /* ---------- Background music: a quiet original C-major loop ---------- */
+    var MUSIC = [
+      [523, 2], [659, 2], [784, 2], [659, 2], [880, 2], [784, 2], [659, 2], [523, 2],
+      [587, 2], [659, 2], [784, 2], [659, 2], [1046, 3], [880, 1], [784, 2], [659, 2],
+      [523, 2], [659, 2], [784, 2], [880, 2], [1046, 2], [880, 2], [784, 2], [659, 2],
+      [784, 2], [659, 2], [587, 2], [523, 2], [587, 4], [0, 2], [523, 2], [659, 2]
+    ];
+    var MUSIC_BEAT = 0.21; /* seconds per beat */
+    var musicTimer = null, musicIdx = 0;
+    function musicTick() {
+      if (!soundOn || STATE !== "playing") { musicTimer = null; return; }
+      ensureAudio();
+      var n = MUSIC[musicIdx % MUSIC.length];
+      if (n[0] > 0) {
+        beep(n[0], n[1] * MUSIC_BEAT * 0.92, "triangle", 0.035);
+        if (musicIdx % 8 === 0) beep(n[0] / 2, n[1] * MUSIC_BEAT * 0.9, "sine", 0.02); /* soft root underneath */
+      }
+      musicIdx++;
+      musicTimer = setTimeout(musicTick, n[1] * MUSIC_BEAT * 1000);
+    }
+    function startMusic() { if (musicTimer) return; musicIdx = 0; musicTick(); }
+    function stopMusic() { if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; } }
 
     /* ---------- Game state ---------- */
     var STATE = "menu"; // menu | playing | paused | over
@@ -1368,9 +1404,11 @@
       pauseScreen.hidden = true;
       hud.hidden = false;
       sndCheer();
+      startMusic();
     }
     function gameOver() {
       STATE = "over";
+      stopMusic();
       var finalDist = Math.floor(distance);
       if (finalDist > best) best = finalDist;
       sndOver();
@@ -1397,6 +1435,7 @@
     function pauseGame() {
       if (STATE !== "playing") return;
       STATE = "paused";
+      stopMusic();
       pauseScreen.hidden = false;
     }
     function resumeGame() {
@@ -1404,9 +1443,11 @@
       STATE = "playing";
       pauseScreen.hidden = true;
       ensureAudio();
+      startMusic();
     }
     function backToMenu() {
       STATE = "menu";
+      stopMusic();
       pauseScreen.hidden = true;
       overScreen.hidden = true;
       hud.hidden = true;
@@ -1526,7 +1567,8 @@
     document.getElementById("btnSound").addEventListener("click", function () {
       soundOn = !soundOn;
       this.textContent = soundOn ? "🔊" : "🔇";
-      if (soundOn) { ensureAudio(); beep(700, 0.08, "triangle", 0.08); }
+      if (soundOn) { ensureAudio(); beep(700, 0.08, "triangle", 0.08); if (STATE === "playing") startMusic(); }
+      else stopMusic();
     });
 
     fitCanvas();
