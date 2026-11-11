@@ -101,6 +101,15 @@
       }
       .sound-btn svg { width: 22px; height: 22px; }
       .sound-btn:focus-visible, button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+      .top-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; position: relative; z-index: 3; }
+      .top-bar .sound-btn { position: static; flex: none; }
+      .music-picker { display: flex; align-items: center; gap: 6px; color: var(--cream); font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 0.85rem; min-width: 0; }
+      .music-picker select {
+        max-width: 172px; min-height: 36px; padding: 4px 6px; border-radius: 10px;
+        border: 2px solid var(--cabinet-edge); background: rgba(8, 31, 44, 0.85); color: var(--cream);
+        font-family: "Nunito", system-ui, sans-serif; font-weight: 700; font-size: 0.85rem; cursor: pointer;
+      }
+      .music-picker select:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
       /* ---------- Message display ---------- */
       .display {
@@ -322,7 +331,28 @@
     <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
     <main>
       <section class="machine" aria-label="Cove Tumble game">
-        <button class="sound-btn" id="soundBtn" type="button" aria-label="Turn sound off" aria-pressed="true"></button>
+        <div class="top-bar">
+          <label class="music-picker" for="musicPick">🎵 Music:
+            <select id="musicPick" aria-label="Background music">
+              <option value="slot" selected>Slot sounds</option>
+              <option value="off">Off</option>
+              <option value="flip-flops">Flip-Flops</option>
+              <option value="little-pip">Little Pip</option>
+              <option value="12-days">12 Days</option>
+              <option value="sleigh-ride">Sleigh Ride</option>
+              <option value="fanfare-for-space">Fanfare for Space</option>
+              <option value="cove-holiday-jingle">Cove Holiday Jingle</option>
+              <option value="grinch">Grinch</option>
+              <option value="christmas">Christmas</option>
+              <option value="halloween">Halloween</option>
+              <option value="halloween-spooky-challenge">Halloween Spooky Challenge</option>
+              <option value="cozy-nights">Cozy Nights</option>
+              <option value="coastal-clips-theme">Coastal Clips Theme</option>
+              <option value="raok">RAOK</option>
+            </select>
+          </label>
+          <button class="sound-btn" id="soundBtn" type="button" aria-label="Turn sound off" aria-pressed="true"></button>
+        </div>
         <div class="marquee">
           <div class="bulbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
           <h1>COVE TUMBLE</h1>
@@ -498,6 +528,7 @@
 
       /* ================= Sound (WebAudio, no files) ================= */
       var audioCtx = null, soundOn = true;
+      var jukeAudio = null, jukeSong = "slot"; /* jukebox MP3 picker: "slot" = slot music, "off" = no music, else MP3 filename */
       function ac() {
         if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; } }
         if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
@@ -582,6 +613,7 @@
       }
       function startMusic() {
         if (musicTimer || !soundOn) return;
+        if (jukeSong !== "slot") return; /* jukebox song or "off": slot music stays off */
         var c = ac(); if (!c) return;
         musicStep = 0;
         musicNextTime = c.currentTime + 0.1;
@@ -601,6 +633,43 @@
         if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
       }
 
+      /* ---- Jukebox picker: play a Cove MP3 instead of the slot music ----
+         One plain <audio> element, looping. The spin/win/bonus sound
+         effects (tone()) keep working in every mode — only the background
+         music is replaced or stopped. */
+      function getJukeAudio() {
+        if (!jukeAudio) {
+          jukeAudio = document.createElement("audio");
+          jukeAudio.id = "jukeAudio";
+          jukeAudio.loop = true;
+          jukeAudio.preload = "none";
+          document.body.appendChild(jukeAudio);
+        }
+        return jukeAudio;
+      }
+      function playJukeAudio() {
+        var a = getJukeAudio();
+        if (!a.src) return;
+        try { var p = a.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+      }
+      function applyMusicPick() {
+        var pick = document.getElementById("musicPick");
+        var v = pick ? pick.value : "slot";
+        jukeSong = v;
+        var a = getJukeAudio();
+        if (v === "slot") {
+          a.pause();
+          if (soundOn && audioCtx) startMusic();
+        } else if (v === "off") {
+          a.pause();
+          stopMusic();
+        } else {
+          stopMusic();
+          a.src = "../music/" + v + ".mp3";
+          if (soundOn) playJukeAudio();
+        }
+      }
+
       /* Stop audio when the page is hidden (app closed / switched away) —
          Android Chrome keeps the page alive in the background, so without
          this the music keeps playing after the app is closed. iOS suspends
@@ -608,12 +677,14 @@
          unlocked by a tap (audioCtx exists). */
       function suspendAudio() {
         if (audioCtx && audioCtx.state === "running") { try { audioCtx.suspend(); } catch (e) {} }
+        if (jukeAudio) jukeAudio.pause();
         stopMusic();
       }
       function resumeAudio() {
         if (!soundOn || !audioCtx) return;
         if (audioCtx.state === "suspended") { try { audioCtx.resume(); } catch (e) {} }
-        if (!musicTimer) startMusic();
+        if (jukeSong !== "slot" && jukeSong !== "off") playJukeAudio();
+        else if (!musicTimer) startMusic();
       }
       if (typeof document !== "undefined" && document.addEventListener) {
         document.addEventListener("visibilitychange", function () {
@@ -633,10 +704,17 @@
       }
       soundBtn.addEventListener("click", function () {
         soundOn = !soundOn; renderSoundBtn();
-        if (soundOn) { if (musicGain) musicGain.gain.value = 0.05; startMusic(); sndClick(); }
-        else { stopMusic(); stopAnticipation(); if (musicGain) musicGain.gain.value = 0; }
+        if (soundOn) {
+          if (musicGain) musicGain.gain.value = 0.05;
+          if (jukeSong !== "slot" && jukeSong !== "off") playJukeAudio();
+          else startMusic();
+          sndClick();
+        }
+        else { if (jukeAudio) jukeAudio.pause(); stopMusic(); stopAnticipation(); if (musicGain) musicGain.gain.value = 0; }
       });
       renderSoundBtn();
+      var musicPick = document.getElementById("musicPick");
+      if (musicPick) musicPick.addEventListener("change", applyMusicPick);
 
       /* ================= DOM refs ================= */
       var display = document.getElementById("display");
