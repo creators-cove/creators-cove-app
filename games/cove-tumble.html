@@ -804,18 +804,6 @@
           if (grid[c][r].id === "wave") { var el = cellEl(c, r); if (el) el.classList.add("bonus-hit"); }
         }
       }
-      /* True when some symbol is one short of a paying cluster (8 to match). */
-      function nearMatch() {
-        var counts = {};
-        for (var c = 0; c < COLS; c++) for (var r = 0; r < ROWS; r++) { var id = grid[c][r].id; counts[id] = (counts[id] || 0) + 1; }
-        var wild = counts["wave"] || 0, best = 0;
-        SYMBOLS.forEach(function (s) {
-          var eff = s.id === "wave" ? (counts["wave"] || 0) : (counts[s.id] || 0) + wild;
-          if (eff > best) best = eff;
-        });
-        return best === MIN_MATCH - 1;
-      }
-
       /* ================= The tumble ================= */
       async function tumble() {
         if (spinning) return;
@@ -836,9 +824,10 @@
         freshGrid();
         renderGrid("dropAll");
         for (var tc = 0; tc < COLS; tc++) (function (c) { setTimeout(function () { sndTick(); }, 120 + c * 50); })(tc);
-        /* Anticipation while the board drops: 2 waves (one away from the
-           bonus) or a symbol one short of a paying cluster. */
-        var dropAnti = (countWaves() === BONUS_MIN - 1 || nearMatch());
+        /* Anticipation while the board drops: only when the board is one
+           Cove Wave short of the bonus (2 waves — one more triggers the
+           10 free spins). Never for regular 8-match symbols. */
+        var dropAnti = (countWaves() === BONUS_MIN - 1);
         if (dropAnti) startAnticipation([gridFrame]);
         await sleep(reducedMotion() ? 60 : 620);
         if (dropAnti) stopAnticipation();
@@ -908,7 +897,10 @@
           sndFall();
           renderGrid({ newCounts: newCounts, moved: moved });
           for (var rc = 0; rc < COLS; rc++) if (newCounts[rc] > 0) (function (c) { setTimeout(function () { sndTick(); }, 60 + c * 40); })(rc);
-          var refillAnti = bonusQueued === 0 && (countWaves() === BONUS_MIN - 1 || nearMatch());
+          /* Bonus-only anticipation on the refill: shake while the new
+             symbols drop only if the board is one Cove Wave short of the
+             bonus (2 waves) and no bonus is already queued. */
+          var refillAnti = bonusQueued === 0 && countWaves() === BONUS_MIN - 1;
           if (refillAnti) startAnticipation([gridFrame]);
           await sleep(reducedMotion() ? 60 : 560);
           if (refillAnti) stopAnticipation();
