@@ -177,29 +177,47 @@
       .cheer img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; flex: none; }
       .cheer .who { font-family: "Baloo 2", cursive; font-weight: 800; font-size: 1rem; line-height: 1.1; }
       .cheer .say { font-weight: 700; font-size: .92rem; }
-      .scene-strip {
-        display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 10px;
-        -webkit-overflow-scrolling: touch;
+      .village-scene {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+        background: linear-gradient(180deg, #a8dcec 0%, #cdeeda 55%, #f6dfae 100%);
+        border: 3px solid var(--panel-edge); border-radius: 20px;
+        padding: 12px; margin-bottom: 12px; box-shadow: var(--shadow);
       }
-      .villager {
-        flex: 0 0 122px; text-align: center; cursor: pointer;
-        background: var(--panel); border: 2px solid var(--panel-edge);
-        border-radius: 16px; padding: 10px 6px 8px; box-shadow: var(--shadow);
+      .lot {
+        position: relative; text-align: center; cursor: pointer;
+        background: rgba(255, 250, 241, 0.92);
+        border: 2px solid var(--panel-edge); border-radius: 16px;
+        padding: 12px 4px 8px;
       }
-      .villager img {
-        width: 62px; height: 62px; border-radius: 50%; object-fit: cover;
-        border: 3px solid var(--gold); display: block; margin: 0 auto 4px;
+      .lot .house { font-size: 2.5rem; line-height: 1; display: block; }
+      .lot .theme {
+        position: absolute; top: -8px; right: 6px; font-size: 1.2rem;
+        background: var(--panel); border: 2px solid var(--gold); border-radius: 50%;
+        width: 30px; height: 30px; line-height: 27px;
       }
-      .villager .robot {
-        width: 62px; height: 62px; border-radius: 50%; margin: 0 auto 4px;
-        background: var(--bg-soft); border: 3px solid var(--gold);
-        font-size: 2rem; line-height: 58px;
+      .lot img {
+        width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+        border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25);
+        position: absolute; top: -10px; left: 6px; background: var(--panel);
       }
-      .villager .v-name { font-family: "Baloo 2", cursive; font-weight: 800; font-size: .92rem; line-height: 1.1; }
-      .villager .v-build { font-size: .78rem; font-weight: 700; color: var(--ink-soft); }
-      .villager .v-bank { font-size: .8rem; font-weight: 800; color: var(--teal-dark); margin-top: 2px; }
-      .villager.locked { opacity: .7; }
-      .villager.locked img { filter: grayscale(.5); border-color: var(--panel-edge); }
+      .lot .robot-face {
+        width: 40px; height: 40px; border-radius: 50%;
+        position: absolute; top: -10px; left: 6px;
+        background: var(--panel); border: 2px solid #fff;
+        font-size: 1.4rem; line-height: 38px;
+        box-shadow: 0 2px 6px rgba(0,0,0,.25);
+      }
+      .lot .l-name { font-family: "Baloo 2", cursive; font-weight: 800; font-size: .88rem; line-height: 1.1; margin-top: 2px; }
+      .lot .l-sub { font-size: .76rem; font-weight: 800; color: var(--ink-soft); }
+      .lot .l-bank { font-size: .8rem; font-weight: 800; color: var(--teal-dark); margin-top: 2px; }
+      .lot .l-bank.full { color: var(--coral-dark); animation: bankBounce 1s ease-in-out infinite alternate; }
+      @keyframes bankBounce { from { transform: scale(1); } to { transform: scale(1.08); } }
+      .lot.locked {
+        background: rgba(255, 250, 241, 0.45);
+        border-style: dashed; color: var(--ink-soft);
+      }
+      .lot.locked .house { font-size: 2rem; opacity: .75; }
+      .lot .stars { color: var(--gold); font-size: .8rem; letter-spacing: .05em; }
       .toast {
         position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
         background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 99px;
@@ -252,7 +270,7 @@
         </div>
       </div>
 
-      <div class="scene-strip" id="sceneStrip" aria-label="The village"></div>
+      <div class="village-scene" id="villageScene" aria-label="The village"></div>
 
       <section class="panel" aria-label="Farm">
         <h2>🌱 Your Farm</h2>
@@ -537,37 +555,56 @@
         if (g) setCheer(g);
       }
 
-      /* ---- village scene strip ---- */
+      /* ---- village scene: the actual buildings on their lots ---- */
       var GIRL_FOR_BUILDING = { canvas: "kim", cottage: "trish", shack: "sandy", workshop: "gladys", shed: "sprocket" };
+      var HOUSE_FOR_BUILDING = { canvas: "🏠", cottage: "🏡", shack: "🏖️", workshop: "🏠", shed: "🏠" };
       function renderScene() {
         var now = Date.now();
-        var strip = document.getElementById("sceneStrip");
-        strip.innerHTML = "";
+        var scene = document.getElementById("villageScene");
+        scene.innerHTML = "";
         BUILDINGS.forEach(function (bDef, i) {
           var b = state.buildings[i];
           var g = GIRLS[GIRL_FOR_BUILDING[bDef.id]];
           var d = document.createElement("div");
-          d.className = "villager" + (b.owned ? "" : " locked");
-          var face = g.img
-            ? '<img src="' + g.img + '" alt="' + g.who + '" />'
-            : '<div class="robot">🤖</div>';
-          var sub;
-          if (!b.owned) sub = '<div class="v-bank">🔒 🐚 ' + bDef.cost + ' to build</div>';
-          else {
+          if (!b.owned) {
+            d.className = "lot locked";
+            d.innerHTML = '<span class="house">🚧</span>' +
+              '<div class="l-name">Empty lot</div>' +
+              '<div class="l-sub">' + bDef.emoji + " " + bDef.name + '</div>' +
+              '<div class="l-bank">🐚 ' + bDef.cost + ' to build</div>';
+            d.addEventListener("click", function () {
+              if (state.shells < bDef.cost) { Sfx.thud(); toast(g.who + "'s place costs 🐚 " + bDef.cost + " — keep harvesting! 🏠"); return; }
+              buyBuilding(i);
+            });
+          } else {
             var banked = bankedNow(b, now);
-            sub = '<div class="v-bank">' + (banked > 0 ? "💰 🐚 " + banked + " — tap to collect!" : "Lv " + b.level + " · 🐚 " + buildingRate(b) + "/hr") + '</div>';
+            var stars = "";
+            for (var s = 0; s < Math.min(5, b.level); s++) stars += "⭐";
+            d.className = "lot";
+            var face = g.img
+              ? '<img src="' + g.img + '" alt="' + g.who + '" />'
+              : '<div class="robot-face">🤖</div>';
+            d.innerHTML = face + '<span class="theme">' + bDef.emoji + '</span>' +
+              '<span class="house">' + HOUSE_FOR_BUILDING[bDef.id] + '</span>' +
+              '<div class="l-name">' + bDef.name + '</div>' +
+              '<div class="stars">' + stars + '</div>' +
+              (banked > 0
+                ? '<div class="l-bank full">💰 🐚 ' + banked + " — tap to collect!</div>"
+                : '<div class="l-sub">Lv ' + b.level + " · 🐚 " + buildingRate(b) + "/hr</div>");
+            d.addEventListener("click", function () {
+              var banked2 = bankedNow(b, Date.now());
+              if (banked2 > 0) collectBuilding(i);
+              else { Sfx.click(); toast(g.who + "'s basket is empty — it fills up over time! ⏱"); }
+            });
           }
-          d.innerHTML = face +
-            '<div class="v-name">' + g.who + '</div>' +
-            '<div class="v-build">' + bDef.emoji + " " + bDef.name.replace("Trish's ", "").replace("Sandy's ", "").replace("Gladys's ", "").replace("Sprocket's ", "").replace("The ", "") + '</div>' + sub;
-          d.addEventListener("click", function () {
-            if (!b.owned) { Sfx.click(); toast(g.who + "'s place costs 🐚 " + bDef.cost + " — build it below! 🏠"); return; }
-            var banked = bankedNow(b, Date.now());
-            if (banked > 0) collectBuilding(i);
-            else { Sfx.click(); toast(g.who + "'s basket is empty — it fills up over time! ⏱"); }
-          });
-          strip.appendChild(d);
+          scene.appendChild(d);
         });
+        /* a sunny filler lot so the grid stays even */
+        var sun = document.createElement("div");
+        sun.className = "lot";
+        sun.style.cursor = "default";
+        sun.innerHTML = '<span class="house">🌴</span><div class="l-name">Cove Beach</div><div class="l-sub">The girls live here! 🏖️</div>';
+        scene.appendChild(sun);
       }
 
       function render() {
