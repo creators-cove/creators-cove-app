@@ -437,7 +437,13 @@
         return extra[n - START_PLOTS] || 300;
       }
       function buildingDef(id) { return BUILDINGS.filter(function (b) { return b.id === id; })[0]; }
-      function upgradeCost(bState) { return Math.round(buildingDef(bState.id).cost * (bState.level + 1)); }
+      function upgradeCost(bState) {
+        var def = buildingDef(bState.id);
+        /* The Salty Canvas starts owned, so its build cost is 0 — upgrades must
+           not be free: give it a base of 40, the same ratio as the other buildings. */
+        var base = def.cost > 0 ? def.cost : 40;
+        return Math.round(base * (bState.level + 1));
+      }
       function buildingRate(bState) { return Math.round(buildingDef(bState.id).rate * (1 + 0.5 * (bState.level - 1))); }
 
       /* ================= Save / load ================= */
