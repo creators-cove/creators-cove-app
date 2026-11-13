@@ -250,6 +250,8 @@
         animation-name: snowfall; animation-timing-function: linear; animation-iteration-count: infinite;
       }
       @keyframes snowfall { to { transform: translateY(112vh) translateX(5vw) rotate(300deg); } }
+      .decor-strip { grid-column: 1 / -1; }
+      .decor-row { font-size: 1.9rem; letter-spacing: .2em; line-height: 1.2; }
       #crabBtn {
         position: fixed; bottom: 84px; left: -12%; display: none; z-index: 60;
         background: none; border: none; font-size: 1.9rem; cursor: pointer;
@@ -333,9 +335,15 @@
       </section>
 
       <section class="panel" aria-label="Grand project">
-        <h2>🎡 Grand Project</h2>
-        <p class="note">One giant build for the whole village to save toward.</p>
-        <div class="building owned" id="grand"></div>
+        <h2>🎡 Grand Projects</h2>
+        <p class="note">Giant builds for the whole village to save toward — each one speeds up every building you own.</p>
+        <div class="buildings" id="grand"></div>
+      </section>
+
+      <section class="panel" aria-label="Village decorations">
+        <h2>🎀 Village Decorations</h2>
+        <p class="note">Pure pretty. Everything you buy shows up in the village scene up top.</p>
+        <div class="buildings" id="decor"></div>
       </section>
 
       <section class="panel" aria-label="Milestones">
@@ -474,7 +482,7 @@
 
       /* ================= Game data ================= */
       var SAVE_KEY = "cove-farm-village-v1";
-      var MAX_PLOTS = 12;
+      var MAX_PLOTS = 18;
       var START_PLOTS = 6;
       var WITHER_MS = 12 * 60 * 60 * 1000; /* withers 12h after ready */
       var BANK_CAP_HOURS = 8;
@@ -506,7 +514,9 @@
 
       function plotCost(n) { /* cost of the (n+1)th plot, n = current count */
         var extra = [50, 80, 120, 170, 230, 300];
-        return extra[n - START_PLOTS] || 300;
+        var field = [500, 700, 950, 1250, 1600, 2000]; /* the Back Field is pricey land */
+        if (n - START_PLOTS < extra.length) return extra[n - START_PLOTS];
+        return field[n - 12] || 2000;
       }
       function buildingDef(id) { return BUILDINGS.filter(function (b) { return b.id === id; })[0]; }
       function upgradeCost(bState) {
@@ -519,6 +529,7 @@
       function buildingRate(bState) {
         var r = buildingDef(bState.id).rate * (1 + 0.5 * (bState.level - 1));
         if (state.grand && state.grand.wheel) r *= 1.25; /* the Ferris wheel speeds up the whole village */
+        if (state.grand && state.grand.pier) r *= 1.25; /* and the Cove Pier speeds it up again */
         return Math.round(r);
       }
 
@@ -529,7 +540,7 @@
         var buildings = BUILDINGS.map(function (b) {
           return { id: b.id, owned: b.id === "canvas", level: 1, banked: 0, lastBankedAt: Date.now() };
         });
-        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false }, grand: { wheel: false }, stats: { harvested: 0, earned: 0 }, milestones: {} };
+        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false }, grand: { wheel: false, pier: false }, stats: { harvested: 0, earned: 0 }, milestones: {}, decor: {} };
       }
       var state = defaultState();
       function save() {
@@ -563,7 +574,9 @@
           if (typeof state.supplies.sprinkler !== "number") state.supplies.sprinkler = 0;
           if (typeof state.supplies.miracle !== "number") state.supplies.miracle = 0;
           if (!state.upgrades) state.upgrades = { baskets: false, bees: false, hoe: false };
-          if (!state.grand) state.grand = { wheel: false };
+          if (!state.grand) state.grand = { wheel: false, pier: false };
+          if (typeof state.grand.pier !== "boolean") state.grand.pier = false;
+          if (!state.decor) state.decor = {};
           if (!state.stats) state.stats = { harvested: 0, earned: 0 };
           if (typeof state.stats.harvested !== "number") state.stats.harvested = 0;
           if (typeof state.stats.earned !== "number") state.stats.earned = 0;
@@ -724,12 +737,35 @@
           }
           scene.appendChild(d);
         })();
+        /* the second grand project lot */
+        (function () {
+          var d = document.createElement("div");
+          if (!state.grand.pier) {
+            d.className = "lot locked";
+            d.innerHTML = '<span class="house">🌉</span><div class="l-name">The Cove Pier</div><div class="l-sub">Grand Project 2</div><div class="l-bank">🐚 ' + PIER_COST + ' to build</div>';
+            d.addEventListener("click", function () { buildPier(); });
+          } else {
+            d.className = "lot";
+            d.innerHTML = '<span class="theme">🌉</span><span class="house">🌉</span><div class="l-name">The Cove Pier</div><div class="l-sub">Grand Project ✓</div><div class="l-bank">Village earns +25% more!</div>';
+            d.addEventListener("click", function () { Sfx.click(); toast("The Cove Pier stretches over the waves — the village earns 25% faster again. 🌉"); });
+          }
+          scene.appendChild(d);
+        })();
         /* a sunny filler lot so the grid stays even */
         var sun = document.createElement("div");
         sun.className = "lot";
         sun.style.cursor = "default";
         sun.innerHTML = '<span class="house">🎄</span><div class="l-name">Winter Cove</div><div class="l-sub">Snow much fun! ⛄</div>';
         scene.appendChild(sun);
+        /* the decorations strip — everything pretty the player has bought */
+        var ownedDecor = DECORATIONS.filter(function (dc) { return state.decor[dc.id]; });
+        if (ownedDecor.length) {
+          var strip = document.createElement("div");
+          strip.className = "lot decor-strip";
+          strip.style.cursor = "default";
+          strip.innerHTML = '<div class="decor-row">' + ownedDecor.map(function (dc) { return dc.emoji; }).join(" ") + '</div><div class="l-name">Village Decorations</div>';
+          scene.appendChild(strip);
+        }
       }
 
       function render() {
@@ -774,7 +810,7 @@
           (function (idx) {
             var d = document.createElement("div");
             d.className = "plot locked";
-            d.innerHTML = '<span class="emoji">🔒</span><span class="lbl">New plot</span><div class="time">🐚 ' + plotCost(idx) + ' shells</div>';
+            d.innerHTML = '<span class="emoji">🔒</span><span class="lbl">' + (idx >= 12 ? "Back Field" : "New plot") + '</span><div class="time">🐚 ' + plotCost(idx) + ' shells</div>';
             d.addEventListener("click", function () { buyPlot(); });
             plotsEl.appendChild(d);
           })(p);
@@ -783,6 +819,7 @@
         renderOrders(now);
         renderShop();
         renderGrand();
+        renderDecor();
         renderMilestones();
 
         /* ---- buildings ---- */
@@ -1050,7 +1087,9 @@
         { id: "tycoon", emoji: "👑", name: "Shell Tycoon", prize: 500, desc: "Earn 10,000 shells all-time",
           test: function () { return state.stats.earned >= 10000; }, prog: function () { return Math.min(state.stats.earned, 10000) + "/10,000 earned"; } },
         { id: "wheel", emoji: "🎡", name: "Big Wheel", prize: 750, desc: "Build the Cove Ferris Wheel",
-          test: function () { return !!(state.grand && state.grand.wheel); }, prog: function () { return state.grand && state.grand.wheel ? "Done!" : "Not built yet"; } }
+          test: function () { return !!(state.grand && state.grand.wheel); }, prog: function () { return state.grand && state.grand.wheel ? "Done!" : "Not built yet"; } },
+        { id: "pier", emoji: "🌉", name: "Pier Builder", prize: 1500, desc: "Build the Cove Pier",
+          test: function () { return !!(state.grand && state.grand.pier); }, prog: function () { return state.grand && state.grand.pier ? "Done!" : "Not built yet"; } }
       ];
       function checkMilestones() {
         var hits = [], total = 0;
@@ -1096,18 +1135,90 @@
         toast("🎡 The Cove Ferris Wheel is built! Village earnings +25%!");
         save(); render();
       }
+      var PIER_COST = 15000;
+      function buildPier() {
+        if (state.grand.pier) return;
+        if (!state.grand.wheel) { Sfx.thud(); toast("One grand project at a time — the Ferris Wheel comes first! 🎡"); return; }
+        if (state.shells < PIER_COST) { Sfx.thud(); toast("The Cove Pier costs 🐚 " + PIER_COST + " — keep saving, tycoon!"); return; }
+        state.shells -= PIER_COST;
+        state.grand.pier = true;
+        Sfx.build();
+        setCheer("kim", "THE COVE PIER IS OPEN! The village earns 25% faster AGAIN — look at that view! 🌉");
+        toast("🌉 The Cove Pier is built! Village earnings +25% more!");
+        save(); render();
+      }
+      function buildGrand(key) {
+        if (key === "wheel") buildWheel();
+        else if (key === "pier") buildPier();
+      }
       function renderGrand() {
         var el = document.getElementById("grand");
         if (!el) return;
-        var built = state.grand.wheel;
-        el.innerHTML = '<div class="b-emoji">🎡</div>' +
-          '<div class="b-info"><div class="b-name">🎡 Cove Ferris Wheel' + (built ? " · Built ✓" : "") + "</div>" +
-          '<div class="b-desc">' + (built ? "It turns over the Cove day and night — every building earns 25% faster." : "The biggest build in Cove history. Once it is up, EVERY building earns 25% faster, forever.") + "</div>" +
-          (built ? "" : '<div class="b-bank">You have 🐚 ' + state.shells + " of 🐚 " + WHEEL_COST + "</div>") + "</div>" +
-          (built ? '<button class="btn ghost" type="button" disabled>Built ✓</button>'
-                 : '<button class="btn gold" type="button" id="wheelBtn"' + (state.shells < WHEEL_COST ? " disabled" : "") + ">Build · 🐚 " + WHEEL_COST + "</button>");
-        var btn = document.getElementById("wheelBtn");
-        if (btn) btn.addEventListener("click", buildWheel);
+        el.innerHTML = "";
+        var projects = [
+          { key: "wheel", emoji: "🎡", name: "Cove Ferris Wheel", cost: WHEEL_COST, built: state.grand.wheel, locked: false,
+            desc: "The biggest build in Cove history. Once it is up, EVERY building earns 25% faster, forever.",
+            builtDesc: "It turns over the Cove day and night — every building earns 25% faster." },
+          { key: "pier", emoji: "🌉", name: "The Cove Pier", cost: PIER_COST, built: state.grand.pier, locked: !state.grand.wheel,
+            desc: "A grand pier stretching out over the water. Once it opens, EVERY building earns another 25% faster.",
+            builtDesc: "Open for strolling over the waves — the village earns 25% faster again." }
+        ];
+        projects.forEach(function (p) {
+          var d = document.createElement("div");
+          d.className = "building owned";
+          var info = '<div class="b-info"><div class="b-name">' + p.emoji + " " + p.name + (p.built ? " · Built ✓" : "") + "</div>" +
+            '<div class="b-desc">' + (p.built ? p.builtDesc : p.desc) + "</div>" +
+            (!p.built && !p.locked ? '<div class="b-bank">You have 🐚 ' + state.shells + " of 🐚 " + p.cost + "</div>" : "") +
+            (!p.built && p.locked ? '<div class="b-bank">Finish the Ferris Wheel first!</div>' : "") + "</div>";
+          var btn = p.built
+            ? '<button class="btn ghost" type="button" disabled>Built ✓</button>'
+            : '<button class="btn gold" type="button" data-grand="' + p.key + '"' + (p.locked || state.shells < p.cost ? " disabled" : "") + ">Build · 🐚 " + p.cost + "</button>";
+          d.innerHTML = '<div class="b-emoji">' + p.emoji + "</div>" + info + '<div style="display:flex;flex-direction:column;gap:6px">' + btn + "</div>";
+          el.appendChild(d);
+        });
+        el.querySelectorAll("button[data-grand]").forEach(function (btn) {
+          btn.addEventListener("click", function () { buildGrand(btn.getAttribute("data-grand")); });
+        });
+      }
+
+      /* ================= Village decorations ================= */
+      var DECORATIONS = [
+        { id: "planters", emoji: "🌷", name: "Flower Planters", cost: 150 },
+        { id: "snowman", emoji: "⛄", name: "Village Snowman", cost: 180 },
+        { id: "benches", emoji: "🪑", name: "Boardwalk Benches", cost: 200 },
+        { id: "flamingos", emoji: "🦩", name: "Flamingo Family", cost: 220 },
+        { id: "lamps", emoji: "🏮", name: "Lamp Posts", cost: 250 },
+        { id: "fountain", emoji: "⛲", name: "The Cove Fountain", cost: 300 }
+      ];
+      function buyDecor(id) {
+        var item = null;
+        DECORATIONS.forEach(function (dc) { if (dc.id === id) item = dc; });
+        if (!item || state.decor[id]) return;
+        if (state.shells < item.cost) { Sfx.thud(); toast("That costs 🐚 " + item.cost + " — keep harvesting!"); return; }
+        state.shells -= item.cost;
+        state.decor[id] = true;
+        Sfx.build();
+        toast(item.emoji + " " + item.name + " is up in the village!");
+        save(); render();
+      }
+      function renderDecor() {
+        var el = document.getElementById("decor");
+        if (!el) return;
+        el.innerHTML = "";
+        DECORATIONS.forEach(function (dc) {
+          var owned = !!state.decor[dc.id];
+          var d = document.createElement("div");
+          d.className = "building owned";
+          d.innerHTML = '<div class="b-emoji">' + dc.emoji + "</div>" +
+            '<div class="b-info"><div class="b-name">' + dc.emoji + " " + dc.name + "</div>" +
+            '<div class="b-desc">' + (owned ? "On display in the village." : "Pure pretty — shows off in the village scene.") + "</div></div>" +
+            (owned ? '<button class="btn ghost" type="button" disabled>On display ✓</button>'
+                   : '<button class="btn gold" type="button" data-decor="' + dc.id + '"' + (state.shells < dc.cost ? " disabled" : "") + ">Buy · 🐚 " + dc.cost + "</button>");
+          el.appendChild(d);
+        });
+        el.querySelectorAll("button[data-decor]").forEach(function (btn) {
+          btn.addEventListener("click", function () { buyDecor(btn.getAttribute("data-decor")); });
+        });
       }
 
       /* ---- seed picker ---- */
