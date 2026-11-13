@@ -34,15 +34,16 @@
       .stage { position: relative; border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); border: 3px solid var(--panel-edge); background: #8fd4e8; touch-action: none; }
       canvas { display: block; width: 100%; height: auto; }
       .overlay {
-        position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background: rgba(16, 42, 54, .72); color: #fdf6e3; text-align: center; padding: 18px; z-index: 6;
+        position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+        background: rgba(16, 42, 54, .72); color: #fdf6e3; text-align: center; padding: 12px 14px; z-index: 6;
+        overflow-y: auto;
       }
-      .overlay h2 { font-family: "Baloo 2", cursive; font-size: 1.7rem; margin: 0 0 6px; }
-      .overlay p { font-weight: 700; margin: 0 0 12px; max-width: 520px; }
+      .overlay h2 { font-family: "Baloo 2", cursive; font-size: 1.3rem; margin: 0 0 4px; }
+      .overlay p { font-weight: 700; margin: 0 0 8px; max-width: 520px; font-size: .92rem; }
       .overlay.hidden { display: none; }
-      .girl-row { display: flex; gap: 10px; margin: 4px 0 14px; flex-wrap: wrap; justify-content: center; }
-      .girl-pick { border: 3px solid transparent; background: rgba(255,255,255,.12); border-radius: 16px; padding: 8px 10px 6px; cursor: pointer; font-family: inherit; color: #fdf6e3; font-weight: 800; font-size: .85rem; }
-      .girl-pick img { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 4px; border: 2px solid #fff; }
+      .girl-row { display: flex; gap: 8px; margin: 2px 0 10px; flex-wrap: wrap; justify-content: center; }
+      .girl-pick { border: 3px solid transparent; background: rgba(255,255,255,.12); border-radius: 16px; padding: 6px 8px 4px; cursor: pointer; font-family: inherit; color: #fdf6e3; font-weight: 800; font-size: .82rem; }
+      .girl-pick img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 3px; border: 2px solid #fff; }
       .girl-pick.on { border-color: var(--gold); background: rgba(255,255,255,.25); }
       .big-btn { border: none; border-radius: 99px; padding: 12px 26px; cursor: pointer; font-family: "Baloo 2", cursive; font-weight: 800; font-size: 1.1rem; background: var(--gold); color: #4a2c00; }
       .touch-ui { position: absolute; inset: auto 0 0 0; display: none; justify-content: space-between; padding: 0 12px 12px; z-index: 5; pointer-events: none; }
@@ -85,8 +86,8 @@
 
         <div class="touch-ui" id="touchUi">
           <div class="side">
-            <button class="tbtn" id="btnLeft" type="button" aria-label="Move left">◀</button>
-            <button class="tbtn" id="btnRight" type="button" aria-label="Move right">▶</button>
+            <button class="tbtn" id="btnLeft" type="button" aria-label="Move left">◀︎</button>
+            <button class="tbtn" id="btnRight" type="button" aria-label="Move right">▶︎</button>
           </div>
           <div class="side">
             <button class="tbtn jump" id="btnJump" type="button" aria-label="Jump">JUMP</button>
@@ -95,10 +96,10 @@
 
         <div class="overlay" id="startOverlay">
           <h2>⭐ The Golden Shells ⭐</h2>
-          <p>Run the beach, cross the boardwalk, swim the lagoon and glide off the pier — the lighthouse keeper is waiting. Stomp crabs, dodge jellyfish, and grab every shell you can!</p>
+          <p>Run the beach, cross the boardwalk, swim the lagoon and glide off the pier to the lighthouse. Stomp crabs, dodge jellyfish!</p>
           <div class="girl-row" id="girlRow"></div>
           <button class="big-btn" id="startBtn" type="button">Start the Quest!</button>
-          <p style="margin-top:12px;font-size:.85rem;opacity:.85">Move: ◀ ▶ buttons or arrow keys · Jump: button or Space<br/>In the water, tap Jump to paddle. In the air, HOLD Jump to glide.</p>
+          <p style="margin-top:8px;font-size:.8rem;opacity:.85">Hold JUMP in the air to glide · In the water, tap JUMP to paddle</p>
         </div>
 
         <div class="overlay hidden" id="endOverlay">
