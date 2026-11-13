@@ -295,7 +295,7 @@
         </div>
         <div class="hud-card">
           <div>
-            <div class="big">💰 <span id="hourlyRate">0</span>/hr</div>
+            <div class="big">🐚 <span id="hourlyRate">0</span>/hr</div>
             <div class="small">Village earns</div>
           </div>
         </div>
@@ -713,7 +713,7 @@
               '<div class="l-name">' + bDef.name + '</div>' +
               '<div class="stars">' + stars + '</div>' +
               (banked > 0
-                ? '<div class="l-bank full">💰 🐚 ' + banked + " — tap to collect!</div>"
+                ? '<div class="l-bank full">🐚 ' + banked + " — tap to collect!</div>"
                 : '<div class="l-sub">Lv ' + b.level + " · 🐚 " + buildingRate(b) + "/hr</div>");
             d.addEventListener("click", function () {
               var banked2 = bankedNow(b, Date.now());
@@ -1082,7 +1082,7 @@
           test: function () { return state.stats.harvested >= 200; }, prog: function () { return Math.min(state.stats.harvested, 200) + "/200 crops"; } },
         { id: "founder", emoji: "🏘️", name: "Village Founder", prize: 300, desc: "Build every building in the village",
           test: function () { return ownedCount() >= BUILDINGS.length; }, prog: function () { return ownedCount() + "/" + BUILDINGS.length + " buildings"; } },
-        { id: "roller", emoji: "💰", name: "High Roller", prize: 250, desc: "Hold 2,500 shells at once",
+        { id: "roller", emoji: "🐚", name: "High Roller", prize: 250, desc: "Hold 2,500 shells at once",
           test: function () { return state.shells >= 2500; }, prog: function () { return Math.min(state.shells, 2500) + "/2,500 shells"; } },
         { id: "tycoon", emoji: "👑", name: "Shell Tycoon", prize: 500, desc: "Earn 10,000 shells all-time",
           test: function () { return state.stats.earned >= 10000; }, prog: function () { return Math.min(state.stats.earned, 10000) + "/10,000 earned"; } },
@@ -1326,7 +1326,7 @@
         addShells(banked);
         b.banked = 0; b.lastBankedAt = Date.now();
         Sfx.coin();
-        toast("Collected 🐚 " + banked + " from " + bDef.name + "! 💰");
+        toast("Collected 🐚 " + banked + " from " + bDef.name + "!");
         save(); render();
       }
       function upgradeBuilding(i) {
