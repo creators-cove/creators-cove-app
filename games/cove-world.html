@@ -250,7 +250,37 @@
       }
       /* ---------- Winter in the Cove ---------- */
       .lights { text-align: center; font-size: 1.1rem; letter-spacing: .3em; margin: 0 0 10px; }
-      body.winter .village-scene { background: linear-gradient(180deg, #bfe0f2 0%, #e6f4fd 55%, #ffffff 100%); }
+      /* ---------- Village moods ---------- */
+      .mood-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 10px; }
+      .mood-label { font-weight: 800; color: var(--ink-soft); font-size: .9rem; }
+      .mood-chip {
+        border: 2px solid var(--panel-edge); background: var(--panel); color: var(--ink);
+        border-radius: 99px; padding: 6px 12px; font-family: inherit;
+        font-weight: 800; font-size: .85rem; cursor: pointer;
+      }
+      .mood-chip.on { background: var(--teal); color: #fff; border-color: var(--teal-dark); }
+      .lights { display: none; }
+      body[data-mood="snow"] .lights, body[data-mood="night"] .lights { display: block; }
+      body[data-mood="snow"] .village-scene { background: linear-gradient(180deg, #bfe0f2 0%, #e6f4fd 55%, #ffffff 100%); }
+      body[data-mood="rain"] .village-scene { background: linear-gradient(180deg, #8fa8b8 0%, #b6c6cf 55%, #7d8b84 100%); }
+      body[data-mood="breezy"] .village-scene { background: linear-gradient(180deg, #a8dcec 0%, #ffe9b8 55%, #f6dfae 100%); }
+      body[data-mood="night"] .village-scene { background: linear-gradient(180deg, #1d2f52 0%, #33507e 55%, #5a6f8f 100%); }
+      .drop {
+        position: absolute; top: -4vh; opacity: .75;
+        animation-name: rainfall; animation-timing-function: linear; animation-iteration-count: infinite;
+      }
+      @keyframes rainfall { to { transform: translateY(112vh) translateX(-7vw); } }
+      .leaf {
+        position: absolute; left: -6%;
+        animation-name: windblow; animation-timing-function: linear; animation-iteration-count: infinite;
+      }
+      @keyframes windblow { to { transform: translateX(118vw) translateY(10vh) rotate(340deg); } }
+      .star {
+        position: absolute; opacity: .7;
+        animation-name: twinkle; animation-timing-function: ease-in-out;
+        animation-iteration-count: infinite; animation-direction: alternate;
+      }
+      @keyframes twinkle { from { opacity: .15; transform: scale(.7); } to { opacity: .95; transform: scale(1.15); } }
       #snowLayer { position: fixed; inset: 0; pointer-events: none; z-index: 40; overflow: hidden; }
       .flake {
         position: absolute; top: -4vh; color: #ffffff; opacity: .85;
@@ -286,7 +316,7 @@
     <button id="muteBtn" class="sound-toggle" type="button" aria-pressed="true">🔊 Sound On</button>
     <div class="wrap">
       <h1>🌻 Cove <span class="tide">Farm &amp; Village</span></h1>
-      <p class="sub">Plant it, water it, come back and harvest it — then build up the whole beach town with the girls. ❄️ Winter has come to the Cove: snow, string lights and peppermint in the ground!</p>
+      <p class="sub">Plant it, water it, come back and harvest it — then build up the whole beach town with the girls. Pick a mood below — snow, rain, a breezy day, or a starry night.</p>
 
       <div class="hud">
         <div class="hud-card hud-main">
@@ -317,6 +347,14 @@
         </div>
       </div>
 
+      <div class="mood-row" id="moodRow" aria-label="Village mood">
+        <span class="mood-label">Mood:</span>
+        <button type="button" class="mood-chip" data-mood="sunny">☀️ Sunny</button>
+        <button type="button" class="mood-chip" data-mood="snow">❄️ Snow</button>
+        <button type="button" class="mood-chip" data-mood="rain">🌧️ Rain</button>
+        <button type="button" class="mood-chip" data-mood="breezy">🍂 Breezy</button>
+        <button type="button" class="mood-chip" data-mood="night">🌙 Night</button>
+      </div>
       <div class="lights" aria-hidden="true">✨🎄✨🔔✨🦌✨🎄✨</div>
       <div class="village-scene" id="villageScene" aria-label="The village"></div>
 
@@ -1065,15 +1103,50 @@
         scheduleCrab();
       }
 
-      /* ================= Winter snow ================= */
-      function makeSnow() {
+      /* ================= Village moods (weather the player picks) ================= */
+      var MOOD_KEY = "cove-farm-mood";
+      var MOODS = ["sunny", "snow", "rain", "breezy", "night"];
+      function buildFx(mood) {
         var layer = document.getElementById("snowLayer");
         if (!layer) return;
-        var html = "";
-        for (var i = 0; i < 22; i++) {
-          html += '<span class="flake" style="left:' + (Math.random() * 100) + "%;animation-duration:" + (6 + Math.random() * 7) + "s;animation-delay:" + (-Math.random() * 12) + "s;font-size:" + (10 + Math.random() * 9) + 'px">❄</span>';
+        var html = "", i;
+        if (mood === "snow") {
+          for (i = 0; i < 22; i++) {
+            html += '<span class="flake" style="left:' + (Math.random() * 100) + "%;animation-duration:" + (6 + Math.random() * 7) + "s;animation-delay:" + (-Math.random() * 12) + "s;font-size:" + (10 + Math.random() * 9) + 'px">❄</span>';
+          }
+        } else if (mood === "rain") {
+          for (i = 0; i < 26; i++) {
+            html += '<span class="drop" style="left:' + (Math.random() * 100) + "%;animation-duration:" + (0.7 + Math.random() * 0.5) + "s;animation-delay:" + (-Math.random() * 2) + "s;font-size:" + (10 + Math.random() * 4) + 'px">💧</span>';
+          }
+        } else if (mood === "breezy") {
+          for (i = 0; i < 16; i++) {
+            html += '<span class="leaf" style="top:' + (4 + Math.random() * 66) + "%;animation-duration:" + (7 + Math.random() * 6) + "s;animation-delay:" + (-Math.random() * 12) + "s;font-size:" + (14 + Math.random() * 8) + 'px">' + (i % 2 ? "🍁" : "🍂") + "</span>";
+          }
+        } else if (mood === "night") {
+          for (i = 0; i < 22; i++) {
+            html += '<span class="star" style="left:' + (Math.random() * 100) + "%;top:" + (2 + Math.random() * 53) + "%;animation-duration:" + (1.6 + Math.random() * 1.6) + "s;animation-delay:" + (-Math.random() * 3) + "s;font-size:" + (9 + Math.random() * 6) + 'px">✨</span>';
+          }
         }
         layer.innerHTML = html;
+      }
+      function setMood(mood) {
+        if (MOODS.indexOf(mood) < 0) mood = "snow";
+        document.body.setAttribute("data-mood", mood);
+        try { window.localStorage.setItem(MOOD_KEY, mood); } catch (e) { /* ignore */ }
+        buildFx(mood);
+        var chips = document.querySelectorAll(".mood-chip");
+        chips.forEach(function (chip) {
+          if (chip.getAttribute("data-mood") === mood) chip.classList.add("on");
+          else chip.classList.remove("on");
+        });
+      }
+      function initMood() {
+        var saved = "snow";
+        try { saved = window.localStorage.getItem(MOOD_KEY) || "snow"; } catch (e) { /* ignore */ }
+        setMood(saved);
+        document.querySelectorAll(".mood-chip").forEach(function (chip) {
+          chip.addEventListener("click", function () { Sfx.click(); setMood(chip.getAttribute("data-mood")); });
+        });
       }
 
       /* ================= Shells, stats & milestones ================= */
@@ -1364,8 +1437,7 @@
 
       /* ================= Boot ================= */
       load();
-      document.body.classList.add("winter");
-      makeSnow();
+      initMood();
       initCrab();
       checkDaily();
       render();
