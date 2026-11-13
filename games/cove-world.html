@@ -369,6 +369,17 @@
         <div class="picker-backdrop" id="pickerBackdrop"></div>
       </section>
 
+      <section class="panel" aria-label="Visit a neighbor">
+        <h2>👋 Visit a Neighbor</h2>
+        <p class="note">Every farm has its own code. Share yours so Cove friends can drop by, peek at your village, and lend a hand — a visit waters their crops and leaves them 10 shells. Your farm itself still lives on your phone; visiting just shares a picture of it.</p>
+        <div id="myFarmBox"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <input id="visitCode" type="text" placeholder="Friend's code — e.g. COVE-AB3F9K" maxlength="12" style="flex:1;min-width:170px;padding:10px;border-radius:10px;border:2px solid #cfe3ea;font-size:1rem;text-transform:uppercase" />
+          <button type="button" class="btn" id="visitBtn">🚶 Visit Farm</button>
+        </div>
+        <div id="visitView"></div>
+      </section>
+
       <section class="panel" aria-label="Orders board">
         <h2>📋 Orders Board</h2>
         <p class="note">The girls post orders here. Harvest what they ask for and you earn the normal shells PLUS the bonus!</p>
@@ -1435,9 +1446,235 @@
         toast("Fresh start! Happy planting. 🌱");
       });
 
+      /* ================= Visit a Neighbor (shared farm postcards) ================= */
+      var COVE_API_URL = "https://enabled-platypus-167183.upstash.io";
+      var COVE_API_KEY = "gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg";
+      var CODE_KEY = "cove-farm-code";
+      var NAME_KEY = "cove-farm-name";
+      var farmCode = "";
+      var farmName = "";
+      var lastPublish = 0;
+      var publishDirty = true;
+
+      function escHtml(s) {
+        return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+      function genCode() {
+        var chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789", out = "";
+        for (var i = 0; i < 6; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+        return "COVE-" + out;
+      }
+      function api(cmd) {
+        return fetch(COVE_API_URL, { method: "POST", headers: { "Authorization": "Bearer " + COVE_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(cmd) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { return j ? j.result : null; });
+      }
+      function apiReady() { return COVE_API_URL.indexOf("http") === 0; }
+
+      function farmSnapshot() {
+        var now = Date.now();
+        var plots = state.plots.map(function (p) {
+          if (!p.crop) return { crop: null };
+          return { crop: p.crop, plantedAt: p.plantedAt, readyAt: readyAt(p) };
+        });
+        var buildings = [];
+        state.buildings.forEach(function (b) { if (b.owned) buildings.push({ id: b.id, level: b.level, rate: buildingRate(b) }); });
+        var decor = [];
+        DECORATIONS.forEach(function (d) { if (state.decor[d.id]) decor.push(d.id); });
+        var mood = "snow";
+        try { mood = window.localStorage.getItem(MOOD_KEY) || "snow"; } catch (e) { /* ignore */ }
+        return {
+          v: 1, name: farmName || "A Cove Farm", code: farmCode, updatedAt: now,
+          shells: Math.floor(state.shells), villageLevel: villageLevel(), hourlyRate: hourlyRate(),
+          plots: plots, buildings: buildings, decor: decor,
+          wheel: !!(state.grand && state.grand.wheel), pier: !!(state.grand && state.grand.pier),
+          harvested: state.stats.harvested, earned: state.stats.earned, mood: mood
+        };
+      }
+      function publishFarm() {
+        if (!apiReady() || !farmCode) return;
+        lastPublish = Date.now();
+        publishDirty = false;
+        api(["SET", "farm:" + farmCode, JSON.stringify(farmSnapshot())])
+          .then(function () { /* quiet */ }, function () { publishDirty = true; });
+      }
+
+      function renderMyFarmBox() {
+        var box = document.getElementById("myFarmBox");
+        if (!box) return;
+        box.innerHTML =
+          "<div style='background:#fdf6e3;border:2px dashed #e3c878;border-radius:12px;padding:10px 12px'>" +
+          "<div style='font-size:1.05rem'>🏡 <strong>" + escHtml(farmName || "A Cove Farm") + "</strong></div>" +
+          "<div style='margin:4px 0'>Your farm code: <strong style='font-size:1.15rem;letter-spacing:1px'>" + farmCode + "</strong></div>" +
+          "<div class='note'>Name your farm: " +
+          "<input id='farmNameInput' type='text' maxlength='30' placeholder='e.g. Kim's Shell Farm' value='" + escHtml(farmName) + "' style='padding:7px;border-radius:8px;border:2px solid #cfe3ea;max-width:180px' /> " +
+          "<button type='button' class='btn' id='farmNameBtn'>Save name</button></div>" +
+          "<div class='note' id='giftNote'></div></div>";
+        document.getElementById("farmNameBtn").addEventListener("click", function () {
+          var v = document.getElementById("farmNameInput").value.replace(/^\s+|\s+$/g, "");
+          farmName = v.slice(0, 30);
+          try { window.localStorage.setItem(NAME_KEY, farmName); } catch (e) { /* ignore */ }
+          renderMyFarmBox();
+          publishDirty = true;
+          publishFarm();
+          toast(farmName ? "Farm named: " + farmName + " 🌻" : "Name cleared.");
+        });
+      }
+
+      function fetchGifts() {
+        if (!apiReady() || !farmCode) return;
+        api(["LRANGE", "gifts:" + farmCode, 0, -1])
+          .then(function (items) {
+            if (!items || !items.length) return;
+            var names = [], gifts = [], i;
+            for (i = 0; i < items.length; i++) {
+              try { gifts.push(JSON.parse(items[i])); } catch (e) { /* skip a bad entry */ }
+            }
+            if (!gifts.length) { api(["DEL", "gifts:" + farmCode]).then(function () { /* done */ }, function () { /* ignore */ }); return; }
+            for (i = 0; i < gifts.length; i++) {
+              if (gifts[i].from_name && names.indexOf(gifts[i].from_name) < 0) names.push(gifts[i].from_name);
+            }
+            var n = gifts.length, now = Date.now(), watered = 0;
+            state.shells += n * 10;
+            state.plots.forEach(function (p) {
+              if (!p.crop || p.watered) return;
+              var st = plotStage(p, now);
+              if (st === "seed" || st === "growing") { p.watered = true; watered++; }
+            });
+            save();
+            render();
+            toast("🎁 " + n + " neighbor visit" + (n > 1 ? "s" : "") + "! +" + (n * 10) + " 🐚" + (watered ? " — crops watered 💧" : ""));
+            var note = document.getElementById("giftNote");
+            if (note) note.innerHTML = "🎁 <strong>" + escHtml(names.join(", ")) + "</strong> stopped by and lent a hand — +" + (n * 10) + " 🐚" + (watered ? ", and your crops got watered 💧" : "") + ".";
+            api(["DEL", "gifts:" + farmCode]).then(function () { /* done */ }, function () { /* they may reappear once; harmless */ });
+          }, function () { /* offline — gifts wait for next time */ });
+      }
+
+      function fmtAgo(ts) {
+        var s = Math.floor((Date.now() - ts) / 1000);
+        if (s < 90) return "just now";
+        var m = Math.floor(s / 60); if (m < 60) return m + "m ago";
+        var h = Math.floor(m / 60); if (h < 24) return h + "h ago";
+        return Math.floor(h / 24) + "d ago";
+      }
+
+      function renderVisit(snap) {
+        var view = document.getElementById("visitView");
+        var now = Date.now();
+        var moodEmoji = { sunny: "☀️", snow: "❄️", rain: "🌧️", breezy: "🍂", night: "🌙" };
+        var bHtml = "";
+        (snap.buildings || []).forEach(function (b) {
+          var def = buildingDef(b.id);
+          if (!def) return;
+          bHtml += "<div style='text-align:center;min-width:54px'><div style='font-size:1.9rem'>" + def.emoji + "</div><div style='font-size:.62rem;color:#5b6b73'>" + escHtml(def.name) + "<br/>Lv " + b.level + " · 🐚 " + b.rate + "/hr</div></div>";
+        });
+        if (snap.wheel) bHtml += "<div style='text-align:center;min-width:54px'><div style='font-size:1.9rem'>🎡</div><div style='font-size:.62rem;color:#5b6b73'>Ferris Wheel</div></div>";
+        if (snap.pier) bHtml += "<div style='text-align:center;min-width:54px'><div style='font-size:1.9rem'>🌉</div><div style='font-size:.62rem;color:#5b6b73'>Cove Pier</div></div>";
+        var decorHtml = "";
+        (snap.decor || []).forEach(function (id) {
+          for (var i = 0; i < DECORATIONS.length; i++) if (DECORATIONS[i].id === id) decorHtml += DECORATIONS[i].emoji + " ";
+        });
+        var plotHtml = "";
+        (snap.plots || []).forEach(function (p) {
+          var cell = "·", label = "Empty";
+          if (p.crop && CROPS[p.crop]) {
+            var c = CROPS[p.crop];
+            if (now >= (p.readyAt || 0) + WITHER_MS) { cell = "🥀"; label = "Withered"; }
+            else if (now >= (p.readyAt || 0)) { cell = c.emoji; label = "Ready!"; }
+            else {
+              var total = (p.readyAt - p.plantedAt) || 1;
+              var pct = Math.floor(100 * (now - p.plantedAt) / total);
+              if (pct < 0) pct = 0;
+              if (pct > 99) pct = 99;
+              cell = pct < 45 ? "🌱" : c.emoji;
+              label = pct + "% grown";
+            }
+          }
+          plotHtml += "<div style='background:#fff;border:2px solid #e7ddc4;border-radius:10px;padding:7px 2px;text-align:center'><div style='font-size:1.3rem'>" + cell + "</div><div style='font-size:.6rem;color:#7a6a4f'>" + label + "</div></div>";
+        });
+        var helpedToday = false;
+        try { helpedToday = window.localStorage.getItem("cove-farm-helped-" + snap.code) === new Date().toDateString(); } catch (e) { /* ignore */ }
+        view.innerHTML =
+          "<div style='background:#eef7fa;border:2px solid #bcd9e4;border-radius:14px;padding:12px;margin-top:12px'>" +
+          "<div style='font-size:1.1rem'>🏡 <strong>" + escHtml(snap.name || "A Cove Farm") + "</strong> " + (moodEmoji[snap.mood] || "❄️") + "</div>" +
+          "<div class='note'>" + escHtml(snap.code) + " · Village Lv " + snap.villageLevel + " · 🐚 " + snap.shells + " · earns 🐚 " + snap.hourlyRate + "/hr · last tended " + fmtAgo(snap.updatedAt || now) + "</div>" +
+          "<div style='display:flex;flex-wrap:wrap;gap:6px;margin:10px 0'>" + bHtml + "</div>" +
+          (decorHtml ? "<div style='font-size:1.15rem;margin:2px 0 8px'>" + decorHtml + "</div>" : "") +
+          "<div style='display:grid;grid-template-columns:repeat(6,1fr);gap:6px'>" + plotHtml + "</div>" +
+          "<div class='note' style='margin-top:8px'>🌾 " + (snap.harvested || 0) + " harvests · 🐚 " + (snap.earned || 0) + " shells earned all-time</div>" +
+          "<div style='margin-top:10px;display:flex;gap:8px;flex-wrap:wrap'>" +
+          (helpedToday
+            ? "<button type='button' class='btn ghost' disabled>💧 You lent a hand here today — come back tomorrow</button>"
+            : "<button type='button' class='btn gold' id='helpBtn'>💧 Lend a hand — water their crops + gift 10 🐚</button>") +
+          "<button type='button' class='btn ghost' id='visitClose'>✖ Close</button>" +
+          "</div></div>";
+        document.getElementById("visitClose").addEventListener("click", function () { view.innerHTML = ""; });
+        var hb = document.getElementById("helpBtn");
+        if (hb) hb.addEventListener("click", function () { helpFarm(snap.code, snap.name); });
+      }
+
+      function visitFarm() {
+        var input = document.getElementById("visitCode");
+        var view = document.getElementById("visitView");
+        var code = (input.value || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
+        if (code && code.indexOf("COVE-") !== 0) code = "COVE-" + code.replace(/^COVE-?/, "");
+        if (!code || code.length < 8) { toast("Type a farm code first — like COVE-AB3F9K"); return; }
+        if (code === farmCode) { toast("That's your own farm, silly 😄"); return; }
+        if (!apiReady()) { toast("The boardwalk isn't open yet — try again later."); return; }
+        view.innerHTML = "<p class='note' style='margin-top:10px'>Walking down the boardwalk… 🚶</p>";
+        api(["GET", "farm:" + code])
+          .then(function (raw) {
+            var snap = null;
+            if (raw) { try { snap = JSON.parse(raw); } catch (e) { snap = null; } }
+            if (!snap) {
+              view.innerHTML = "<p class='note' style='margin-top:10px'>Hmm — no farm with that code yet. Check the code and try again. A farm shows up here after its owner has opened the game once.</p>";
+              return;
+            }
+            renderVisit(snap);
+          }, function () {
+            view.innerHTML = "<p class='note' style='margin-top:10px'>Couldn't reach the boardwalk (connection hiccup). Try again in a moment.</p>";
+          });
+      }
+
+      function helpFarm(code, ownerName) {
+        var today = new Date().toDateString();
+        var key = "cove-farm-helped-" + code;
+        try { if (window.localStorage.getItem(key) === today) { toast("You already lent a hand here today 💧"); return; } } catch (e) { /* ignore */ }
+        api(["LPUSH", "gifts:" + code, JSON.stringify({ from_code: farmCode, from_name: farmName || "A Cove neighbor", ts: Date.now() })])
+          .then(function () {
+            try { window.localStorage.setItem(key, today); } catch (e) { /* ignore */ }
+            var btn = document.getElementById("helpBtn");
+            if (btn) { btn.disabled = true; btn.textContent = "💧 Hand lent! They'll find your gift when they open their farm."; }
+            Sfx.click();
+            toast("You lent a hand at " + (ownerName || "their farm") + " 💧");
+          }, function () { toast("The boardwalk path washed out — try again in a moment."); });
+      }
+
+      /* every save also marks the postcard stale, so friends see a fresh farm */
+      var saveBeforeNet = save;
+      save = function () { saveBeforeNet(); publishDirty = true; };
+
+      function farmNetInit() {
+        try {
+          farmCode = window.localStorage.getItem(CODE_KEY) || "";
+          farmName = window.localStorage.getItem(NAME_KEY) || "";
+        } catch (e) { /* ignore */ }
+        if (!farmCode) {
+          farmCode = genCode();
+          try { window.localStorage.setItem(CODE_KEY, farmCode); } catch (e) { /* ignore */ }
+        }
+        renderMyFarmBox();
+        document.getElementById("visitBtn").addEventListener("click", visitFarm);
+        fetchGifts();
+        setTimeout(publishFarm, 4000);
+        setInterval(function () { if (publishDirty && Date.now() - lastPublish > 45000) publishFarm(); }, 20000);
+        document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden" && publishDirty) publishFarm(); });
+      }
+
       /* ================= Boot ================= */
       load();
       initMood();
+      farmNetInit();
       initCrab();
       checkDaily();
       render();
