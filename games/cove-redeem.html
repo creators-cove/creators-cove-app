@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Redeem a Prize — Creator's Cove</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --sea-top: #8fe0f2; --sea-mid: #2a9db8; --sea-deep: #0d5a74;
+        --gold: #ffc93c; --gold-deep: #e89b0c;
+        --panel: rgba(255, 248, 234, 0.96); --panel-ink: #17384a;
+        --shadow: 0 18px 40px rgba(4, 40, 56, 0.35);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Nunito", system-ui, sans-serif; color: var(--panel-ink);
+        background: radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.4), rgba(255,255,255,0) 60%),
+          linear-gradient(180deg, var(--sea-top) 0%, var(--sea-mid) 46%, var(--sea-deep) 100%);
+        min-height: 100vh; padding: 18px 14px 40px;
+      }
+      main { max-width: 520px; margin: 0 auto; }
+      .cove-back-btn{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:12px 12px 0;border-radius:999px;background:#ffffff;color:#12303e;font-weight:800;text-decoration:none;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+      .card {
+        background: var(--panel); border-radius: 24px; box-shadow: var(--shadow);
+        padding: 22px 18px; margin-top: 14px; text-align: center;
+        border: 3px solid var(--gold);
+      }
+      h1 { font-family: "Fredoka", sans-serif; font-size: 1.8rem; margin: 4px 0 6px; }
+      p { line-height: 1.5; }
+      .code-input {
+        width: 100%; font-family: "Fredoka", sans-serif; font-size: 1.35rem; letter-spacing: 0.1em;
+        text-align: center; padding: 12px; border-radius: 14px; border: 3px solid #cfe3ea;
+        text-transform: uppercase; margin: 10px 0;
+      }
+      .btn {
+        font-family: "Fredoka", sans-serif; font-weight: 700; cursor: pointer; display: inline-block;
+        border: 2px solid var(--gold-deep); border-radius: 999px; padding: 12px 22px;
+        background: linear-gradient(180deg, #ffe08a, var(--gold)); color: #4a2c00;
+        box-shadow: 0 3px 0 var(--gold-deep); font-size: 1.05rem; text-decoration: none;
+      }
+      .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--gold-deep); }
+      .btn.big { font-size: 1.2rem; padding: 14px 28px; }
+      .msg { margin-top: 14px; font-weight: 700; line-height: 1.5; min-height: 24px; }
+      .msg.err { color: #b3372c; }
+      .hidden { display: none; }
+      .note { font-size: 0.88rem; opacity: 0.85; }
+    </style>
+  </head>
+  <body>
+    <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+    <main>
+      <div class="card">
+        <div style="font-size:3rem" aria-hidden="true">🎁</div>
+        <h1>Redeem a Prize</h1>
+        <p>Won a prize in <strong>Cove Rips</strong>? Type your claim code below and your prize downloads right to your phone. Each code works <strong>once</strong>.</p>
+        <input class="code-input" id="codeInput" type="text" placeholder="RIPS-XXXXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+        <div><button class="btn" id="redeemBtn" type="button">Redeem my prize</button></div>
+        <div class="msg" id="msg" role="status" aria-live="polite"></div>
+        <div id="prizeArea" class="hidden">
+          <p style="font-size:1.1rem"><strong>🎉 Your prize: the Little Garden Witch Journal Kit!</strong></p>
+          <a class="btn big" id="downloadBtn" href="../downloads/gw-kit-7f3a9c2e.pdf" download>⬇️ Download my kit</a>
+          <p class="note">12 printable journal pages. Save it somewhere safe — your code has now been used.</p>
+        </div>
+        <p class="note" style="margin-top:16px;">No code yet? <a href="cove-rips.html">Play Cove Rips</a> — pull an Epic or Gold card and you win one.</p>
+      </div>
+    </main>
+
+    <script>
+      "use strict";
+      var COVE_API_URL = "https://enabled-platypus-167183.upstash.io";
+      var COVE_API_KEY = "gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg";
+
+      var input = document.getElementById("codeInput");
+      var btn = document.getElementById("redeemBtn");
+      var msg = document.getElementById("msg");
+      var prizeArea = document.getElementById("prizeArea");
+      var busy = false;
+
+      function api(cmd) {
+        return fetch(COVE_API_URL, { method: "POST", headers: { "Authorization": "Bearer " + COVE_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(cmd) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { return j ? j.result : null; });
+      }
+      function normalize(raw) {
+        var c = String(raw || "").replace(/\s+/g, "").toUpperCase();
+        if (c && c.indexOf("RIPS-") !== 0 && c.indexOf("RIPS") !== 0) c = "RIPS-" + c;
+        if (c.indexOf("RIPS-") !== 0 && c.indexOf("RIPS") === 0) c = "RIPS-" + c.slice(4);
+        return c;
+      }
+      function setMsg(text, isErr) {
+        msg.textContent = text;
+        msg.className = "msg" + (isErr ? " err" : "");
+      }
+      function redeem() {
+        if (busy) return;
+        var code = normalize(input.value);
+        if (!code || code.length < 10) { setMsg("Type your whole code — it looks like RIPS-XXXXXX.", true); return; }
+        busy = true;
+        btn.disabled = true;
+        setMsg("Checking your code…", false);
+        prizeArea.classList.add("hidden");
+        api(["GET", "rips:" + code]).then(function (raw) {
+          if (!raw) {
+            setMsg("Hmm — that code doesn't match any prize. Check the letters and try again. (Codes come from Epic and Gold pulls in Cove Rips.)", true);
+            busy = false; btn.disabled = false;
+            return;
+          }
+          var rec = null;
+          try { rec = JSON.parse(raw); } catch (e) { rec = null; }
+          if (!rec) {
+            setMsg("Something went wrong reading that code — try again in a moment.", true);
+            busy = false; btn.disabled = false;
+            return;
+          }
+          if (rec.status === "claimed") {
+            setMsg("That code has already been redeemed — each code works once. If that wasn't you, tell Kim in the group.", true);
+            busy = false; btn.disabled = false;
+            return;
+          }
+          rec.status = "claimed";
+          rec.claimedAt = new Date().toISOString();
+          api(["SET", "rips:" + code, JSON.stringify(rec)]).then(function () {
+            setMsg("Code accepted — enjoy your kit!", false);
+            prizeArea.classList.remove("hidden");
+            busy = false; btn.disabled = false;
+          }, function () {
+            setMsg("Your code is good, but the save hiccuped — tap Redeem once more.", true);
+            busy = false; btn.disabled = false;
+          });
+        }, function () {
+          setMsg("Couldn't reach the prize shelf just now — check your connection and try again.", true);
+          busy = false; btn.disabled = false;
+        });
+      }
+      btn.addEventListener("click", redeem);
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") redeem(); });
+
+      /* Prefill from ?code= (the prize box and code list in Cove Rips link here) */
+      (function () {
+        var m = /[?&]code=([^&]+)/.exec(window.location.search || "");
+        if (m) {
+          try { input.value = decodeURIComponent(m[1]); } catch (e) { input.value = m[1]; }
+          redeem();
+        }
+      })();
+    </script>
+  </body>
+</html>

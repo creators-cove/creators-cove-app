@@ -272,7 +272,7 @@
           <span class="refill-timer" id="refillTimer" aria-live="polite">--:--:--</span>
           <span class="refill-sub" id="refillSub">Come back tomorrow to claim them</span>
         </button>
-        <div class="prize-banner">Your coins are make-believe — there's nothing to buy. Pull an <strong>Epic or Gold card</strong> and you win the <strong>Little Garden Witch Journal Kit</strong> — your Winner Card shows a claim code. Screenshot it, post it in the Creator's Cove Facebook group, and Glenda will send you the kit. One prize per member, per round.</div>
+        <div class="prize-banner">Your coins are make-believe — there's nothing to buy. Pull an <strong>Epic or Gold card</strong> and you win the <strong>Little Garden Witch Journal Kit</strong> — your Winner Card shows a claim code. Redeem the code right in the app and the kit downloads to your phone. One prize per member, per round.</div>
       </section>
 
       <section class="panel" aria-label="Your session">
@@ -299,7 +299,7 @@
         <h2>How it works in the group</h2>
         <p>Rip packs just for fun — the coins are make-believe and there's nothing to buy. Every pack has <strong>5 cards</strong>. Most pulls are Common, some are Rare, a few are Epic — and a lucky few are <strong>Gold</strong>, and Gold cards glow.</p>
         <p><strong>Elite Pack</strong> costs more coins, but it boosts your Epic and Gold odds — and it always has at least one Epic or better inside.</p>
-        <p><strong>Your pulls can win a real prize.</strong> Pull an <strong>Epic</strong> or <strong>Gold</strong> card and you win the current prize — right now it's the <strong>Little Garden Witch Journal Kit</strong>. Tap <strong>WINNER CARD</strong> to see your claim code, screenshot it, and post it in the Creator's Cove Facebook group — Glenda will send you the kit. One prize per member, per round. Your codes stay saved right here in the game, under "Your prize codes," so you can't lose them.</p>
+        <p><strong>Your pulls can win a real prize.</strong> Pull an <strong>Epic</strong> or <strong>Gold</strong> card and you win the current prize — right now it's the <strong>Little Garden Witch Journal Kit</strong>. Tap <strong>WINNER CARD</strong> to see your claim code, then hit <strong>Redeem</strong> — the kit downloads right to your phone, no waiting on anybody. Screenshot your win for the group if you want to show off. One prize per member, per round, and each code works once. Your codes stay saved right here in the game, under "Your prize codes," so you can't lose them.</p>
         <p class="note">Run out of coins? Your next 100 free coins arrive tomorrow — when you hit zero, a countdown timer appears showing exactly how long is left until midnight. Come back tomorrow, tap to claim your 100, and you're ripping again. Your coin balance and your Vault are saved on this device, so they're right where you left them when you come back — your session scores start fresh each visit.</p>
       </section>
     </main>
@@ -583,6 +583,24 @@
         return code;
       }
 
+      /* Prize codes are registered on the Cove shelf so the Redeem page can check them */
+      var COVE_API_URL = "https://enabled-platypus-167183.upstash.io";
+      var COVE_API_KEY = "gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg";
+      function api(cmd) {
+        return fetch(COVE_API_URL, { method: "POST", headers: { "Authorization": "Bearer " + COVE_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(cmd) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { return j ? j.result : null; });
+      }
+      function registerPrizeCode(entry) {
+        var rec = { status: "unclaimed", rarity: entry.rarity, card: entry.card, prize: CURRENT_PRIZE, createdAt: entry.date };
+        api(["SET", "rips:" + entry.code, JSON.stringify(rec)]).then(function () {
+          entry.reg = true; savePrizeCodes();
+        }, function () { /* stays unregistered; retried on the next visit */ });
+      }
+      function registerPendingCodes() {
+        prizeCodes.forEach(function (p) { if (!p.reg) registerPrizeCode(p); });
+      }
+
       /* ================= State ================= */
       var coins = loadCoins();
       var refillAt = loadRefillAt();
@@ -708,9 +726,9 @@
         prizeCodes.slice().reverse().forEach(function (p) {
           var d = new Date(p.date);
           var when = isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-          html += '<p style="margin:6px 0;"><strong style="font-family:Fredoka,sans-serif; letter-spacing:0.06em; font-size:1.1rem;">' + p.code + "</strong> — " + rarityLabel(p.rarity) + " " + p.card + (when ? " · " + when : "") + "</p>";
+          html += '<p style="margin:6px 0;"><strong style="font-family:Fredoka,sans-serif; letter-spacing:0.06em; font-size:1.1rem;">' + p.code + "</strong> — " + rarityLabel(p.rarity) + " " + p.card + (when ? " · " + when : "") + ' · <a href="cove-redeem.html?code=' + p.code + '">Redeem</a></p>';
         });
-        html += '<p class="note">Post a screenshot showing your code in the Creator\'s Cove Facebook group and Glenda will send you the ' + CURRENT_PRIZE + '. One prize per member, per round.</p>';
+        html += '<p class="note">Tap Redeem next to a code and the ' + CURRENT_PRIZE + ' downloads right to your phone. Screenshot your win for the group first if you want to show off. One prize per member, per round — each code works once.</p>';
         list.innerHTML = html;
       }
       function renderAll() {
@@ -799,13 +817,16 @@
           if (prizePulls.length) {
             var bestPrize = prizePulls.slice().sort(function (a, b) { return RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity]; })[0];
             lastPrizeCode = makePrizeCode();
-            prizeCodes.push({ code: lastPrizeCode, rarity: bestPrize.rarity, card: bestPrize.card.name, date: new Date().toISOString() });
+            var newEntry = { code: lastPrizeCode, rarity: bestPrize.rarity, card: bestPrize.card.name, date: new Date().toISOString() };
+            prizeCodes.push(newEntry);
             savePrizeCodes();
+            registerPrizeCode(newEntry);
             var pb = document.createElement("div");
             pb.className = "prize-code-box";
             pb.innerHTML = "🎁 <strong>You won the " + CURRENT_PRIZE + "!</strong><br>Your claim code:" +
               '<div class="prize-code">' + lastPrizeCode + "</div>" +
-              "Screenshot this and post it in the Creator's Cove group — Glenda will send you the kit. Your code is saved in the game, under \u201CYour prize codes.\u201D One prize per member, per round.";
+              "Screenshot this and show it off in the Creator's Cove group — then tap the button and the kit downloads right to your phone. Nobody has to send you anything. One prize per member, per round.<br>" +
+              '<a class="btn" style="margin-top:10px; text-decoration:none;" href="cove-redeem.html?code=' + lastPrizeCode + '">🎁 Redeem my prize</a>';
             ripStageEl.appendChild(pb);
             renderPrizeCodes();
           }
@@ -852,7 +873,7 @@
           (lastPrizeCode ?
             '<p class="wc-amount" style="font-size:1.25rem;">🎁 Claim code: ' + lastPrizeCode + "</p>" +
             '<p class="wc-detail">Prize: ' + CURRENT_PRIZE + "</p>" : "") +
-          '<p class="wc-detail" style="font-size:0.85rem; margin-top:10px;">Screenshot this and post it in the Creator\'s Cove Facebook group' + (lastPrizeCode ? " — Glenda will send you your prize. One prize per member, per round." : " to enter — prizes are picked in the group, not in the app.") + ' Coins are make-believe.</p>';
+          '<p class="wc-detail" style="font-size:0.85rem; margin-top:10px;">Screenshot this and post it in the Creator\'s Cove Facebook group' + (lastPrizeCode ? " — redeem the code in the app and the kit downloads to your phone. One prize per member, per round." : " to enter — prizes are picked in the group, not in the app.") + ' Coins are make-believe.</p>';
         overlay.classList.add("show");
       }
       document.getElementById("closeCardBtn").addEventListener("click", function () {
@@ -888,6 +909,7 @@
       /* ================= Init ================= */
       if (coins >= CHEAPEST && refillAt) { refillAt = 0; saveRefillAt(); }
       if (coins < CHEAPEST && !refillAt) { refillAt = nextMidnight(); saveRefillAt(); }
+      registerPendingCodes();
       renderAll();
       tickRefill();
       if (coins < CHEAPEST) {
