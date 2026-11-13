@@ -46,11 +46,17 @@
         border: 3px solid var(--panel-edge); box-shadow: var(--shadow);
         max-height: none; overflow: visible;
       }
+      .pick-label { font-family: "Baloo 2", cursive; font-weight: 800; font-size: .95rem; margin: 6px 0 4px; color: #ffd964; }
+      .level-row { display: flex; gap: 8px; margin: 0 0 4px; flex-wrap: wrap; justify-content: center; }
+      .level-pick { border: 3px solid transparent; background: rgba(255,255,255,.12); border-radius: 14px; padding: 8px 14px; cursor: pointer; font-family: inherit; color: #fdf6e3; font-weight: 800; font-size: .9rem; }
+      .level-pick.on { border-color: var(--gold); background: rgba(255,255,255,.25); }
+      .level-pick.locked { opacity: .55; }
       .girl-row { display: flex; gap: 8px; margin: 2px 0 10px; flex-wrap: wrap; justify-content: center; }
       .girl-pick { border: 3px solid transparent; background: rgba(255,255,255,.12); border-radius: 16px; padding: 6px 8px 4px; cursor: pointer; font-family: inherit; color: #fdf6e3; font-weight: 800; font-size: .82rem; }
       .girl-pick img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 3px; border: 2px solid #fff; }
       .girl-pick.on { border-color: var(--gold); background: rgba(255,255,255,.25); }
       .big-btn { border: none; border-radius: 99px; padding: 12px 26px; cursor: pointer; font-family: "Baloo 2", cursive; font-weight: 800; font-size: 1.1rem; background: var(--gold); color: #4a2c00; }
+      .big-btn.secondary { background: rgba(255,255,255,.18); color: #fdf6e3; margin-top: 8px; }
       .touch-ui { position: absolute; inset: auto 0 0 0; display: none; justify-content: space-between; padding: 0 12px 12px; z-index: 5; pointer-events: none; }
       .touch-ui .side { display: flex; gap: 10px; pointer-events: none; }
       .tbtn {
@@ -77,12 +83,12 @@
     <button id="muteBtn" class="sound-toggle" type="button" aria-pressed="true">🔊 Sound On</button>
     <div class="wrap">
       <h1>🧭 Cove <span class="tide">Quest</span></h1>
-      <p class="sub">A storm scattered the Cove's 5 Golden Shells from the beach to the lighthouse. Pick your girl and go get them — run, jump, swim and glide!</p>
+      <p class="sub" id="levelSub">Level 1 — The Golden Shells: a storm scattered the Cove's 5 Golden Shells from the beach to the lighthouse. Pick your girl and go get them!</p>
 
       <div class="hud">
         <div class="hud-card" id="hearts">❤️❤️❤️❤️❤️</div>
         <div class="hud-card">🐚 <span id="shellCount">0</span></div>
-        <div class="hud-card">⭐ <span id="goldCount">0</span>/5</div>
+        <div class="hud-card">⭐ <span id="goldCount">0</span>/<span id="goldTotal">5</span></div>
         <div class="hud-card">⏱ <span id="timeCount">0:00</span></div>
       </div>
 
@@ -103,18 +109,22 @@
           <h2 id="endTitle">🎉 You did it!</h2>
           <p id="endText"></p>
           <button class="big-btn" id="againBtn" type="button">Play Again</button>
+          <button class="big-btn secondary hidden" id="nextBtn" type="button" style="display:none">Next Level ▶</button>
         </div>
       </div>
 
       <div class="overlay menu-card" id="startOverlay">
-        <h2>⭐ The Golden Shells ⭐</h2>
-        <p>Run the beach, cross the boardwalk, swim the lagoon and glide off the pier to the lighthouse. Stomp crabs, dodge jellyfish!</p>
+        <h2>⭐ Cove Quest ⭐</h2>
+        <p>Run the beach, cross the boardwalk, swim the lagoon and glide off the pier. Stomp crabs, dodge jellyfish, and bring the Golden Shells home!</p>
+        <div class="pick-label">Pick a level</div>
+        <div class="level-row" id="levelRow"></div>
+        <div class="pick-label">Pick your girl</div>
         <div class="girl-row" id="girlRow"></div>
         <button class="big-btn" id="startBtn" type="button">Start the Quest!</button>
-        <p style="margin-top:8px;font-size:.8rem;opacity:.85">Hold JUMP in the air to glide · In the water, tap JUMP to paddle</p>
+        <p style="margin-top:8px;font-size:.8rem;opacity:.85">Hold JUMP in the air to glide · In the water, tap JUMP to paddle · Finish Level 1 to unlock Level 2</p>
       </div>
 
-      <p class="howto"><strong>How to play:</strong> run with the arrow buttons, jump with the JUMP button. Stomp crabs flat for bonus shells — but don't let them pinch you, and don't get stung in the lagoon. Fall in a gap and you splash back to the last checkpoint, minus a heart. Off the pier's edge, hold JUMP to glide on your umbrella. Reach the lighthouse to finish!</p>
+      <p class="howto"><strong>How to play:</strong> run with the arrow buttons, jump with the JUMP button. Stomp crabs flat for bonus shells — a pinch just knocks you back, but fall in a gap and you splash back to the last checkpoint, minus a heart. In the lagoon, tap JUMP to paddle and mind the jellyfish. Off the pier's edge, hold JUMP to glide on your umbrella. Reach the lighthouse — or the old Beacon — to finish the level!</p>
     </div>
     <div class="toast" id="toast" role="status"></div>
 
@@ -212,58 +222,141 @@
       });
       loadSprite();
 
-      /* ================= Level ================= */
-      var VIEW_W = 960, VIEW_H = 540, LEVEL_W = 7200, GOAL_X = 6940;
-      var GROUND_Y = 470;
-      /* platforms: x, y(top), w, type (sand|wood|rock) — all are floors you can stand on */
-      var PLATFORMS = [
-        { x: -40, y: GROUND_Y, w: 1680, t: "sand" },                    /* the beach */
-        { x: 300, y: 382, w: 120, t: "sand" }, { x: 520, y: 312, w: 120, t: "sand" },
-        { x: 1050, y: 372, w: 140, t: "sand" }, { x: 1280, y: 302, w: 120, t: "sand" },
-        { x: 1600, y: GROUND_Y, w: 470, t: "wood" },                     /* boardwalk 1 */
-        { x: 2180, y: GROUND_Y, w: 390, t: "wood" },                    /* boardwalk 2 */
-        { x: 2680, y: GROUND_Y, w: 330, t: "wood" },                    /* boardwalk 3 */
-        { x: 1750, y: 362, w: 120, t: "wood" }, { x: 2300, y: 352, w: 120, t: "wood" },
-        { x: 3000, y: GROUND_Y, w: 130, t: "sand" },                     /* lagoon entry sand */
-        { x: 3120, y: 518, w: 1380, t: "sand" },                        /* lagoon floor */
-        { x: 3400, y: 428, w: 110, t: "rock" }, { x: 3850, y: 362, w: 110, t: "rock" },
-        { x: 4360, y: 484, w: 120, t: "rock" },                          /* climb-out step at the lagoon exit */
-        { x: 4480, y: GROUND_Y, w: 440, t: "sand" },                     /* lagoon exit + cliffs base */
-        { x: 4950, y: 400, w: 120, t: "rock" }, { x: 5150, y: 330, w: 120, t: "rock" },
-        { x: 5350, y: 262, w: 130, t: "rock" },
-        { x: 5480, y: 262, w: 300, t: "wood" },                          /* the pier deck */
-        { x: 6400, y: 432, w: 300, t: "rock" },                          /* glide landing ramp */
-        { x: 6560, y: GROUND_Y, w: 680, t: "sand" }                     /* lighthouse shore */
-      ];
-      var WATER = { x: 3060, y: 330, w: 1440, h: 210 };                 /* the lagoon */
-      var SHELLS = [];
-      function addShell(x, y, golden) { SHELLS.push({ x: x, y: y, golden: !!golden, taken: false }); }
-      /* beach */
-      addShell(345, 348); addShell(575, 274, true); addShell(760, 430); addShell(1105, 338); addShell(1335, 264); addShell(1470, 430);
-      /* boardwalk */
-      addShell(1810, 328); addShell(1960, 430); addShell(2245, 430); addShell(2360, 318, true); addShell(2780, 430); addShell(2920, 430);
-      /* lagoon */
-      addShell(3250, 380); addShell(3455, 394); addShell(3660, 462, true); addShell(3905, 328); addShell(4150, 430); addShell(4380, 392);
-      /* cliffs + glide */
-      addShell(5005, 366); addShell(5205, 296); addShell(5560, 222); addShell(6150, 306, true); addShell(6520, 394, true);
-      /* lighthouse shore */
-      addShell(6680, 430); addShell(6820, 430);
-      var GOLD_TOTAL = SHELLS.filter(function (s) { return s.golden; }).length;
+      /* ================= Levels ================= */
+      var VIEW_W = 960, VIEW_H = 540, GROUND_Y = 470;
+      function buildLevel1() {
+        return {
+          title: "Level 1 — The Golden Shells",
+          sub: "Level 1 — The Golden Shells: a storm scattered the Cove's 5 Golden Shells from the beach to the lighthouse. Pick your girl and go get them!",
+          night: false, goalType: "lighthouse", goalX: 6940, levelW: 7200,
+          water: { x: 3060, y: 330, w: 1440, h: 210 },
+          platforms: [
+            { x: -40, y: GROUND_Y, w: 1680, t: "sand" },
+            { x: 300, y: 382, w: 120, t: "sand" }, { x: 520, y: 312, w: 120, t: "sand" },
+            { x: 1050, y: 372, w: 140, t: "sand" }, { x: 1280, y: 302, w: 120, t: "sand" },
+            { x: 1600, y: GROUND_Y, w: 470, t: "wood" }, { x: 2180, y: GROUND_Y, w: 390, t: "wood" },
+            { x: 2680, y: GROUND_Y, w: 330, t: "wood" },
+            { x: 1750, y: 362, w: 120, t: "wood" }, { x: 2300, y: 352, w: 120, t: "wood" },
+            { x: 3000, y: GROUND_Y, w: 130, t: "sand" },
+            { x: 3120, y: 518, w: 1380, t: "sand" },
+            { x: 3400, y: 428, w: 110, t: "rock" }, { x: 3850, y: 362, w: 110, t: "rock" },
+            { x: 4360, y: 484, w: 120, t: "rock" },
+            { x: 4480, y: GROUND_Y, w: 440, t: "sand" },
+            { x: 4950, y: 400, w: 120, t: "rock" }, { x: 5150, y: 330, w: 120, t: "rock" },
+            { x: 5350, y: 262, w: 130, t: "rock" },
+            { x: 5480, y: 262, w: 300, t: "wood" },
+            { x: 6400, y: 432, w: 300, t: "rock" },
+            { x: 6560, y: GROUND_Y, w: 680, t: "sand" }
+          ],
+          shells: [
+            [345, 348, 0], [575, 274, 1], [760, 430, 0], [1105, 338, 0], [1335, 264, 0], [1470, 430, 0],
+            [1810, 328, 0], [1960, 430, 0], [2245, 430, 0], [2360, 318, 1], [2780, 430, 0], [2920, 430, 0],
+            [3250, 380, 0], [3455, 394, 0], [3660, 462, 1], [3905, 328, 0], [4150, 430, 0], [4380, 392, 0],
+            [5005, 366, 0], [5205, 296, 0], [5560, 222, 0], [6150, 306, 1], [6520, 394, 1],
+            [6680, 430, 0], [6820, 430, 0]
+          ],
+          crabs: [
+            { x: 760, min: 680, max: 1020, dir: 1, y: GROUND_Y },
+            { x: 1300, min: 1220, max: 1520, dir: -1, y: GROUND_Y },
+            { x: 2320, min: 2220, max: 2500, dir: 1, y: GROUND_Y },
+            { x: 4700, min: 4560, max: 4860, dir: 1, y: GROUND_Y },
+            { x: 6720, min: 6620, max: 6880, dir: -1, y: GROUND_Y }
+          ],
+          jellies: [ { x: 3550, baseY: 392, phase: 0 }, { x: 4120, baseY: 408, phase: 2.1 } ],
+          checkpoints: [ { x: 60, y: 360 }, { x: 1640, y: 360 }, { x: 3040, y: 360 }, { x: 4560, y: 360 }, { x: 5520, y: 150 }, { x: 6600, y: 360 } ],
+          glideSignX: 5740, goalDrawX: 6990
+        };
+      }
+      function buildLevel2() {
+        return {
+          title: "Level 2 — Starlight Shores",
+          sub: "Level 2 — Starlight Shores: the other 5 Golden Shells washed down the coast under the stars. Swim the deep lagoon, ride TWO glides, and light the old Beacon!",
+          night: true, goalType: "beacon", goalX: 7420, levelW: 7600,
+          water: { x: 2950, y: 318, w: 1700, h: 222 },
+          platforms: [
+            { x: -40, y: GROUND_Y, w: 1560, t: "sand" },
+            { x: 280, y: 380, w: 120, t: "sand" }, { x: 500, y: 310, w: 120, t: "sand" },
+            { x: 1020, y: 370, w: 130, t: "sand" },
+            { x: 1500, y: GROUND_Y, w: 480, t: "wood" }, { x: 2110, y: GROUND_Y, w: 450, t: "wood" },
+            { x: 2690, y: GROUND_Y, w: 260, t: "wood" },
+            { x: 1700, y: 360, w: 120, t: "wood" },
+            { x: 2900, y: GROUND_Y, w: 130, t: "sand" },
+            { x: 3020, y: 520, w: 1560, t: "sand" },
+            { x: 3300, y: 420, w: 110, t: "rock" }, { x: 3750, y: 350, w: 110, t: "rock" },
+            { x: 4200, y: 430, w: 110, t: "rock" }, { x: 4460, y: 484, w: 120, t: "rock" },
+            { x: 4580, y: GROUND_Y, w: 470, t: "sand" },
+            { x: 5100, y: 398, w: 120, t: "rock" }, { x: 5300, y: 328, w: 120, t: "rock" },
+            { x: 5500, y: 258, w: 130, t: "rock" },
+            { x: 5630, y: 258, w: 290, t: "wood" },
+            { x: 6520, y: 420, w: 420, t: "rock" },
+            { x: 7160, y: GROUND_Y, w: 480, t: "sand" }
+          ],
+          shells: [
+            [330, 346, 0], [560, 272, 1], [800, 430, 0], [1080, 336, 0], [1380, 430, 0],
+            [1760, 326, 1], [1900, 430, 0], [2280, 430, 0], [2760, 430, 0],
+            [3180, 380, 0], [3360, 386, 0], [3600, 466, 1], [3810, 316, 0], [4040, 420, 0], [4260, 396, 0], [4480, 430, 0],
+            [5160, 364, 0], [5360, 294, 0], [5700, 218, 0], [6220, 304, 1], [7040, 428, 1],
+            [7240, 430, 0]
+          ],
+          crabs: [
+            { x: 700, min: 640, max: 960, dir: 1, y: GROUND_Y },
+            { x: 1250, min: 1150, max: 1460, dir: -1, y: GROUND_Y },
+            { x: 2280, min: 2160, max: 2480, dir: 1, y: GROUND_Y },
+            { x: 4760, min: 4640, max: 4980, dir: 1, y: GROUND_Y },
+            { x: 7300, min: 7220, max: 7480, dir: -1, y: GROUND_Y }
+          ],
+          jellies: [ { x: 3450, baseY: 392, phase: 0 }, { x: 3980, baseY: 408, phase: 2.1 }, { x: 4380, baseY: 382, phase: 4.0 } ],
+          checkpoints: [ { x: 60, y: 360 }, { x: 1540, y: 360 }, { x: 2940, y: 360 }, { x: 4620, y: 360 }, { x: 5660, y: 150 }, { x: 6560, y: 300 }, { x: 7200, y: 360 } ],
+          glideSignX: 5880, goalDrawX: 7470
+        };
+      }
+      var LEVEL_BUILDERS = [buildLevel1, buildLevel2];
+      var levelIdx = 0, selectedLevel = 0;
+      var L = null, LEVEL_W = 7200, GOAL_X = 6940;
+      var PLATFORMS = [], WATER = { x: 0, y: 0, w: 0, h: 0 }, SHELLS = [], CRABS = [], JELLIES = [], CHECKPOINTS = [];
+      var GOLD_TOTAL = 5;
 
-      var CRABS = [
-        { x: 760, min: 680, max: 1020, dir: 1, y: GROUND_Y, dead: false },
-        { x: 1300, min: 1220, max: 1520, dir: -1, y: GROUND_Y, dead: false },
-        { x: 2320, min: 2220, max: 2500, dir: 1, y: GROUND_Y, dead: false },
-        { x: 4700, min: 4560, max: 4860, dir: 1, y: GROUND_Y, dead: false },
-        { x: 6720, min: 6620, max: 6880, dir: -1, y: GROUND_Y, dead: false }
-      ];
-      var JELLIES = [
-        { x: 3550, baseY: 392, phase: 0 }, { x: 4120, baseY: 408, phase: 2.1 }
-      ];
-      var CHECKPOINTS = [
-        { x: 60, y: 360 }, { x: 1640, y: 360 }, { x: 3040, y: 360 },
-        { x: 4560, y: 360 }, { x: 5520, y: 150 }, { x: 6600, y: 360 }
-      ];
+      function unlocked() {
+        var u = 1;
+        try { u = parseInt(window.localStorage.getItem("cove-quest-unlocked") || "1", 10); } catch (e) { /* ignore */ }
+        return isNaN(u) ? 1 : u;
+      }
+      function loadLevel(idx) {
+        levelIdx = idx;
+        L = LEVEL_BUILDERS[idx]();
+        LEVEL_W = L.levelW; GOAL_X = L.goalX;
+        PLATFORMS = L.platforms; WATER = L.water; CHECKPOINTS = L.checkpoints; JELLIES = L.jellies;
+        SHELLS = L.shells.map(function (s) { return { x: s[0], y: s[1], golden: !!s[2], taken: false }; });
+        CRABS = L.crabs.map(function (c) { return { x: c.x, min: c.min, max: c.max, dir: c.dir, y: c.y, dead: false }; });
+        GOLD_TOTAL = SHELLS.filter(function (s) { return s.golden; }).length;
+        document.getElementById("goldTotal").textContent = GOLD_TOTAL;
+        document.getElementById("levelSub").textContent = L.sub;
+      }
+
+      /* level picker */
+      var levelRow = document.getElementById("levelRow");
+      function renderLevelPicks() {
+        levelRow.innerHTML = "";
+        var u = unlocked();
+        LEVEL_BUILDERS.forEach(function (builder, i) {
+          var tmp = builder();
+          var btn = document.createElement("button");
+          btn.type = "button";
+          var lockedLevel = i + 1 > u;
+          btn.className = "level-pick" + (i === selectedLevel ? " on" : "") + (lockedLevel ? " locked" : "");
+          btn.textContent = (i === 0 ? "☀️ " : "🌙 ") + tmp.title.replace(/^Level \d+ — /, "") + (lockedLevel ? " 🔒" : "");
+          btn.addEventListener("click", function () {
+            Sfx.ensure();
+            if (lockedLevel) { toast("Finish Level 1 to unlock " + tmp.title + "!"); return; }
+            selectedLevel = i;
+            loadLevel(i);
+            resetGame();
+            Sfx.coin();
+            renderLevelPicks();
+          });
+          levelRow.appendChild(btn);
+        });
+      }
 
       /* ================= Player & game state ================= */
       var cv = document.getElementById("game"), ctx2 = cv.getContext("2d");
@@ -275,10 +368,10 @@
 
       function resetGame() {
         hearts = 5; shellCount = 0; goldCount = 0; score = 0; elapsed = 0; finished = false;
-        SHELLS.forEach(function (s) { s.taken = false; });
-        CRABS.forEach(function (c) { c.dead = false; });
+        loadLevel(levelIdx);
         respawn(CHECKPOINTS[0]);
         updateHud();
+        document.getElementById("timeCount").textContent = "0:00";
       }
       function respawn(cp) {
         P.x = cp.x; P.y = cp.y; P.vx = 0; P.vy = 0; P.inv = 90;
@@ -324,16 +417,25 @@
         var ov = document.getElementById("endOverlay");
         var title = document.getElementById("endTitle");
         var text = document.getElementById("endText");
+        var nextBtn = document.getElementById("nextBtn");
+        nextBtn.style.display = "none";
         if (wonGame) {
           Sfx.win();
-          var bestKey = "cove-quest-best";
+          var bestKey = "cove-quest-best-" + levelIdx;
           var best = 0;
           try { best = parseInt(window.localStorage.getItem(bestKey) || "0", 10); } catch (e) { /* ignore */ }
           var isBest = !best || elapsed < best;
           if (isBest) { try { window.localStorage.setItem(bestKey, String(Math.round(elapsed))); } catch (e) { /* ignore */ } }
+          if (levelIdx === 0) {
+            try { window.localStorage.setItem("cove-quest-unlocked", "2"); } catch (e) { /* ignore */ }
+            renderLevelPicks();
+            nextBtn.style.display = "";
+            nextBtn.textContent = "Next Level ▶ Starlight Shores 🌙";
+          }
           title.textContent = "🎉 " + GIRLS[girlIdx].name + " did it!";
-          text.innerHTML = "The Golden Shells are coming home to the Cove!<br/>⭐ Golden Shells: <strong>" + goldCount + "/" + GOLD_TOTAL + "</strong> · 🐚 Shells: <strong>" + shellCount + "</strong><br/>⏱ Time: <strong>" + fmtTime(elapsed) + "</strong>" + (isBest ? " — a new Cove record! 🏆" : " · Cove record: " + fmtTime(best)) +
-            (goldCount < GOLD_TOTAL ? "<br/>Psst — " + (GOLD_TOTAL - goldCount) + " golden shell(s) are still out there, if you want the perfect run." : "<br/>A PERFECT run — every golden shell! 🌟");
+          text.innerHTML = L.title + " — complete!<br/>⭐ Golden Shells: <strong>" + goldCount + "/" + GOLD_TOTAL + "</strong> · 🐚 Shells: <strong>" + shellCount + "</strong><br/>⏱ Time: <strong>" + fmtTime(elapsed) + "</strong>" + (isBest ? " — a new Cove record! 🏆" : " · Cove record: " + fmtTime(best)) +
+            (goldCount < GOLD_TOTAL ? "<br/>Psst — " + (GOLD_TOTAL - goldCount) + " golden shell(s) are still out there, if you want the perfect run." : "<br/>A PERFECT run — every golden shell! 🌟") +
+            (levelIdx === 1 ? "<br/>🏆 <strong>COVE CHAMPION!</strong> You finished every level!" : "<br/>🌙 Level 2 is unlocked — Starlight Shores is waiting below!");
         } else {
           title.textContent = "💔 Out of hearts!";
           text.innerHTML = GIRLS[girlIdx].name + " is pooped — but the shells aren't going anywhere. Shake off the sand and try again!<br/>🐚 Shells found: <strong>" + shellCount + "</strong> · ⭐ Golden: <strong>" + goldCount + "/" + GOLD_TOTAL + "</strong>";
@@ -377,7 +479,6 @@
         P.inWater = inWaterRect(cx, P.y + P.h * 0.55);
         var speed = P.inWater ? 2.6 : 3.4;
 
-        /* horizontal */
         var want = 0;
         if (keys.left) want -= 1;
         if (keys.right) want += 1;
@@ -386,7 +487,6 @@
         if (P.gliding) targetVx = P.face * 4.5;
         P.vx += (targetVx - P.vx) * (P.onGround || P.inWater ? 0.4 : 0.18);
 
-        /* vertical */
         P.gliding = false;
         if (P.inWater) {
           P.vy += 0.12;
@@ -406,14 +506,12 @@
           }
         }
 
-        /* integrate */
         var prevFeet = feetY;
         P.x += P.vx;
         P.y += P.vy;
         if (P.x < 0) P.x = 0;
         if (P.x > LEVEL_W - P.w) P.x = LEVEL_W - P.w;
 
-        /* land on platforms (from above) */
         P.onGround = false;
         var newFeet = P.y + P.h;
         for (var i = 0; i < PLATFORMS.length; i++) {
@@ -424,12 +522,10 @@
           }
         }
 
-        /* fell off the world / into a gap */
         if (P.y > VIEW_H + 130) { hurtPit(); return; }
 
         if (P.inv > 0) P.inv--;
 
-        /* shells */
         for (var s = 0; s < SHELLS.length; s++) {
           var sh = SHELLS[s];
           if (sh.taken) continue;
@@ -442,7 +538,6 @@
           }
         }
 
-        /* crabs */
         for (var c = 0; c < CRABS.length; c++) {
           var crab = CRABS[c];
           if (crab.dead) continue;
@@ -461,7 +556,6 @@
           }
         }
 
-        /* jellyfish */
         for (var j = 0; j < JELLIES.length; j++) {
           var jel = JELLIES[j];
           var jy = jel.baseY + Math.sin(tick / 55 + jel.phase) * 42;
@@ -469,14 +563,11 @@
           if (jdx * jdx + jdy * jdy < 34 * 34 && P.inv <= 0) { hurtEnemy(); return; }
         }
 
-        /* the lighthouse door */
         if (P.x + P.w > GOAL_X && P.onGround) { gameOver(true); return; }
 
-        /* camera */
         var targetCam = Math.max(0, Math.min(LEVEL_W - VIEW_W, P.x + P.w / 2 - 400));
         camX += (targetCam - camX) * 0.12;
 
-        /* timer */
         elapsed = performance.now() - startTime;
         document.getElementById("timeCount").textContent = fmtTime(elapsed);
       }
@@ -507,25 +598,39 @@
         ctx2.textAlign = "center"; ctx2.textBaseline = "middle";
         ctx2.fillText(e, x, y);
       }
+      var STARS = [];
+      for (var si = 0; si < 70; si++) STARS.push({ x: (si * 197) % 1200, y: (si * 89) % 300, r: 1 + ((si * 7) % 3) * 0.7 });
       function draw() {
-        /* sky */
         var sky = ctx2.createLinearGradient(0, 0, 0, VIEW_H);
-        sky.addColorStop(0, "#8fd4e8"); sky.addColorStop(0.7, "#d8f2f4"); sky.addColorStop(1, "#fdf3d8");
+        if (L && L.night) {
+          sky.addColorStop(0, "#141f42"); sky.addColorStop(0.7, "#33507e"); sky.addColorStop(1, "#6f87a0");
+        } else {
+          sky.addColorStop(0, "#8fd4e8"); sky.addColorStop(0.7, "#d8f2f4"); sky.addColorStop(1, "#fdf3d8");
+        }
         ctx2.fillStyle = sky; ctx2.fillRect(0, 0, VIEW_W, VIEW_H);
-        bigEmoji("☀️", 880 - (camX * 0.05) % 60, 62, 52);
-        /* far landmarks (slow parallax) */
-        ctx2.globalAlpha = 0.5;
+        if (L && L.night) {
+          ctx2.fillStyle = "rgba(255,255,255,.85)";
+          for (var st = 0; st < STARS.length; st++) {
+            var sx = ((STARS[st].x - camX * 0.15) % 1200 + 1200) % 1200;
+            ctx2.beginPath(); ctx2.arc(sx, STARS[st].y, STARS[st].r, 0, 7); ctx2.fill();
+          }
+          bigEmoji("🌙", 872 - (camX * 0.05) % 60, 60, 46);
+        } else {
+          bigEmoji("☀️", 880 - (camX * 0.05) % 60, 62, 52);
+        }
+        ctx2.globalAlpha = (L && L.night) ? 0.35 : 0.5;
         bigEmoji("🎡", 2600 - camX * 0.35, 300, 150);
         bigEmoji("🌴", 900 - camX * 0.35, 330, 110);
         bigEmoji("🌴", 6300 - camX * 0.35, 320, 120);
         ctx2.globalAlpha = 1;
-        /* the Salty Canvas at the start */
         bigEmoji("🎨", 170 - camX, 408, 74);
         bigEmoji("🏠", 170 - camX, 452, 92);
-        /* water behind platforms: boardwalk sea + lagoon */
-        ctx2.fillStyle = "rgba(64,164,196,.55)";
-        ctx2.fillRect(1600 - camX, 494, 1450, 60);
-        ctx2.fillStyle = "rgba(46,140,190,.66)";
+        /* water behind platforms: boardwalk sea (level 1) + the lagoon */
+        if (!L || !L.night) {
+          ctx2.fillStyle = "rgba(64,164,196,.55)";
+          ctx2.fillRect(1600 - camX, 494, 1450, 60);
+        }
+        ctx2.fillStyle = (L && L.night) ? "rgba(28,92,150,.72)" : "rgba(46,140,190,.66)";
         ctx2.fillRect(WATER.x - camX, WATER.y, WATER.w, WATER.h + 20);
         ctx2.strokeStyle = "rgba(255,255,255,.75)"; ctx2.lineWidth = 2.5;
         ctx2.beginPath();
@@ -537,38 +642,46 @@
 
         PLATFORMS.forEach(drawPlatform);
 
-        /* the lighthouse */
-        var lx = 6990 - camX;
+        /* the goal tower */
+        var lx = (L ? L.goalDrawX : 6990) - camX;
         if (lx > -160 && lx < VIEW_W + 160) {
-          ctx2.fillStyle = "#f4f1e8"; ctx2.fillRect(lx, 238, 74, 232);
-          ctx2.fillStyle = "#e05252";
-          ctx2.fillRect(lx, 282, 74, 30); ctx2.fillRect(lx, 352, 74, 30); ctx2.fillRect(lx, 422, 74, 30);
-          ctx2.fillStyle = "#213f4d"; ctx2.fillRect(lx + 8, 208, 58, 32);
-          ctx2.fillStyle = "#ffd964"; ctx2.beginPath(); ctx2.arc(lx + 37, 224, 11, 0, 7); ctx2.fill();
-          ctx2.fillStyle = "#7a4a21"; ctx2.fillRect(lx + 24, 416, 27, 54);
-          ctx2.fillStyle = "#ffd964"; ctx2.beginPath(); ctx2.arc(lx + 44, 444, 3, 0, 7); ctx2.fill();
-          bigEmoji("🚩", lx + 37, 176, 34);
+          if (L && L.goalType === "beacon") {
+            ctx2.fillStyle = "#77808c"; ctx2.fillRect(lx, 238, 74, 232);
+            ctx2.fillStyle = "#5d6673";
+            ctx2.fillRect(lx, 282, 74, 30); ctx2.fillRect(lx, 352, 74, 30); ctx2.fillRect(lx, 422, 74, 30);
+            ctx2.fillStyle = "#213f4d"; ctx2.fillRect(lx + 8, 208, 58, 32);
+            ctx2.fillStyle = "#7bf0e0"; ctx2.beginPath(); ctx2.arc(lx + 37, 224, 11, 0, 7); ctx2.fill();
+            ctx2.fillStyle = "#4c4438"; ctx2.fillRect(lx + 24, 416, 27, 54);
+            ctx2.fillStyle = "#ffd964"; ctx2.beginPath(); ctx2.arc(lx + 44, 444, 3, 0, 7); ctx2.fill();
+            bigEmoji("🔦", lx + 37, 176, 34);
+          } else {
+            ctx2.fillStyle = "#f4f1e8"; ctx2.fillRect(lx, 238, 74, 232);
+            ctx2.fillStyle = "#e05252";
+            ctx2.fillRect(lx, 282, 74, 30); ctx2.fillRect(lx, 352, 74, 30); ctx2.fillRect(lx, 422, 74, 30);
+            ctx2.fillStyle = "#213f4d"; ctx2.fillRect(lx + 8, 208, 58, 32);
+            ctx2.fillStyle = "#ffd964"; ctx2.beginPath(); ctx2.arc(lx + 37, 224, 11, 0, 7); ctx2.fill();
+            ctx2.fillStyle = "#7a4a21"; ctx2.fillRect(lx + 24, 416, 27, 54);
+            ctx2.fillStyle = "#ffd964"; ctx2.beginPath(); ctx2.arc(lx + 44, 444, 3, 0, 7); ctx2.fill();
+            bigEmoji("🚩", lx + 37, 176, 34);
+          }
         }
-        /* pier posts + glide sign */
-        bigEmoji("☂️", 5740 - camX, 208, 40);
+        bigEmoji("☂️", (L ? L.glideSignX : 5740) - camX, 208, 40);
 
-        /* shells */
         for (var s = 0; s < SHELLS.length; s++) {
           var sh = SHELLS[s];
           if (sh.taken) continue;
-          var sx = sh.x - camX;
-          if (sx < -30 || sx > VIEW_W + 30) continue;
+          var shx = sh.x - camX;
+          if (shx < -30 || shx > VIEW_W + 30) continue;
           var bob = Math.sin(tick / 22 + sh.x) * 3;
           if (sh.golden) {
             ctx2.save();
             ctx2.shadowColor = "#ffd964"; ctx2.shadowBlur = 16 + Math.sin(tick / 9) * 6;
-            bigEmoji("⭐", sx, sh.y + bob, 30);
+            bigEmoji("⭐", shx, sh.y + bob, 30);
             ctx2.restore();
           } else {
-            bigEmoji("🐚", sx, sh.y + bob, 24);
+            bigEmoji("🐚", shx, sh.y + bob, 24);
           }
         }
-        /* crabs */
         for (var c = 0; c < CRABS.length; c++) {
           var crab = CRABS[c];
           if (crab.dead) continue;
@@ -580,7 +693,6 @@
           bigEmoji("🦀", 0, 0, 42);
           ctx2.restore();
         }
-        /* jellyfish */
         for (var j = 0; j < JELLIES.length; j++) {
           var jel = JELLIES[j];
           var jy2 = jel.baseY + Math.sin(tick / 55 + jel.phase) * 42;
@@ -588,7 +700,6 @@
           if (jx < -50 || jx > VIEW_W + 50) continue;
           bigEmoji("🪼", jx, jy2, 44);
         }
-        /* player */
         var px = P.x + P.w / 2 - camX, py = P.y + P.h;
         var blink = P.inv > 0 && Math.floor(tick / 5) % 2 === 0;
         if (!blink && sprite.complete && sprite.naturalWidth > 0) {
@@ -606,8 +717,6 @@
           ctx2.drawImage(sprite, -drawW / 2, -drawH + bobY, drawW, drawH);
           ctx2.restore();
         }
-        /* swim bubbles */
-        if (P.inWater && tick % 9 === 0) { /* bubbles are drawn as part of the water shimmer below */ }
         if (P.inWater) {
           ctx2.fillStyle = "rgba(255,255,255,.5)";
           for (var bb = 0; bb < 3; bb++) {
@@ -635,22 +744,30 @@
       }
       requestAnimationFrame(loop);
 
-      /* ================= Start / again ================= */
-      document.getElementById("startBtn").addEventListener("click", function () {
+      /* ================= Start / again / next ================= */
+      function beginRun() {
         Sfx.ensure();
         document.getElementById("startOverlay").classList.add("hidden");
-        resetGame();
-        running = true;
-        startTime = performance.now();
-        toast(GIRLS[girlIdx].name + " is off! Find those Golden Shells! ⭐");
-      });
-      document.getElementById("againBtn").addEventListener("click", function () {
-        Sfx.ensure();
         document.getElementById("endOverlay").classList.add("hidden");
+        loadLevel(selectedLevel);
         resetGame();
         running = true;
         startTime = performance.now();
+        toast(GIRLS[girlIdx].name + " is off! " + L.title + " ⭐");
+      }
+      document.getElementById("startBtn").addEventListener("click", beginRun);
+      document.getElementById("againBtn").addEventListener("click", function () {
+        selectedLevel = levelIdx;
+        beginRun();
       });
+      document.getElementById("nextBtn").addEventListener("click", function () {
+        selectedLevel = 1;
+        renderLevelPicks();
+        beginRun();
+      });
+
+      loadLevel(0);
+      renderLevelPicks();
       resetGame();
     </script>
   </body>
