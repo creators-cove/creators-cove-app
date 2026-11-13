@@ -75,7 +75,7 @@
       <p class="sub">A storm scattered the Cove's 5 Golden Shells from the beach to the lighthouse. Pick your girl and go get them — run, jump, swim and glide!</p>
 
       <div class="hud">
-        <div class="hud-card" id="hearts">❤️❤️❤️</div>
+        <div class="hud-card" id="hearts">❤️❤️❤️❤️❤️</div>
         <div class="hud-card">🐚 <span id="shellCount">0</span></div>
         <div class="hud-card">⭐ <span id="goldCount">0</span>/5</div>
         <div class="hud-card">⏱ <span id="timeCount">0:00</span></div>
@@ -240,7 +240,7 @@
       /* lagoon */
       addShell(3250, 380); addShell(3455, 394); addShell(3660, 462, true); addShell(3905, 328); addShell(4150, 430); addShell(4380, 392);
       /* cliffs + glide */
-      addShell(5005, 366); addShell(5205, 296); addShell(5560, 222); addShell(6150, 336, true); addShell(6520, 394, true);
+      addShell(5005, 366); addShell(5205, 296); addShell(5560, 222); addShell(6150, 306, true); addShell(6520, 394, true);
       /* lighthouse shore */
       addShell(6680, 430); addShell(6820, 430);
       var GOLD_TOTAL = SHELLS.filter(function (s) { return s.golden; }).length;
@@ -263,13 +263,13 @@
       /* ================= Player & game state ================= */
       var cv = document.getElementById("game"), ctx2 = cv.getContext("2d");
       var P = { x: 60, y: 360, w: 46, h: 104, vx: 0, vy: 0, face: 1, onGround: false, inWater: false, gliding: false, inv: 0, coyote: 0 };
-      var hearts = 3, shellCount = 0, goldCount = 0, score = 0, startTime = 0, elapsed = 0;
+      var hearts = 5, shellCount = 0, goldCount = 0, score = 0, startTime = 0, elapsed = 0;
       var running = false, finished = false, camX = 0, tick = 0, paddleAt = 0;
       var keys = { left: false, right: false, jump: false };
       var jumpPressedAt = -99;
 
       function resetGame() {
-        hearts = 3; shellCount = 0; goldCount = 0; score = 0; elapsed = 0; finished = false;
+        hearts = 5; shellCount = 0; goldCount = 0; score = 0; elapsed = 0; finished = false;
         SHELLS.forEach(function (s) { s.taken = false; });
         CRABS.forEach(function (c) { c.dead = false; });
         respawn(CHECKPOINTS[0]);
@@ -294,14 +294,24 @@
         return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2);
       }
 
-      function hurt(splashIt) {
-        if (P.inv > 0 && !splashIt) return;
+      function hurtPit() {
         hearts -= 1;
         updateHud();
-        if (splashIt) Sfx.splash(); else Sfx.hurt();
+        Sfx.splash();
         if (hearts <= 0) { gameOver(false); return; }
-        toast(splashIt ? "Splash! Back to the checkpoint — one heart gone." : "Ouch! One heart gone.");
+        toast("Splash! Back to the checkpoint — one heart gone.");
         respawn(checkpointFor(P.x));
+      }
+      function hurtEnemy() {
+        if (P.inv > 0) return;
+        hearts -= 1;
+        updateHud();
+        Sfx.hurt();
+        if (hearts <= 0) { gameOver(false); return; }
+        toast("Ouch! One heart gone.");
+        P.inv = 130;
+        P.vy = -6.5;
+        P.vx = P.face > 0 ? -3.4 : 3.4;
       }
 
       function gameOver(wonGame) {
@@ -369,7 +379,7 @@
         if (keys.right) want += 1;
         if (want !== 0) P.face = want;
         var targetVx = want * speed;
-        if (P.gliding) targetVx = P.face * 4.3;
+        if (P.gliding) targetVx = P.face * 4.5;
         P.vx += (targetVx - P.vx) * (P.onGround || P.inWater ? 0.4 : 0.18);
 
         /* vertical */
@@ -388,7 +398,7 @@
           }
           if (P.vy > 0 && keys.jump && !P.onGround) {
             P.gliding = true;
-            if (P.vy > 1.05) P.vy = 1.05;
+            if (P.vy > 0.9) P.vy = 0.9;
           }
         }
 
@@ -411,7 +421,7 @@
         }
 
         /* fell off the world / into a gap */
-        if (P.y > VIEW_H + 130) { hurt(true); return; }
+        if (P.y > VIEW_H + 130) { hurtPit(); return; }
 
         if (P.inv > 0) P.inv--;
 
@@ -432,7 +442,7 @@
         for (var c = 0; c < CRABS.length; c++) {
           var crab = CRABS[c];
           if (crab.dead) continue;
-          crab.x += crab.dir * 0.7;
+          crab.x += crab.dir * 0.5;
           if (crab.x < crab.min) { crab.x = crab.min; crab.dir = 1; }
           if (crab.x > crab.max) { crab.x = crab.max; crab.dir = -1; }
           var cdx = Math.abs((P.x + P.w / 2) - crab.x), cdy = (P.y + P.h) - crab.y;
@@ -442,7 +452,7 @@
               toast("Stomp! 🦀 +2 shells");
               updateHud();
             } else if (P.inv <= 0) {
-              hurt(false); return;
+              hurtEnemy(); return;
             }
           }
         }
@@ -452,7 +462,7 @@
           var jel = JELLIES[j];
           var jy = jel.baseY + Math.sin(tick / 55 + jel.phase) * 42;
           var jdx = (P.x + P.w / 2) - jel.x, jdy = (P.y + P.h / 2) - jy;
-          if (jdx * jdx + jdy * jdy < 42 * 42 && P.inv <= 0) { hurt(false); return; }
+          if (jdx * jdx + jdy * jdy < 34 * 34 && P.inv <= 0) { hurtEnemy(); return; }
         }
 
         /* the lighthouse door */
