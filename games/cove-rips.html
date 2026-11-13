@@ -174,6 +174,13 @@
         border-radius: 12px; padding: 10px 12px; text-align: center; color: var(--cream); font-size: 0.92rem; line-height: 1.4;
       }
       .prize-banner strong { color: var(--gold); }
+      .prize-code-box {
+        margin-top: 14px; background: linear-gradient(180deg, #fff3c4, #ffe08a); color: #4a2c00;
+        border: 3px solid var(--gold); border-radius: 16px; padding: 12px;
+        font-weight: 700; line-height: 1.45; text-align: center;
+        box-shadow: 0 0 16px 3px rgba(255, 201, 60, 0.55);
+      }
+      .prize-code-box .prize-code { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.7rem; letter-spacing: 0.12em; margin: 4px 0; }
 
       .panel {
         margin-top: 16px; background: var(--panel); color: var(--panel-ink);
@@ -265,7 +272,7 @@
           <span class="refill-timer" id="refillTimer" aria-live="polite">--:--:--</span>
           <span class="refill-sub" id="refillSub">Come back tomorrow to claim them</span>
         </button>
-        <div class="prize-banner">Your coins are make-believe — there's nothing to buy. Pull a <strong>Gold card</strong>? Screenshot it and post it in the Creator's Cove Facebook group to enter — prizes are picked in the group, not in the app.</div>
+        <div class="prize-banner">Your coins are make-believe — there's nothing to buy. Pull an <strong>Epic or Gold card</strong> and you win the <strong>Little Garden Witch Journal Kit</strong> — your Winner Card shows a claim code. Screenshot it, post it in the Creator's Cove Facebook group, and Glenda will send you the kit. One prize per member, per round.</div>
       </section>
 
       <section class="panel" aria-label="Your session">
@@ -283,11 +290,16 @@
         <div class="vault-grid" id="vaultGrid"></div>
       </section>
 
+      <section class="panel" aria-label="Your prize codes">
+        <h2>🎁 Your prize codes</h2>
+        <div id="prizeCodeList"></div>
+      </section>
+
       <section class="panel" aria-label="How to play">
         <h2>How it works in the group</h2>
         <p>Rip packs just for fun — the coins are make-believe and there's nothing to buy. Every pack has <strong>5 cards</strong>. Most pulls are Common, some are Rare, a few are Epic — and a lucky few are <strong>Gold</strong>, and Gold cards glow.</p>
         <p><strong>Elite Pack</strong> costs more coins, but it boosts your Epic and Gold odds — and it always has at least one Epic or better inside.</p>
-        <p><strong>Your pulls are how you earn your way toward prizes.</strong> Pull a Gold card, tap <strong>WINNER CARD</strong>, take a screenshot, and post it in the Creator's Cove Facebook group — that's your entry. Winners are picked from the screenshots posted in the group.</p>
+        <p><strong>Your pulls can win a real prize.</strong> Pull an <strong>Epic</strong> or <strong>Gold</strong> card and you win the current prize — right now it's the <strong>Little Garden Witch Journal Kit</strong>. Tap <strong>WINNER CARD</strong> to see your claim code, screenshot it, and post it in the Creator's Cove Facebook group — Glenda will send you the kit. One prize per member, per round. Your codes stay saved right here in the game, under "Your prize codes," so you can't lose them.</p>
         <p class="note">Run out of coins? Your next 100 free coins arrive tomorrow — when you hit zero, a countdown timer appears showing exactly how long is left until midnight. Come back tomorrow, tap to claim your 100, and you're ripping again. Your coin balance and your Vault are saved on this device, so they're right where you left them when you come back — your session scores start fresh each visit.</p>
       </section>
     </main>
@@ -501,6 +513,8 @@
       var COIN_KEY = "cove-rips-coins";
       var REFILL_KEY = "cove-rips-next-refill";
       var VAULT_KEY = "cove-rips-vault";
+      var PRIZE_KEY = "cove-rips-prize-codes";
+      var CURRENT_PRIZE = "Little Garden Witch Journal Kit";
       var CHEAPEST = 10;
 
       function loadCoins() {
@@ -547,10 +561,34 @@
         try { window.localStorage.setItem(VAULT_KEY, JSON.stringify(vault)); } catch (e) { /* ignore */ }
       }
 
+      /* ================= Prize codes (Epic/Gold pulls win the current prize) ================= */
+      var CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+      function loadPrizeCodes() {
+        try {
+          var v = JSON.parse(window.localStorage.getItem(PRIZE_KEY) || "[]");
+          if (Object.prototype.toString.call(v) === "[object Array]") return v;
+        } catch (e) { /* ignore */ }
+        return [];
+      }
+      function savePrizeCodes() {
+        try { window.localStorage.setItem(PRIZE_KEY, JSON.stringify(prizeCodes)); } catch (e) { /* ignore */ }
+      }
+      function makePrizeCode() {
+        var code = "", tries = 0, i;
+        do {
+          code = "RIPS-";
+          for (i = 0; i < 6; i++) code += CODE_ALPHABET.charAt(Math.floor(Math.random() * CODE_ALPHABET.length));
+          tries++;
+        } while (tries < 20 && prizeCodes.some(function (p) { return p.code === code; }));
+        return code;
+      }
+
       /* ================= State ================= */
       var coins = loadCoins();
       var refillAt = loadRefillAt();
       var vault = loadVault();
+      var prizeCodes = loadPrizeCodes();
+      var lastPrizeCode = null;
       var ripping = false;
       var lastPull = null;      /* array of {card, rarity} from the latest rip */
       var lastPack = null;
@@ -659,12 +697,29 @@
           refillSub.textContent = "Come back tomorrow to claim them";
         }
       }
+      function renderPrizeCodes() {
+        var list = document.getElementById("prizeCodeList");
+        if (!list) return;
+        if (!prizeCodes.length) {
+          list.innerHTML = '<p class="note">No prize codes yet — pull an Epic or Gold card and you win one.</p>';
+          return;
+        }
+        var html = "";
+        prizeCodes.slice().reverse().forEach(function (p) {
+          var d = new Date(p.date);
+          var when = isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+          html += '<p style="margin:6px 0;"><strong style="font-family:Fredoka,sans-serif; letter-spacing:0.06em; font-size:1.1rem;">' + p.code + "</strong> — " + rarityLabel(p.rarity) + " " + p.card + (when ? " · " + when : "") + "</p>";
+        });
+        html += '<p class="note">Post a screenshot showing your code in the Creator\'s Cove Facebook group and Glenda will send you the ' + CURRENT_PRIZE + '. One prize per member, per round.</p>';
+        list.innerHTML = html;
+      }
       function renderAll() {
         coinValEl.textContent = coins;
         renderShop();
         renderVault();
         renderStats();
         renderRefill();
+        renderPrizeCodes();
       }
 
       /* ================= Rip flow ================= */
@@ -673,6 +728,7 @@
         if (coins < pack.price) { setDisplay("Not enough coins for the " + pack.name + " — come back tomorrow for 100 free coins!"); return; }
         ripping = true;
         lastPack = pack;
+        lastPrizeCode = null;
         coins -= pack.price;
         saveCoins();
         if (coins < CHEAPEST && !refillAt) { refillAt = nextMidnight(); saveRefillAt(); }
@@ -703,6 +759,7 @@
       }
       function revealCards(pulls, pack) {
         var goldPulls = pulls.filter(function (p) { return p.rarity === "gold"; });
+        var prizePulls = pulls.filter(function (p) { return RARITY_RANK[p.rarity] >= 2; });
         var best = pulls.slice().sort(function (a, b) { return RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity]; })[0];
         /* Save to vault + stats */
         pulls.forEach(function (p) {
@@ -730,7 +787,7 @@
         html += "</div>";
         html += '<div class="rip-actions">' +
           '<button class="btn" id="ripAgainBtn" type="button">Rip Another</button>' +
-          '<button class="btn ghost" id="winnerCardBtn" type="button"' + (goldPulls.length ? "" : " disabled") + ">WINNER CARD</button>" +
+          '<button class="btn ghost" id="winnerCardBtn" type="button"' + (prizePulls.length ? "" : " disabled") + ">WINNER CARD</button>" +
           "</div>";
         ripStageEl.innerHTML = html;
         var cards = ripStageEl.querySelectorAll(".rip-card");
@@ -739,10 +796,25 @@
         });
         var totalDelay = 350 + pulls.length * 550 + 500;
         setTimeout(function () {
+          if (prizePulls.length) {
+            var bestPrize = prizePulls.slice().sort(function (a, b) { return RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity]; })[0];
+            lastPrizeCode = makePrizeCode();
+            prizeCodes.push({ code: lastPrizeCode, rarity: bestPrize.rarity, card: bestPrize.card.name, date: new Date().toISOString() });
+            savePrizeCodes();
+            var pb = document.createElement("div");
+            pb.className = "prize-code-box";
+            pb.innerHTML = "🎁 <strong>You won the " + CURRENT_PRIZE + "!</strong><br>Your claim code:" +
+              '<div class="prize-code">' + lastPrizeCode + "</div>" +
+              "Screenshot this and post it in the Creator's Cove group — Glenda will send you the kit. Your code is saved in the game, under \u201CYour prize codes.\u201D One prize per member, per round.";
+            ripStageEl.appendChild(pb);
+            renderPrizeCodes();
+          }
           if (goldPulls.length) {
             Sfx.goldFanfare();
             var names = goldPulls.map(function (p) { return p.card.name; }).join(", ");
-            setDisplay("✨ GOLD! You pulled " + names + "! Screenshot it for the group!", true);
+            setDisplay("✨ GOLD! You pulled " + names + "! That wins the prize — your claim code is below!", true);
+          } else if (prizePulls.length) {
+            setDisplay("🎁 EPIC pull — that's a prize! Your claim code is below!", true);
           } else {
             setDisplay("You pulled a " + rarityLabel(best.rarity) + " " + best.card.name + " — nice rip!", false);
           }
@@ -777,7 +849,10 @@
           '<p class="wc-amount">' + (golds.length ? "✨ GOLD PULL! ✨" : "Nice rip!") + "</p>" +
           '<p class="wc-detail">Coin total: ' + coins + " coins · Vault: " + vaultCount() + " / 12</p>" +
           '<p class="wc-date">' + today + "</p>" +
-          '<p class="wc-detail" style="font-size:0.85rem; margin-top:10px;">Screenshot this and post it in the Creator\'s Cove Facebook group to enter — prizes are picked in the group, not in the app. Coins are make-believe.</p>';
+          (lastPrizeCode ?
+            '<p class="wc-amount" style="font-size:1.25rem;">🎁 Claim code: ' + lastPrizeCode + "</p>" +
+            '<p class="wc-detail">Prize: ' + CURRENT_PRIZE + "</p>" : "") +
+          '<p class="wc-detail" style="font-size:0.85rem; margin-top:10px;">Screenshot this and post it in the Creator\'s Cove Facebook group' + (lastPrizeCode ? " — Glenda will send you your prize. One prize per member, per round." : " to enter — prizes are picked in the group, not in the app.") + ' Coins are make-believe.</p>';
         overlay.classList.add("show");
       }
       document.getElementById("closeCardBtn").addEventListener("click", function () {
