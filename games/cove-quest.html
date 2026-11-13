@@ -124,7 +124,7 @@
         <p style="margin-top:8px;font-size:.8rem;opacity:.85">Hold JUMP in the air to glide · In the water, tap JUMP to paddle · Finish a level to unlock the next — 5 levels in all!</p>
       </div>
 
-      <p class="howto"><strong>How to play:</strong> run with the arrow buttons, jump with the JUMP button. Stomp crabs flat for bonus shells — a pinch just knocks you back, but fall in a gap and you splash back to the last checkpoint, minus a heart. In the lagoon, tap JUMP to paddle and mind the jellyfish. Off the pier's edge, hold JUMP to glide on your umbrella. Reach the lighthouse — or the old Beacon — to finish the level!</p>
+      <p class="howto"><strong>How to play:</strong> run with the arrow buttons, jump with the JUMP button. Stomp crabs flat for bonus shells — a pinch just knocks you back, but fall in a gap and you splash back to the last checkpoint, minus a heart. In the lagoon, tap JUMP to paddle, mind the jellyfish — and from Level 2 on, there's a <strong>shark</strong> in there with them. Watch the sky for swooping <strong>seagulls</strong> (bonk one from above for +2 shells!) and don't step on the spiky <strong>sea urchins</strong>. Every level bites a little harder than the one before. Off the pier's edge, hold JUMP to glide on your umbrella. Reach the lighthouse — or the old Beacon — to finish the level!</p>
     </div>
     <div class="toast" id="toast" role="status"></div>
 
@@ -263,6 +263,9 @@
             { x: 6720, min: 6620, max: 6880, dir: -1, y: GROUND_Y }
           ],
           jellies: [ { x: 3550, baseY: 392, phase: 0 }, { x: 4120, baseY: 408, phase: 2.1 } ],
+          crabSpeed: 0.45, jellySpeed: 55, gullSpeed: 1.0,
+          gulls: [ { x: 900, y: 250, min: 600, max: 1200, dir: 1, phase: 0 } ],
+          sharks: [], urchins: [],
           checkpoints: [ { x: 60, y: 360 }, { x: 1640, y: 360 }, { x: 3040, y: 360 }, { x: 4560, y: 360 }, { x: 5520, y: 150 }, { x: 6600, y: 360 } ],
           glideSignX: 5740, goalDrawX: 6990
         };
@@ -306,6 +309,10 @@
             { x: 7300, min: 7220, max: 7480, dir: -1, y: GROUND_Y }
           ],
           jellies: [ { x: 3450, baseY: 392, phase: 0 }, { x: 3980, baseY: 408, phase: 2.1 }, { x: 4380, baseY: 382, phase: 4.0 } ],
+          crabSpeed: 0.55, jellySpeed: 52, gullSpeed: 1.1,
+          sharks: [ { x: 3800, min: 3250, max: 4350, y: 436, dir: 1, spd: 0.7 } ],
+          gulls: [ { x: 1000, y: 246, min: 700, max: 1350, dir: 1, phase: 0 }, { x: 4800, y: 300, min: 4600, max: 5050, dir: -1, phase: 1.6 } ],
+          urchins: [ { x: 4255, y: 430 } ],
           checkpoints: [ { x: 60, y: 360 }, { x: 1540, y: 360 }, { x: 2940, y: 360 }, { x: 4620, y: 360 }, { x: 5660, y: 150 }, { x: 6560, y: 300 }, { x: 7200, y: 360 } ],
           glideSignX: 5880, goalDrawX: 7470
         };
@@ -338,7 +345,7 @@
             [345, 348, 0], [575, 274, 1], [760, 430, 0], [1080, 336, 0], [1380, 430, 0],
             [1760, 322, 1], [1900, 430, 0], [2280, 430, 0], [2760, 430, 0],
             [3180, 380, 0], [3380, 390, 0], [3620, 466, 1], [3820, 322, 0], [4060, 424, 0], [4480, 430, 0],
-            [5110, 366, 0], [5310, 296, 0], [5700, 220, 0], [6180, 302, 1], [6600, 390, 1],
+            [5110, 366, 0], [5310, 296, 0], [5700, 220, 0], [6180, 302, 1], [6640, 390, 1],
             [6860, 430, 0]
           ],
           crabs: [
@@ -349,6 +356,10 @@
             { x: 6820, min: 6760, max: 6960, dir: -1, y: GROUND_Y }
           ],
           jellies: [ { x: 3480, baseY: 396, phase: 0 }, { x: 4020, baseY: 404, phase: 2.1 }, { x: 4360, baseY: 378, phase: 4.0 } ],
+          crabSpeed: 0.6, jellySpeed: 50, gullSpeed: 1.2,
+          sharks: [ { x: 3800, min: 3200, max: 4400, y: 440, dir: -1, spd: 0.9 } ],
+          gulls: [ { x: 950, y: 252, min: 650, max: 1300, dir: 1, phase: 0 }, { x: 2350, y: 308, min: 2100, max: 2600, dir: 1, phase: 1.6 }, { x: 5750, y: 190, min: 5560, max: 5900, dir: -1, phase: 3.1 } ],
+          urchins: [ { x: 5180, y: 400 }, { x: 6540, y: 428 } ],
           checkpoints: [ { x: 60, y: 360 }, { x: 1540, y: 360 }, { x: 2960, y: 360 }, { x: 4590, y: 360 }, { x: 5620, y: 150 }, { x: 6660, y: 360 } ],
           glideSignX: 5840, goalDrawX: 7050
         };
@@ -391,7 +402,11 @@
             { x: 4760, min: 4620, max: 4920, dir: 1, y: GROUND_Y },
             { x: 6740, min: 6660, max: 6900, dir: -1, y: GROUND_Y }
           ],
-          jellies: [ { x: 3500, baseY: 394, phase: 0 }, { x: 4100, baseY: 402, phase: 2.4 } ],
+          jellies: [ { x: 3500, baseY: 394, phase: 0 }, { x: 4100, baseY: 402, phase: 2.4 }, { x: 4380, baseY: 382, phase: 4.0 } ],
+          crabSpeed: 0.65, jellySpeed: 48, gullSpeed: 1.3,
+          sharks: [ { x: 3800, min: 3200, max: 4400, y: 438, dir: 1, spd: 1.1 } ],
+          gulls: [ { x: 950, y: 252, min: 650, max: 1300, dir: 1, phase: 0 }, { x: 3650, y: 240, min: 3300, max: 4000, dir: 1, phase: 1.6 }, { x: 6750, y: 330, min: 6620, max: 6950, dir: -1, phase: 3.1 } ],
+          urchins: [ { x: 5180, y: 398 }, { x: 4280, y: 428 }, { x: 6660, y: 470 } ],
           checkpoints: [ { x: 60, y: 360 }, { x: 1560, y: 360 }, { x: 2970, y: 360 }, { x: 4590, y: 360 }, { x: 5620, y: 150 }, { x: 6640, y: 360 } ],
           glideSignX: 5840, goalDrawX: 6980
         };
@@ -433,7 +448,11 @@
             { x: 4580, min: 4460, max: 4760, dir: 1, y: GROUND_Y },
             { x: 7560, min: 7450, max: 7700, dir: -1, y: GROUND_Y }
           ],
-          jellies: [ { x: 3450, baseY: 394, phase: 0 }, { x: 4050, baseY: 404, phase: 2.4 } ],
+          jellies: [ { x: 3450, baseY: 394, phase: 0 }, { x: 4050, baseY: 404, phase: 2.4 }, { x: 4300, baseY: 386, phase: 4.2 } ],
+          crabSpeed: 0.75, jellySpeed: 46, gullSpeed: 1.45,
+          sharks: [ { x: 3650, min: 3150, max: 4250, y: 440, dir: 1, spd: 1.3 } ],
+          gulls: [ { x: 950, y: 252, min: 650, max: 1300, dir: 1, phase: 0 }, { x: 3600, y: 246, min: 3250, max: 3950, dir: 1, phase: 1.6 }, { x: 6050, y: 300, min: 5850, max: 6300, dir: 1, phase: 3.1 }, { x: 7000, y: 420, min: 6900, max: 7300, dir: -1, phase: 4.4 } ],
+          urchins: [ { x: 5030, y: 400 }, { x: 3395, y: 424 }, { x: 7220, y: 470 } ],
           checkpoints: [ { x: 60, y: 360 }, { x: 1520, y: 360 }, { x: 2920, y: 360 }, { x: 4440, y: 360 }, { x: 5460, y: 150 }, { x: 6440, y: 320 }, { x: 6920, y: 360 } ],
           glideSignX: 5660, goalDrawX: 7830
         };
@@ -443,6 +462,7 @@
       var L = null, LEVEL_W = 7200, GOAL_X = 6940;
       var PLATFORMS = [], WATER = { x: 0, y: 0, w: 0, h: 0 }, SHELLS = [], CRABS = [], JELLIES = [], CHECKPOINTS = [];
       var GOLD_TOTAL = 5;
+      var SHARKS = [], GULLS = [], URCHINS = [];
 
       function unlocked() {
         var u = 1;
@@ -457,6 +477,9 @@
         SHELLS = L.shells.map(function (s) { return { x: s[0], y: s[1], golden: !!s[2], taken: false }; });
         CRABS = L.crabs.map(function (c) { return { x: c.x, min: c.min, max: c.max, dir: c.dir, y: c.y, dead: false }; });
         GOLD_TOTAL = SHELLS.filter(function (s) { return s.golden; }).length;
+        SHARKS = (L.sharks || []).map(function (s2) { return { x: s2.x, min: s2.min, max: s2.max, y: s2.y, dir: s2.dir || 1, spd: s2.spd || 0.8 }; });
+        GULLS = (L.gulls || []).map(function (g) { return { x: g.x, y: g.y, min: g.min, max: g.max, dir: g.dir || 1, phase: g.phase || 0, dead: false }; });
+        URCHINS = L.urchins || [];
         document.getElementById("goldTotal").textContent = GOLD_TOTAL;
         document.getElementById("levelSub").textContent = L.sub;
       }
@@ -672,7 +695,7 @@
         for (var c = 0; c < CRABS.length; c++) {
           var crab = CRABS[c];
           if (crab.dead) continue;
-          crab.x += crab.dir * 0.5;
+          crab.x += crab.dir * (L.crabSpeed || 0.5);
           if (crab.x < crab.min) { crab.x = crab.min; crab.dir = 1; }
           if (crab.x > crab.max) { crab.x = crab.max; crab.dir = -1; }
           var cdx = Math.abs((P.x + P.w / 2) - crab.x), cdy = (P.y + P.h) - crab.y;
@@ -689,9 +712,46 @@
 
         for (var j = 0; j < JELLIES.length; j++) {
           var jel = JELLIES[j];
-          var jy = jel.baseY + Math.sin(tick / 55 + jel.phase) * 42;
+          var jy = jel.baseY + Math.sin(tick / (L.jellySpeed || 55) + jel.phase) * 42;
           var jdx = (P.x + P.w / 2) - jel.x, jdy = (P.y + P.h / 2) - jy;
           if (jdx * jdx + jdy * jdy < 34 * 34 && P.inv <= 0) { hurtEnemy(); return; }
+        }
+
+        /* sharks — they patrol the lagoon, and they bite */
+        for (var sk = 0; sk < SHARKS.length; sk++) {
+          var shark = SHARKS[sk];
+          shark.x += shark.dir * shark.spd;
+          if (shark.x < shark.min) { shark.x = shark.min; shark.dir = 1; }
+          if (shark.x > shark.max) { shark.x = shark.max; shark.dir = -1; }
+          var sdx = (P.x + P.w / 2) - shark.x, sdy = (P.y + P.h / 2) - shark.y;
+          if (Math.abs(sdx) < 48 && Math.abs(sdy) < 34 && P.inv <= 0) { hurtEnemy(); return; }
+        }
+
+        /* seagulls — they swoop back and forth; bonk one from above, or get pecked */
+        for (var gu = 0; gu < GULLS.length; gu++) {
+          var gull = GULLS[gu];
+          if (gull.dead) continue;
+          gull.x += gull.dir * (L.gullSpeed || 1.1);
+          if (gull.x < gull.min) { gull.x = gull.min; gull.dir = 1; }
+          if (gull.x > gull.max) { gull.x = gull.max; gull.dir = -1; }
+          var gy = gull.y + Math.sin(tick / 30 + gull.phase) * 10;
+          var gdx = Math.abs((P.x + P.w / 2) - gull.x), gdy = (P.y + P.h) - gy;
+          if (gdx < 38 && gdy > -52 && gdy < 34) {
+            if (P.vy > 0.6 && gdy < 8) {
+              gull.dead = true; P.vy = -8.5; score += 50; shellCount += 2; Sfx.stomp();
+              toast("Bonk! 🕊️ +2 shells");
+              updateHud();
+            } else if (P.inv <= 0) {
+              hurtEnemy(); return;
+            }
+          }
+        }
+
+        /* sea urchins — sit still, all spikes. Do NOT step on these */
+        for (var ur = 0; ur < URCHINS.length; ur++) {
+          var urch = URCHINS[ur];
+          var udx = Math.abs((P.x + P.w / 2) - urch.x), udy = (P.y + P.h) - urch.y;
+          if (udx < 30 && udy > -30 && udy < 14 && P.inv <= 0) { hurtEnemy(); return; }
         }
 
         if (P.x + P.w > GOAL_X && P.onGround) { gameOver(true); return; }
@@ -786,6 +846,24 @@
 
         PLATFORMS.forEach(drawPlatform);
 
+        /* sea urchins on the rocks and decks */
+        for (var uu = 0; uu < URCHINS.length; uu++) {
+          var ux = URCHINS[uu].x - camX, uy = URCHINS[uu].y;
+          if (ux < -30 || ux > VIEW_W + 30) continue;
+          ctx2.strokeStyle = "#3a2b4d"; ctx2.lineWidth = 2.4;
+          for (var a = 0; a < 11; a++) {
+            var ang = Math.PI + (a / 10) * Math.PI;
+            ctx2.beginPath();
+            ctx2.moveTo(ux, uy - 5);
+            ctx2.lineTo(ux + Math.cos(ang) * 16, uy - 5 + Math.sin(ang) * 16);
+            ctx2.stroke();
+          }
+          ctx2.fillStyle = "#4b3566";
+          ctx2.beginPath(); ctx2.arc(ux, uy - 5, 9.5, 0, 7); ctx2.fill();
+          ctx2.fillStyle = "#6d4c9f";
+          ctx2.beginPath(); ctx2.arc(ux - 2.5, uy - 7.5, 3, 0, 7); ctx2.fill();
+        }
+
         /* the goal tower */
         var lx = (L ? L.goalDrawX : 6990) - camX;
         if (lx > -160 && lx < VIEW_W + 160) {
@@ -839,10 +917,33 @@
         }
         for (var j = 0; j < JELLIES.length; j++) {
           var jel = JELLIES[j];
-          var jy2 = jel.baseY + Math.sin(tick / 55 + jel.phase) * 42;
+          var jy2 = jel.baseY + Math.sin(tick / (L.jellySpeed || 55) + jel.phase) * 42;
           var jx = jel.x - camX;
           if (jx < -50 || jx > VIEW_W + 50) continue;
           bigEmoji("🪼", jx, jy2, 44);
+        }
+        /* sharks in the lagoon */
+        for (var sk2 = 0; sk2 < SHARKS.length; sk2++) {
+          var shark2 = SHARKS[sk2];
+          var shx2 = shark2.x - camX;
+          if (shx2 < -70 || shx2 > VIEW_W + 70) continue;
+          ctx2.save();
+          ctx2.translate(shx2, shark2.y + Math.sin(tick / 40 + shark2.x) * 5);
+          ctx2.scale(shark2.dir > 0 ? -1 : 1, 1);
+          bigEmoji("🦈", 0, 0, 64);
+          ctx2.restore();
+        }
+        /* seagulls overhead */
+        for (var gu2 = 0; gu2 < GULLS.length; gu2++) {
+          var gull2 = GULLS[gu2];
+          if (gull2.dead) continue;
+          var gx2 = gull2.x - camX;
+          if (gx2 < -50 || gx2 > VIEW_W + 50) continue;
+          ctx2.save();
+          ctx2.translate(gx2, gull2.y + Math.sin(tick / 30 + gull2.phase) * 10);
+          ctx2.scale(gull2.dir > 0 ? -1 : 1, 1);
+          bigEmoji("🕊️", 0, 0, 40);
+          ctx2.restore();
         }
         var px = P.x + P.w / 2 - camX, py = P.y + P.h;
         var blink = P.inv > 0 && Math.floor(tick / 5) % 2 === 0;
