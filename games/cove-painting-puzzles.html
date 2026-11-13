@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Cove Painting Puzzles — Creator's Cove</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: linear-gradient(180deg, #fdf3e3, #e3f0f7); color: #21303a; min-height: 100vh; padding: 14px 14px 42px; }
+  .wrap { max-width: 560px; margin: 0 auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .back { text-decoration: none; color: #0f6f8f; font-weight: 700; font-size: .95rem; background: #fff; padding: 7px 13px; border-radius: 999px; box-shadow: 0 2px 8px rgba(31,64,84,.15); }
+  .mute { border: none; background: #fff; font-size: 1.05rem; width: 38px; height: 38px; border-radius: 50%; box-shadow: 0 2px 8px rgba(31,64,84,.15); cursor: pointer; }
+  h1 { font-size: 1.55rem; text-align: center; }
+  .sub { text-align: center; color: #5b6b73; font-size: .92rem; margin: 4px 0 12px; }
+  .picks { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; }
+  .pick { flex: none; width: 74px; cursor: pointer; text-align: center; }
+  .pick img { width: 74px; height: 74px; object-fit: cover; border-radius: 12px; border: 3px solid transparent; box-shadow: 0 2px 8px rgba(31,64,84,.2); }
+  .pick.on img { border-color: #f4a93b; }
+  .pick .nm { font-size: .68rem; font-weight: 700; color: #44565f; margin-top: 3px; }
+  .sizes { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
+  .sizebtn { border: none; border-radius: 999px; padding: 9px 16px; font-weight: 800; cursor: pointer; background: #fff; color: #44565f; box-shadow: 0 2px 8px rgba(31,64,84,.13); font-size: .9rem; }
+  .sizebtn.on { background: linear-gradient(180deg, #ffd166, #f4a93b); color: #21303a; }
+  .scorebar { display: flex; justify-content: space-between; background: #21303a; color: #fdf6e3; border-radius: 12px; padding: 9px 14px; font-weight: 700; font-size: .92rem; margin-bottom: 12px; }
+  .boardwrap { position: relative; }
+  .board { display: grid; gap: 3px; background: #21303a; padding: 3px; border-radius: 14px; box-shadow: 0 8px 24px rgba(31,64,84,.28); }
+  .tile { aspect-ratio: 1/1; border-radius: 6px; cursor: pointer; background-repeat: no-repeat; }
+  .tile.sel { outline: 4px solid #ffd166; outline-offset: -4px; filter: brightness(1.12); }
+  .tile.home { box-shadow: inset 0 0 0 2px rgba(255,255,255,.35); }
+  .peek { position: absolute; inset: 3px; border-radius: 12px; background-size: cover; background-position: center; display: none; z-index: 5; }
+  .actions { display: flex; gap: 8px; margin-top: 14px; }
+  .btn { flex: 1; border: none; border-radius: 999px; padding: 12px 6px; font-size: .95rem; font-weight: 800; cursor: pointer; background: #fff; color: #21303a; box-shadow: 0 3px 8px rgba(31,64,84,.15); }
+  .btn.gold { background: linear-gradient(180deg, #ffd166, #f4a93b); }
+  .btn:active { transform: scale(.97); }
+  .win { display: none; background: #fff; border-radius: 16px; padding: 18px; margin-top: 14px; text-align: center; box-shadow: 0 3px 12px rgba(31,64,84,.12); }
+  .win .big { font-size: 1.3rem; font-weight: 900; }
+  .howto { font-size: .85rem; color: #5b6b73; margin-top: 16px; line-height: 1.45; }
+  #toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); background: #21303a; color: #fff; padding: 11px 18px; border-radius: 999px; font-weight: 700; opacity: 0; pointer-events: none; transition: all .25s; max-width: 92vw; text-align: center; z-index: 50; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="../index.html">← Back to Cove</a>
+    <button class="mute" id="muteBtn" type="button" aria-label="Sound on or off">🔊</button>
+  </div>
+  <h1>🧩 Cove Painting Puzzles</h1>
+  <p class="sub">Kim's own paintings, scrambled! Swap the tiles to put them back together.</p>
+
+  <div class="picks" id="picks"></div>
+  <div class="sizes" id="sizes">
+    <button class="sizebtn" type="button" data-n="3">3 × 3 Easy</button>
+    <button class="sizebtn on" type="button" data-n="4">4 × 4 Classic</button>
+    <button class="sizebtn" type="button" data-n="5">5 × 5 Master</button>
+  </div>
+  <div class="scorebar"><span id="paintName">Dandelion Wish</span><span>Moves <span id="moveNo">0</span></span><span>⏱ <span id="timeNo">0:00</span></span></div>
+
+  <div class="boardwrap">
+    <div class="board" id="board"></div>
+    <div class="peek" id="peek"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" id="peekBtn" type="button">👀 Hold to peek</button>
+    <button class="btn gold" id="shuffleBtn" type="button">🔀 Scramble it again</button>
+  </div>
+
+  <div class="win" id="winBox">
+    <div class="big">🎉 You put the painting back together!</div>
+    <p id="winStats" style="color:#5b6b73;margin:6px 0"></p>
+    <img id="winImg" alt="The finished painting" style="width:180px;height:180px;object-fit:cover;border-radius:12px;box-shadow:0 4px 14px rgba(31,64,84,.25)" />
+  </div>
+
+  <p class="howto"><strong>How to play:</strong> tap a tile, then tap another tile to swap them. A soft white frame means that tile is already home. Finish the whole painting to win. Every picture here is one of Kim's real paintings — the same ones from her journals. Best scores are saved on this phone.</p>
+</div>
+<div id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var AC = null, muted = false;
+  try { muted = window.localStorage.getItem("cove-puzzle-muted") === "1"; } catch (e) { /* ignore */ }
+  function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } } if (AC && AC.state === "suspended") AC.resume(); return AC; }
+  function tone(f, d, type, v, delay, slide) { if (muted) return; var c = ac(); if (!c) return; var t = c.currentTime + (delay || 0); var o = c.createOscillator(), g = c.createGain(); o.type = type || "sine"; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + d); g.gain.setValueAtTime(v || .12, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + d + .02); }
+  var Sfx = {
+    pick: function () { tone(620, .06, "sine", .1); },
+    swap: function () { tone(440, .09, "sine", .11, 0, 660); },
+    home: function () { tone(880, .1, "triangle", .1); },
+    win: function () { var n = [523, 659, 784, 1047]; for (var i = 0; i < 4; i++) tone(n[i], .22, "triangle", .14, i * .1); }
+  };
+  var muteBtn = document.getElementById("muteBtn");
+  function drawMute() { muteBtn.textContent = muted ? "🔇" : "🔊"; }
+  muteBtn.addEventListener("click", function () { muted = !muted; try { window.localStorage.setItem("cove-puzzle-muted", muted ? "1" : "0"); } catch (e) { /* ignore */ } drawMute(); if (!muted) Sfx.pick(); });
+  drawMute();
+  document.addEventListener("visibilitychange", function () { if (document.hidden && AC) AC.suspend(); });
+  var toastTimer = null;
+  function toast(msg) { var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2200); }
+
+  var PAINTINGS = [
+    { img: "puzzle/p1.jpg", name: "Dandelion Wish" },
+    { img: "puzzle/p2.jpg", name: "Rainy Day" },
+    { img: "puzzle/p3.jpg", name: "Ember" },
+    { img: "puzzle/p4.jpg", name: "Sunflower" },
+    { img: "puzzle/p5.jpg", name: "Sister Witches" }
+  ];
+  var cur = 0, N = 4, order = [], selected = -1, moves = 0, startedAt = 0, timerInt = null, won = false;
+
+  function fmtTime(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
+  function isSolved() { for (var i = 0; i < order.length; i++) if (order[i] !== i) return false; return true; }
+  function shuffle() {
+    var total = N * N, tries = 0;
+    do {
+      order = [];
+      for (var i = 0; i < total; i++) order.push(i);
+      for (var j = total - 1; j > 0; j--) { var k = Math.floor(Math.random() * (j + 1)); var tmp = order[j]; order[j] = order[k]; order[k] = tmp; }
+      var home = 0;
+      for (var m = 0; m < total; m++) if (order[m] === m) home++;
+      tries++;
+    } while ((isSolved() || home > total * 0.35) && tries < 12);
+    selected = -1; moves = 0; won = false; startedAt = 0;
+    document.getElementById("timeNo").textContent = "0:00";
+    document.getElementById("winBox").style.display = "none";
+  }
+  function renderPicks() {
+    var box = document.getElementById("picks");
+    var html = "";
+    PAINTINGS.forEach(function (p, i) {
+      html += "<div class='pick" + (i === cur ? " on" : "") + "' data-i='" + i + "'><img src='" + p.img + "' alt='" + p.name + "' /><div class='nm'>" + p.name + "</div></div>";
+    });
+    box.innerHTML = html;
+    box.querySelectorAll(".pick").forEach(function (el) {
+      el.addEventListener("click", function () { cur = parseInt(el.getAttribute("data-i"), 10); Sfx.pick(); startPuzzle(); });
+    });
+    document.querySelectorAll("#sizes .sizebtn").forEach(function (b) {
+      b.classList.toggle("on", parseInt(b.getAttribute("data-n"), 10) === N);
+    });
+  }
+  function renderBoard() {
+    var board = document.getElementById("board");
+    board.style.gridTemplateColumns = "repeat(" + N + ", 1fr)";
+    var p = PAINTINGS[cur];
+    document.getElementById("paintName").textContent = p.name;
+    document.getElementById("moveNo").textContent = moves;
+    document.getElementById("peek").style.backgroundImage = "url('" + p.img + "')";
+    var html = "";
+    for (var slot = 0; slot < order.length; slot++) {
+      var homeIdx = order[slot];
+      var cx = homeIdx % N, cy = Math.floor(homeIdx / N);
+      var px = N === 1 ? 0 : (cx / (N - 1)) * 100, py = N === 1 ? 0 : (cy / (N - 1)) * 100;
+      html += "<div class='tile" + (slot === selected ? " sel" : "") + (homeIdx === slot ? " home" : "") + "' data-slot='" + slot + "' style='background-image:url(\"" + p.img + "\");background-size:" + (N * 100) + "% " + (N * 100) + "%;background-position:" + px + "% " + py + "%'></div>";
+    }
+    board.innerHTML = html;
+    board.querySelectorAll(".tile").forEach(function (el) {
+      el.addEventListener("click", function () { tapTile(parseInt(el.getAttribute("data-slot"), 10)); });
+    });
+  }
+  function startPuzzle() { shuffle(); renderPicks(); renderBoard(); }
+  function tapTile(slot) {
+    if (won) return;
+    if (selected < 0) { selected = slot; Sfx.pick(); renderBoard(); return; }
+    if (slot === selected) { selected = -1; Sfx.pick(); renderBoard(); return; }
+    var first = selected;
+    var tmp = order[first]; order[first] = order[slot]; order[slot] = tmp;
+    selected = -1; moves++;
+    if (!startedAt) { startedAt = Date.now(); startTimer(); }
+    Sfx.swap();
+    if (order[slot] === slot || order[first] === first) Sfx.home();
+    if (isSolved()) {
+      won = true;
+      stopTimer();
+      var ms = Date.now() - startedAt;
+      var key = "cove-puzzle-best-" + cur + "-" + N;
+      var prev = 0;
+      try { prev = parseInt(window.localStorage.getItem(key) || "0", 10) || 0; } catch (e) { /* ignore */ }
+      var bestLine = "";
+      if (!prev || moves < prev) { try { window.localStorage.setItem(key, String(moves)); } catch (e) { /* ignore */ } bestLine = " — a new best for this puzzle! 🏆"; }
+      document.getElementById("winStats").textContent = PAINTINGS[cur].name + " · " + N + "×" + N + " · " + moves + " moves in " + fmtTime(ms) + bestLine;
+      document.getElementById("winImg").src = PAINTINGS[cur].img;
+      document.getElementById("winBox").style.display = "block";
+      Sfx.win();
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+    renderBoard();
+  }
+  function startTimer() {
+    stopTimer();
+    timerInt = setInterval(function () {
+      if (startedAt && !won) document.getElementById("timeNo").textContent = fmtTime(Date.now() - startedAt);
+    }, 500);
+  }
+  function stopTimer() { if (timerInt) { clearInterval(timerInt); timerInt = null; } }
+  document.querySelectorAll("#sizes .sizebtn").forEach(function (b) {
+    b.addEventListener("click", function () { N = parseInt(b.getAttribute("data-n"), 10); Sfx.pick(); startPuzzle(); });
+  });
+  var peekBtn = document.getElementById("peekBtn"), peekEl = document.getElementById("peek");
+  function peekOn(e) { e.preventDefault(); peekEl.style.display = "block"; }
+  function peekOff() { peekEl.style.display = "none"; }
+  peekBtn.addEventListener("pointerdown", peekOn);
+  peekBtn.addEventListener("pointerup", peekOff);
+  peekBtn.addEventListener("pointerleave", peekOff);
+  document.getElementById("shuffleBtn").addEventListener("click", function () { stopTimer(); startPuzzle(); toast("Scrambled! 🔀"); });
+  startPuzzle();
+})();
+</script>
+</body>
+</html>

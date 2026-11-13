@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Cove Mix the Paint — Creator's Cove</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: linear-gradient(180deg, #fdf3e3 0%, #f7e3ee 55%, #e3f0f7 100%); color: #21303a; min-height: 100vh; padding: 14px 14px 42px; }
+  .wrap { max-width: 560px; margin: 0 auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .back { text-decoration: none; color: #0f6f8f; font-weight: 700; font-size: .95rem; background: #fff; padding: 7px 13px; border-radius: 999px; box-shadow: 0 2px 8px rgba(31,64,84,.15); }
+  .mute { border: none; background: #fff; font-size: 1.05rem; width: 38px; height: 38px; border-radius: 50%; box-shadow: 0 2px 8px rgba(31,64,84,.15); cursor: pointer; }
+  h1 { font-size: 1.55rem; text-align: center; color: #21303a; }
+  .sub { text-align: center; color: #5b6b73; font-size: .92rem; margin: 4px 0 14px; }
+  .girl { display: flex; gap: 12px; align-items: center; background: #fff; border-radius: 16px; padding: 12px 14px; box-shadow: 0 3px 12px rgba(31,64,84,.10); }
+  .girl img { width: 62px; height: 62px; border-radius: 50%; object-fit: cover; border: 3px solid #ffd166; }
+  .girl .who { font-weight: 800; }
+  .girl .say { color: #44565f; font-size: .94rem; }
+  .swatches { display: flex; gap: 14px; margin-top: 14px; }
+  .sw { flex: 1; background: #fff; border-radius: 16px; padding: 12px; text-align: center; box-shadow: 0 3px 12px rgba(31,64,84,.10); }
+  .sw .lbl { font-weight: 800; font-size: .85rem; letter-spacing: .4px; color: #5b6b73; margin-bottom: 8px; }
+  .blob { height: 110px; border-radius: 46% 54% 52% 48% / 52% 46% 54% 48%; border: 3px solid rgba(33,48,58,.15); box-shadow: inset 0 -12px 22px rgba(0,0,0,.14), inset 0 8px 14px rgba(255,255,255,.35); transition: background-color .25s; }
+  .chips { min-height: 26px; margin-top: 8px; font-size: .95rem; }
+  .doses { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 14px; }
+  .dose { border: none; border-radius: 14px; padding: 12px 2px 9px; cursor: pointer; color: #fff; font-weight: 800; font-size: .8rem; box-shadow: 0 3px 8px rgba(31,64,84,.22); }
+  .dose:active { transform: scale(.95); }
+  .dose .drop { font-size: 1.45rem; display: block; }
+  .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .btn { flex: 1; border: none; border-radius: 999px; padding: 13px 8px; font-size: .98rem; font-weight: 800; cursor: pointer; background: #e8eef1; color: #21303a; box-shadow: 0 3px 8px rgba(31,64,84,.15); }
+  .btn.gold { background: linear-gradient(180deg, #ffd166, #f4a93b); }
+  .btn:active { transform: scale(.97); }
+  .scorebar { display: flex; justify-content: space-between; background: #21303a; color: #fdf6e3; border-radius: 12px; padding: 9px 14px; margin-top: 14px; font-weight: 700; font-size: .92rem; }
+  .result { display: none; background: #fff; border-radius: 16px; padding: 16px; margin-top: 14px; text-align: center; box-shadow: 0 3px 12px rgba(31,64,84,.12); }
+  .result .big { font-size: 1.3rem; font-weight: 900; }
+  .result .pts { font-size: 2rem; font-weight: 900; color: #e8873a; }
+  .howto { font-size: .85rem; color: #5b6b73; margin-top: 16px; line-height: 1.45; }
+  #toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); background: #21303a; color: #fff; padding: 11px 18px; border-radius: 999px; font-weight: 700; opacity: 0; pointer-events: none; transition: all .25s; max-width: 92vw; text-align: center; z-index: 50; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="../index.html">← Back to Cove</a>
+    <button class="mute" id="muteBtn" type="button" aria-label="Sound on or off">🔊</button>
+  </div>
+  <h1>🎨 Cove Mix the Paint</h1>
+  <p class="sub">The girls need THAT color. Mix it on your palette!</p>
+
+  <div class="scorebar"><span>Round <span id="roundNo">1</span></span><span>Score <span id="scoreNo">0</span></span><span>🔥 Streak <span id="streakNo">0</span></span></div>
+
+  <div class="girl" style="margin-top:12px">
+    <img id="girlImg" src="crew/kim.jpg" alt="One of the Cove girls" />
+    <div><div class="who" id="girlWho">Kim</div><div class="say" id="girlSay"></div></div>
+  </div>
+
+  <div class="swatches">
+    <div class="sw"><div class="lbl">🎯 SHE WANTS</div><div class="blob" id="targetBlob"></div><div class="chips">&nbsp;</div></div>
+    <div class="sw"><div class="lbl">🥣 YOUR MIX</div><div class="blob" id="yourBlob"></div><div class="chips" id="mixChips">empty bowl</div></div>
+  </div>
+
+  <div class="doses">
+    <button class="dose" type="button" data-pig="r" style="background:#d92323"><span class="drop">🔴</span>Red</button>
+    <button class="dose" type="button" data-pig="y" style="background:#e8a812"><span class="drop">🟡</span>Yellow</button>
+    <button class="dose" type="button" data-pig="b" style="background:#2456a8"><span class="drop">🔵</span>Blue</button>
+    <button class="dose" type="button" data-pig="w" style="background:#9aa7ad"><span class="drop">⚪</span>White</button>
+    <button class="dose" type="button" data-pig="k" style="background:#2b2b30"><span class="drop">⚫</span>Black</button>
+  </div>
+
+  <div class="actions">
+    <button class="btn" id="undoBtn" type="button">↩️ Undo drop</button>
+    <button class="btn" id="rinseBtn" type="button">🚰 Rinse bowl</button>
+    <button class="btn gold" id="doneBtn" type="button">✅ That's my color!</button>
+  </div>
+
+  <div class="result" id="resultBox">
+    <div class="big" id="resultTitle"></div>
+    <div class="pts" id="resultPts"></div>
+    <p id="resultRecipe" style="color:#5b6b73"></p>
+    <div class="actions" style="max-width:280px;margin:12px auto 0"><button class="btn gold" id="nextBtn" type="button">🎨 Next color</button></div>
+  </div>
+
+  <p class="howto"><strong>How to play:</strong> tap the paint drops to add them to your bowl, one drop at a time — real paint rules! Red + yellow makes orange, blue + yellow makes green, and all three together make... well, every artist knows. White lightens, black deepens. Match the color she wants as close as you can, then hit "That's my color!" 90 or better keeps your streak alive. Best score is saved on this phone.</p>
+  <p class="howto" style="text-align:center">🏆 Best score: <span id="bestNo">0</span></p>
+</div>
+<div id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  /* ---------- sound ---------- */
+  var AC = null, muted = false;
+  try { muted = window.localStorage.getItem("cove-mix-muted") === "1"; } catch (e) { /* ignore */ }
+  function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } } if (AC && AC.state === "suspended") AC.resume(); return AC; }
+  function tone(f, d, type, v, delay, slide) { if (muted) return; var c = ac(); if (!c) return; var t = c.currentTime + (delay || 0); var o = c.createOscillator(), g = c.createGain(); o.type = type || "sine"; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + d); g.gain.setValueAtTime(v || .12, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + d + .02); }
+  var Sfx = {
+    plop: function () { tone(300, .12, "sine", .16, 0, 120); },
+    click: function () { tone(620, .06, "sine", .1); },
+    rinse: function () { tone(500, .25, "sine", .08, 0, 900); },
+    good: function () { var n = [523, 659, 784]; for (var i = 0; i < 3; i++) tone(n[i], .16, "triangle", .14, i * .09); },
+    great: function () { var n = [523, 659, 784, 1047]; for (var i = 0; i < 4; i++) tone(n[i], .2, "triangle", .15, i * .09); },
+    meh: function () { tone(220, .25, "sine", .12, 0, 160); }
+  };
+  var muteBtn = document.getElementById("muteBtn");
+  function drawMute() { muteBtn.textContent = muted ? "🔇" : "🔊"; }
+  muteBtn.addEventListener("click", function () { muted = !muted; try { window.localStorage.setItem("cove-mix-muted", muted ? "1" : "0"); } catch (e) { /* ignore */ } drawMute(); if (!muted) Sfx.click(); });
+  drawMute();
+  document.addEventListener("visibilitychange", function () { if (document.hidden && AC) AC.suspend(); });
+
+  /* ---------- toast ---------- */
+  var toastTimer = null;
+  function toast(msg) { var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2300); }
+
+  /* ---------- RYB paint mixing (trilinear over the classic paint cube) ---------- */
+  var CORNERS = {
+    "000": [243, 240, 232], "100": [214, 32, 39], "010": [247, 197, 12], "001": [33, 71, 171],
+    "110": [238, 111, 28], "101": [122, 45, 145], "011": [30, 148, 79], "111": [84, 62, 48]
+  };
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function mixColor(d) {
+    var T = d.r + d.y + d.b, W = d.w, K = d.k;
+    var base;
+    if (T === 0) { base = CORNERS["000"].slice(); }
+    else {
+      var pr = d.r / T, py = d.y / T, pb = d.b / T, c = [0, 0, 0], i;
+      var keys = ["000", "100", "010", "001", "110", "101", "011", "111"];
+      for (var ki = 0; ki < 8; ki++) {
+        var key = keys[ki];
+        var wgt = (key.charAt(0) === "1" ? pr : 1 - pr) * (key.charAt(1) === "1" ? py : 1 - py) * (key.charAt(2) === "1" ? pb : 1 - pb);
+        for (i = 0; i < 3; i++) c[i] += CORNERS[key][i] * wgt;
+      }
+      base = c;
+    }
+    var adj = T + W + K;
+    if (adj > 0 && W > 0) { var wf = (W / adj) * 0.85; for (var j = 0; j < 3; j++) base[j] = lerp(base[j], 255, wf); }
+    if (adj > 0 && K > 0) { var kf = 1 - 0.78 * (K / adj); for (var m = 0; m < 3; m++) base[m] *= kf; }
+    return [Math.round(base[0]), Math.round(base[1]), Math.round(base[2])];
+  }
+  function rgbCss(c) { return "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")"; }
+  function dist(a, b) {
+    var dr = a[0] - b[0], dg = a[1] - b[1], db = a[2] - b[2];
+    return Math.sqrt(2 * dr * dr + 4 * dg * dg + 3 * db * db) / 3;
+  }
+  var PIG_NAMES = { r: "🔴 Red", y: "🟡 Yellow", b: "🔵 Blue", w: "⚪ White", k: "⚫ Black" };
+  function recipeText(d) {
+    var parts = [];
+    ["r", "y", "b", "w", "k"].forEach(function (p) { if (d[p] > 0) parts.push(d[p] + " × " + PIG_NAMES[p]); });
+    return parts.length ? parts.join(" · ") : "nothing — just the empty bowl!";
+  }
+
+  /* ---------- the girls ---------- */
+  var GIRLS = [
+    { img: "crew/kim.jpg", who: "Kim", lines: ["Mix me a color that POPS for the studio wall!", "I need this exact shade. Don't ask why. Artist reasons.", "Get this one right and I'll only be a *little* sarcastic today."] },
+    { img: "crew/trish.jpg", who: "Trish Hexley", lines: ["My potions need this precise color, no substitutions!", "Brew me this shade, would you? The moon insists.", "This color has magical properties. Probably."] },
+    { img: "crew/sandy.jpg", who: "Sandy Sunshine", lines: ["I need THIS color for the beach shack — it's gonna be so cute!", "Mix this for me! Bonus points if it sparkles. (It can't. But still!)", "This shade screams beach party. Mix it up!"] },
+    { img: "crew/gladys.jpg", who: "Gladys", lines: ["I measured this color scientifically. Reproduce it, please!", "My spreadsheet says this is the perfect shade. Spreadsheets never lie.", "Sprocket calculated this color. He is never wrong."] }
+  ];
+
+  /* ---------- game state ---------- */
+  var round = 1, score = 0, streak = 0, best = 0;
+  try { best = parseInt(window.localStorage.getItem("cove-mix-best") || "0", 10) || 0; } catch (e) { /* ignore */ }
+  var target = null, targetRecipe = null, mine = null, history = [];
+
+  function emptyDoses() { return { r: 0, y: 0, b: 0, w: 0, k: 0 }; }
+  function randomRecipe() {
+    var d = emptyDoses();
+    var pigs = ["r", "y", "b"];
+    var nPig = 1 + Math.floor(Math.random() * 3); /* 1-3 primaries */
+    var used = [];
+    for (var i = 0; i < nPig; i++) {
+      var p = pigs[Math.floor(Math.random() * 3)];
+      if (used.indexOf(p) < 0) used.push(p);
+      d[p] += 1 + Math.floor(Math.random() * 2); /* 1-2 drops each */
+    }
+    if (Math.random() < 0.45) d.w = 1;
+    if (Math.random() < 0.22) d.k = 1;
+    return d;
+  }
+  function render() {
+    document.getElementById("roundNo").textContent = round;
+    document.getElementById("scoreNo").textContent = score;
+    document.getElementById("streakNo").textContent = streak;
+    document.getElementById("bestNo").textContent = best;
+    document.getElementById("targetBlob").style.backgroundColor = rgbCss(target);
+    document.getElementById("yourBlob").style.backgroundColor = rgbCss(mixColor(mine));
+    var chips = [];
+    ["r", "y", "b", "w", "k"].forEach(function (p) { if (mine[p] > 0) chips.push(PIG_NAMES[p].split(" ")[0] + "×" + mine[p]); });
+    document.getElementById("mixChips").textContent = chips.length ? chips.join("  ") : "empty bowl";
+  }
+  function newRound() {
+    targetRecipe = randomRecipe();
+    target = mixColor(targetRecipe);
+    mine = emptyDoses();
+    history = [];
+    var g = GIRLS[Math.floor(Math.random() * GIRLS.length)];
+    document.getElementById("girlImg").src = g.img;
+    document.getElementById("girlWho").textContent = g.who;
+    document.getElementById("girlSay").textContent = g.lines[Math.floor(Math.random() * g.lines.length)];
+    document.getElementById("resultBox").style.display = "none";
+    render();
+  }
+  document.querySelectorAll(".dose").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var p = btn.getAttribute("data-pig");
+      mine[p]++; history.push(p);
+      Sfx.plop(); render();
+    });
+  });
+  document.getElementById("undoBtn").addEventListener("click", function () {
+    var last = history.pop();
+    if (!last) { toast("The bowl is already empty!"); return; }
+    mine[last]--; Sfx.click(); render();
+  });
+  document.getElementById("rinseBtn").addEventListener("click", function () {
+    mine = emptyDoses(); history = []; Sfx.rinse(); render();
+  });
+  document.getElementById("doneBtn").addEventListener("click", function () {
+    if (history.length === 0) { toast("Add some paint first! 🎨"); return; }
+    var d = dist(mixColor(mine), target);
+    var pts = Math.max(0, Math.round(100 - d / 2.1));
+    score += pts;
+    var title;
+    if (pts >= 99) { title = "PERFECT MIX! 🎨"; Sfx.great(); }
+    else if (pts >= 90) { title = "Gorgeous — that's the color!"; Sfx.great(); }
+    else if (pts >= 75) { title = "Lovely! She'll take it."; Sfx.good(); }
+    else if (pts >= 55) { title = "Close enough for the Cove."; Sfx.good(); }
+    else { title = "A happy little accident. 🎨"; Sfx.meh(); }
+    if (pts >= 90) streak++; else streak = 0;
+    if (score > best) { best = score; try { window.localStorage.setItem("cove-mix-best", String(best)); } catch (e) { /* ignore */ } }
+    document.getElementById("resultTitle").textContent = title;
+    document.getElementById("resultPts").textContent = "+" + pts;
+    document.getElementById("resultRecipe").textContent = "Her recipe was: " + recipeText(targetRecipe);
+    document.getElementById("resultBox").style.display = "block";
+    render();
+  });
+  document.getElementById("nextBtn").addEventListener("click", function () { round++; Sfx.click(); newRound(); });
+  newRound();
+})();
+</script>
+</body>
+</html>
