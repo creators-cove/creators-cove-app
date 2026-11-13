@@ -218,6 +218,43 @@
       }
       .lot.locked .house { font-size: 2rem; opacity: .75; }
       .lot .stars { color: var(--gold); font-size: .8rem; letter-spacing: .05em; }
+      /* ---------- Orders board ---------- */
+      .orders { display: flex; flex-direction: column; gap: 10px; }
+      .order {
+        display: flex; gap: 10px; align-items: center;
+        border: 2px solid var(--panel-edge); border-radius: 14px;
+        padding: 10px; background: var(--bg-soft);
+      }
+      .order img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; flex: none; }
+      .order .o-face {
+        width: 42px; height: 42px; border-radius: 50%; flex: none;
+        background: var(--panel); border: 2px solid #fff;
+        font-size: 1.35rem; line-height: 40px; text-align: center;
+      }
+      .order .o-info { flex: 1; min-width: 0; }
+      .order .o-name { font-family: "Baloo 2", cursive; font-weight: 800; font-size: .98rem; line-height: 1.15; }
+      .order .o-flavor { font-size: .8rem; font-weight: 600; color: var(--ink-soft); }
+      .order .o-prog { font-size: .82rem; font-weight: 800; color: var(--teal-dark); margin-top: 2px; }
+      .order .o-reward {
+        font-family: "Baloo 2", cursive; font-weight: 800; text-align: center; flex: none;
+        color: #4a2c00; background: #ffe08a; border: 2px solid #e89b0c;
+        border-radius: 12px; padding: 6px 9px; font-size: .85rem; line-height: 1.15;
+      }
+      /* ---------- Winter in the Cove ---------- */
+      .lights { text-align: center; font-size: 1.1rem; letter-spacing: .3em; margin: 0 0 10px; }
+      body.winter .village-scene { background: linear-gradient(180deg, #bfe0f2 0%, #e6f4fd 55%, #ffffff 100%); }
+      #snowLayer { position: fixed; inset: 0; pointer-events: none; z-index: 40; overflow: hidden; }
+      .flake {
+        position: absolute; top: -4vh; color: #ffffff; opacity: .85;
+        text-shadow: 0 0 6px rgba(140, 190, 230, .95);
+        animation-name: snowfall; animation-timing-function: linear; animation-iteration-count: infinite;
+      }
+      @keyframes snowfall { to { transform: translateY(112vh) translateX(5vw) rotate(300deg); } }
+      #crabBtn {
+        position: fixed; bottom: 84px; left: -12%; display: none; z-index: 60;
+        background: none; border: none; font-size: 1.9rem; cursor: pointer;
+        padding: 6px; line-height: 1; filter: drop-shadow(0 3px 4px rgba(0,0,0,.3));
+      }
       .toast {
         position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
         background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 99px;
@@ -239,7 +276,7 @@
     <button id="muteBtn" class="sound-toggle" type="button" aria-pressed="true">🔊 Sound On</button>
     <div class="wrap">
       <h1>🌻 Cove <span class="tide">Farm &amp; Village</span></h1>
-      <p class="sub">Plant it, water it, come back and harvest it — then build up the whole beach town with the girls.</p>
+      <p class="sub">Plant it, water it, come back and harvest it — then build up the whole beach town with the girls. ❄️ Winter has come to the Cove: snow, string lights and peppermint in the ground!</p>
 
       <div class="hud">
         <div class="hud-card hud-main">
@@ -270,6 +307,7 @@
         </div>
       </div>
 
+      <div class="lights" aria-hidden="true">✨🎄✨🔔✨🦌✨🎄✨</div>
       <div class="village-scene" id="villageScene" aria-label="The village"></div>
 
       <section class="panel" aria-label="Farm">
@@ -282,16 +320,30 @@
         </div>
       </section>
 
+      <section class="panel" aria-label="Orders board">
+        <h2>📋 Orders Board</h2>
+        <p class="note">The girls post orders here. Harvest what they ask for and you earn the normal shells PLUS the bonus!</p>
+        <div class="orders" id="orders"></div>
+      </section>
+
       <section class="panel" aria-label="Village">
         <h2>🏠 The Village</h2>
         <p class="note">Every building earns shells while you are away — but its basket fills up, so come back and collect! Tap Collect to empty the basket, or Upgrade to earn even faster.</p>
         <div class="buildings" id="buildings"></div>
       </section>
 
-      <p class="howto"><strong>How it works:</strong> crops grow in real time, even while the app is closed. Buildings fill their baskets while you are away (up to 8 hours). Your farm is saved on this phone, just like the game coins — if you switch phones or clear the browser, it starts over.</p>
+      <section class="panel" aria-label="Supply store">
+        <h2>🛒 Cove Supply Store</h2>
+        <p class="note">Spend shells on farm supplies and forever-upgrades. Kim added this one herself — she runs a tight farm.</p>
+        <div class="buildings" id="shop"></div>
+      </section>
+
+      <p class="howto"><strong>How it works:</strong> crops grow in real time, even while the app is closed. Buildings fill their baskets while you are away (up to 8 hours). Your farm is saved on this phone, just like the game coins — if you switch phones or clear the browser, it starts over. The <strong>Orders Board</strong> pays bonus shells for harvesting what the girls ask for, a <strong>daily hello bonus</strong> waits every morning, and if you spot a crab scuttling across the screen — tap him, he drops shells!</p>
       <button class="reset-link" id="resetBtn" type="button">Start my farm over</button>
     </div>
     <div class="toast" id="toast" role="status"></div>
+    <button id="crabBtn" type="button" aria-label="A wandering crab — tap him!">🦀</button>
+    <div id="snowLayer" aria-hidden="true"></div>
     <script>
       "use strict";
 
@@ -416,20 +468,26 @@
       var BANK_CAP_HOURS = 8;
 
       var CROPS = {
-        pumpkin:   { emoji: "🎃", name: "Pumpkin",   seed: 5,  sell: 12, growMs: 5 * 60 * 1000 },
-        sunflower: { emoji: "🌻", name: "Sunflower", seed: 8,  sell: 20, growMs: 15 * 60 * 1000 },
-        corn:      { emoji: "🌽", name: "Corn",      seed: 12, sell: 30, growMs: 30 * 60 * 1000 },
-        strawberry:{ emoji: "🍓", name: "Strawberry",seed: 20, sell: 55, growMs: 60 * 60 * 1000 },
-        starfruit: { emoji: "⭐", name: "Starfruit", seed: 35, sell: 95, growMs: 2 * 60 * 60 * 1000 }
+        carrot:    { emoji: "🥕", name: "Carrot",    seed: 3,  sell: 7,   growMs: 2 * 60 * 1000 },
+        pumpkin:   { emoji: "🎃", name: "Pumpkin",   seed: 5,  sell: 12,  growMs: 5 * 60 * 1000 },
+        sunflower: { emoji: "🌻", name: "Sunflower", seed: 8,  sell: 20,  growMs: 15 * 60 * 1000 },
+        peppermint:{ emoji: "🍬", name: "Peppermint",seed: 15, sell: 42,  growMs: 25 * 60 * 1000 },
+        corn:      { emoji: "🌽", name: "Corn",      seed: 12, sell: 30,  growMs: 30 * 60 * 1000 },
+        strawberry:{ emoji: "🍓", name: "Strawberry",seed: 20, sell: 55,  growMs: 60 * 60 * 1000 },
+        starfruit: { emoji: "⭐", name: "Starfruit", seed: 35, sell: 95,  growMs: 2 * 60 * 60 * 1000 },
+        poinsettia:{ emoji: "🌺", name: "Poinsettia",seed: 45, sell: 135, growMs: 3 * 60 * 60 * 1000 },
+        moonmelon: { emoji: "🍈", name: "Moon Melon",seed: 60, sell: 200, growMs: 8 * 60 * 60 * 1000 }
       };
-      var CROP_ORDER = ["pumpkin", "sunflower", "corn", "strawberry", "starfruit"];
+      var CROP_ORDER = ["carrot", "pumpkin", "sunflower", "peppermint", "corn", "strawberry", "starfruit", "poinsettia", "moonmelon"];
 
       var BUILDINGS = [
         { id: "canvas",   emoji: "🎨", name: "The Salty Canvas",   desc: "Kim's art studio — the heart of the Cove.", cost: 0,   rate: 4 },
         { id: "cottage",  emoji: "🧙", name: "Trish's Cottage",    desc: "Trish brews lucky potions by the sea.",   cost: 60,  rate: 6 },
         { id: "shack",    emoji: "⭐", name: "Sandy's Beach Shack",desc: "Sandy sells starfish by the shore.",      cost: 120, rate: 10 },
         { id: "workshop", emoji: "👓", name: "Gladys's Workshop",  desc: "Gladys fixes gadgets (and Sprocket).",    cost: 200, rate: 16 },
-        { id: "shed",     emoji: "🤖", name: "Sprocket's Shed",    desc: "Sprocket wraps presents, day and night.",  cost: 350, rate: 25 }
+        { id: "shed",     emoji: "🤖", name: "Sprocket's Shed",    desc: "Sprocket wraps presents, day and night.",  cost: 350, rate: 25 },
+        { id: "icecream", emoji: "🍦", name: "The Ice Cream Cart", desc: "Brain-freeze central — the line never ends.", cost: 280, rate: 20 },
+        { id: "lighthouse", emoji: "🗼", name: "Cove Lighthouse",  desc: "It keeps the whole Cove glowing, day and night.", cost: 600, rate: 45 }
       ];
 
       function plotCost(n) { /* cost of the (n+1)th plot, n = current count */
@@ -453,7 +511,7 @@
         var buildings = BUILDINGS.map(function (b) {
           return { id: b.id, owned: b.id === "canvas", level: 1, banked: 0, lastBankedAt: Date.now() };
         });
-        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now() };
+        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false } };
       }
       var state = defaultState();
       function save() {
@@ -468,18 +526,37 @@
           state = s;
           /* heal missing fields from older saves */
           state.plots.forEach(function (p) { if (typeof p.watered !== "boolean") p.watered = false; });
-          state.buildings.forEach(function (b) {
+          /* rebuild the building list in game order, keeping saved progress
+             (levels, banks) and adding any brand-new buildings unowned —
+             so an update never costs a player their village */
+          var byId = {};
+          state.buildings.forEach(function (b) { byId[b.id] = b; });
+          state.buildings = BUILDINGS.map(function (def) {
+            var b = byId[def.id] || { id: def.id, owned: def.id === "canvas", level: 1, banked: 0, lastBankedAt: Date.now() };
             if (typeof b.banked !== "number") b.banked = 0;
             if (!b.lastBankedAt) b.lastBankedAt = Date.now();
             if (!b.level) b.level = 1;
+            if (typeof b.owned !== "boolean") b.owned = def.id === "canvas";
+            return b;
           });
+          if (!Array.isArray(state.orders)) state.orders = [];
+          if (typeof state.lastDaily !== "string") state.lastDaily = "";
+          if (!state.supplies) state.supplies = { sprinkler: 0, miracle: 0 };
+          if (typeof state.supplies.sprinkler !== "number") state.supplies.sprinkler = 0;
+          if (typeof state.supplies.miracle !== "number") state.supplies.miracle = 0;
+          if (!state.upgrades) state.upgrades = { baskets: false, bees: false, hoe: false };
         } catch (e) { /* ignore */ }
       }
 
       /* ================= Time helpers ================= */
+      function effGrowMs(key) {
+        var g = CROPS[key].growMs;
+        if (state.upgrades && state.upgrades.bees) g = Math.round(g * 0.8); /* Busy Bees: 20% faster */
+        return g;
+      }
       function readyAt(plot) {
         if (!plot.crop) return 0;
-        var grow = CROPS[plot.crop].growMs;
+        var grow = effGrowMs(plot.crop);
         return plot.plantedAt + (plot.watered ? grow / 2 : grow);
       }
       function plotStage(plot, now) {
@@ -487,7 +564,7 @@
         var r = readyAt(plot);
         if (now >= r + WITHER_MS) return "withered";
         if (now >= r) return "ready";
-        var grow = CROPS[plot.crop].growMs;
+        var grow = effGrowMs(plot.crop);
         var elapsed = now - plot.plantedAt;
         var total = plot.watered ? grow / 2 : grow;
         return elapsed < total * 0.45 ? "seed" : "growing";
@@ -503,7 +580,7 @@
       }
       function bankedNow(bState, now) {
         var rate = buildingRate(bState);
-        var cap = rate * BANK_CAP_HOURS;
+        var cap = rate * ((state.upgrades && state.upgrades.baskets) ? 16 : BANK_CAP_HOURS);
         var earned = bState.banked + rate * (now - bState.lastBankedAt) / 3600000;
         return Math.min(cap, Math.floor(earned));
       }
@@ -532,7 +609,7 @@
       var selectedPlot = -1;
 
       /* ---- the girls cheer you on ---- */
-      var GIRL_FOR_CROP = { pumpkin: "trish", sunflower: "sandy", corn: "gladys", strawberry: "kim", starfruit: "sprocket" };
+      var GIRL_FOR_CROP = { carrot: "gladys", pumpkin: "trish", sunflower: "sandy", peppermint: "trish", corn: "gladys", strawberry: "kim", starfruit: "sprocket", poinsettia: "kim", moonmelon: "sprocket" };
       var GIRLS = {
         kim:      { img: "crew/kim.jpg",    who: "Kim",     lines: ["Sweet! That's the good stuff. 🍓", "Now THAT'S a harvest! 🎉", "Told you this farm would be fun. 😄"] },
         trish:    { img: "crew/trish.jpg",  who: "Trish",   lines: ["A pumpkin fit for a witch's pie! 🎃", "Hocus pocus — look at that haul! ✨", "My potions never looked this good. 🧙"] },
@@ -540,6 +617,11 @@
         gladys:   { img: "crew/gladys.jpg", who: "Gladys",  lines: ["Corn-tastic! My calculations were correct! 🌽", "I graphed this harvest and it is EXCELLENT. 📊", "Science says: nice work! 🔬"] },
         sprocket: { img: null,              who: "Sprocket", lines: ["Beep boop — starfruit secured! ⭐", "Present-wrapping circuits: delighted. 🤖", "Bleep! Best harvest yet! ✨"] }
       };
+      GIRLS.cove = { img: null, who: "The Cove", lines: [] };
+      GIRLS.gladys.lines.push("Carrot power! I did the math — it is delicious. 🥕");
+      GIRLS.trish.lines.push("Peppermint! A little magic for your cocoa. 🍬");
+      GIRLS.kim.lines.push("A poinsettia! The studio is going to look so festive. 🌺");
+      GIRLS.sprocket.lines.push("Moon Melon harvested under cover of night. Beep. 🌙");
       function setCheer(girlKey, line) {
         var g = GIRLS[girlKey];
         if (!g) return;
@@ -562,8 +644,8 @@
       }
 
       /* ---- village scene: the actual buildings on their lots ---- */
-      var GIRL_FOR_BUILDING = { canvas: "kim", cottage: "trish", shack: "sandy", workshop: "gladys", shed: "sprocket" };
-      var HOUSE_FOR_BUILDING = { canvas: "🏠", cottage: "🏡", shack: "🏖️", workshop: "🏠", shed: "🏠" };
+      var GIRL_FOR_BUILDING = { canvas: "kim", cottage: "trish", shack: "sandy", workshop: "gladys", shed: "sprocket", icecream: "cove", lighthouse: "cove" };
+      var HOUSE_FOR_BUILDING = { canvas: "🏠", cottage: "🏡", shack: "🏖️", workshop: "🏠", shed: "🏠", icecream: "🍦", lighthouse: "🗼" };
       function renderScene() {
         var now = Date.now();
         var scene = document.getElementById("villageScene");
@@ -579,7 +661,7 @@
               '<div class="l-sub">' + bDef.emoji + " " + bDef.name + '</div>' +
               '<div class="l-bank">🐚 ' + bDef.cost + ' to build</div>';
             d.addEventListener("click", function () {
-              if (state.shells < bDef.cost) { Sfx.thud(); toast(g.who + "'s place costs 🐚 " + bDef.cost + " — keep harvesting! 🏠"); return; }
+              if (state.shells < bDef.cost) { Sfx.thud(); toast(bDef.name + " costs 🐚 " + bDef.cost + " — keep harvesting! 🏠"); return; }
               buyBuilding(i);
             });
           } else {
@@ -589,7 +671,7 @@
             d.className = "lot";
             var face = g.img
               ? '<img src="' + g.img + '" alt="' + g.who + '" />'
-              : '<div class="robot-face">🤖</div>';
+              : '<div class="robot-face">' + (bDef.id === "shed" ? "🤖" : bDef.emoji) + '</div>';
             d.innerHTML = face + '<span class="theme">' + bDef.emoji + '</span>' +
               '<span class="house">' + HOUSE_FOR_BUILDING[bDef.id] + '</span>' +
               '<div class="l-name">' + bDef.name + '</div>' +
@@ -609,7 +691,7 @@
         var sun = document.createElement("div");
         sun.className = "lot";
         sun.style.cursor = "default";
-        sun.innerHTML = '<span class="house">🌴</span><div class="l-name">Cove Beach</div><div class="l-sub">The girls live here! 🏖️</div>';
+        sun.innerHTML = '<span class="house">🎄</span><div class="l-name">Winter Cove</div><div class="l-sub">Snow much fun! ⛄</div>';
         scene.appendChild(sun);
       }
 
@@ -638,8 +720,8 @@
             d.innerHTML = '<span class="emoji">' + crop.emoji + '</span><span class="lbl">' + crop.name + '</span><div class="time">✨ Ready! Tap to harvest</div>';
           } else {
             d.className = "plot";
-            var total = plot.watered ? crop.growMs / 2 : crop.growMs;
-            var pct = Math.min(100, Math.round((now - plot.plantedAt) / total * 100));
+            var total = plot.watered ? effGrowMs(plot.crop) / 2 : effGrowMs(plot.crop);
+            var pct = Math.max(0, Math.min(100, Math.round((now - plot.plantedAt) / total * 100)));
             var emoji = stage === "seed" ? "🌱" : "🌿";
             d.innerHTML = (plot.watered ? '<span class="watered-tag">💧</span>' : "") +
               '<span class="emoji">' + emoji + '</span><span class="lbl">' + crop.name + '</span>' +
@@ -659,6 +741,9 @@
             plotsEl.appendChild(d);
           })(p);
         }
+
+        renderOrders(now);
+        renderShop();
 
         /* ---- buildings ---- */
         var bEl = document.getElementById("buildings");
@@ -694,6 +779,217 @@
         });
       }
 
+      /* ================= Orders board ================= */
+      var ORDER_GIRLS = ["kim", "trish", "sandy", "gladys", "sprocket"];
+      var ORDER_FLAVOR = {
+        kim: "Kim is restocking the studio snack table.",
+        trish: "Trish is brewing something witchy.",
+        sandy: "Sandy is throwing a beach picnic.",
+        gladys: "Gladys is running an experiment (the tasty kind).",
+        sprocket: "Sprocket is wrapping a surprise."
+      };
+      var ORDER_DONE = {
+        kim: "Order up! Kim's snack table is saved. 🎉",
+        trish: "Order complete! Trish's brew bubbles happily. ✨",
+        sandy: "Order done! Sandy's picnic is ON. 🏖️",
+        gladys: "Order fulfilled! Gladys files it under 'delicious data.' 📊",
+        sprocket: "Order wrapped! Sprocket beeps with pride. 🤖"
+      };
+      function makeOrder() {
+        var girl = ORDER_GIRLS[Math.floor(Math.random() * ORDER_GIRLS.length)];
+        var key = CROP_ORDER[Math.floor(Math.random() * CROP_ORDER.length)];
+        var c = CROPS[key];
+        var need = c.growMs <= 15 * 60 * 1000 ? 3 + Math.floor(Math.random() * 3)
+          : c.growMs <= 60 * 60 * 1000 ? 2 + Math.floor(Math.random() * 3)
+          : 1 + Math.floor(Math.random() * 2);
+        return { girl: girl, crop: key, need: need, have: 0,
+          reward: Math.round(c.sell * need * 0.8) + 10,
+          expires: Date.now() + 24 * 60 * 60 * 1000 };
+      }
+      function ensureOrders(now) {
+        state.orders = state.orders.filter(function (o) { return o.expires > now && CROPS[o.crop] && GIRLS[o.girl]; });
+        while (state.orders.length < 3) state.orders.push(makeOrder());
+      }
+      function noteHarvest(cropKey) {
+        for (var i = 0; i < state.orders.length; i++) {
+          var o = state.orders[i];
+          if (o.crop !== cropKey || o.have >= o.need) continue;
+          o.have += 1;
+          if (o.have >= o.need) {
+            state.shells += o.reward;
+            Sfx.coin();
+            setCheer(o.girl, ORDER_DONE[o.girl]);
+            toast("📋 Order complete! Bonus +🐚 " + o.reward);
+            state.orders.splice(i, 1);
+          }
+          break; /* one harvest counts toward one order */
+        }
+      }
+      function renderOrders(now) {
+        ensureOrders(now);
+        var el = document.getElementById("orders");
+        if (!el) return;
+        el.innerHTML = "";
+        state.orders.forEach(function (o) {
+          var g = GIRLS[o.girl], c = CROPS[o.crop];
+          var d = document.createElement("div");
+          d.className = "order";
+          var face = g.img ? '<img src="' + g.img + '" alt="' + g.who + '" />' : '<div class="o-face">' + (o.girl === "sprocket" ? "🤖" : "🌊") + "</div>";
+          d.innerHTML = face +
+            '<div class="o-info"><div class="o-name">' + g.who + " needs " + o.need + " × " + c.emoji + " " + c.name + "</div>" +
+            '<div class="o-flavor">' + ORDER_FLAVOR[o.girl] + "</div>" +
+            '<div class="o-prog">Harvested ' + o.have + "/" + o.need + " · ⏳ " + fmtLeft(o.expires - now) + " left</div></div>" +
+            '<div class="o-reward">Bonus<br/>🐚 ' + o.reward + "</div>";
+          el.appendChild(d);
+        });
+      }
+
+      /* ================= Supply store ================= */
+      var SHOP = [
+        { id: "sprinkler", emoji: "💦", name: "Sprinkler", kind: "supply", cost: 15, desc: "Use it to water every growing crop at once." },
+        { id: "miracle", emoji: "🌟", name: "Miracle Fertilizer", kind: "supply", cost: 40, desc: "Use it and every growing crop is ready within a minute." },
+        { id: "bees", emoji: "🐝", name: "Busy Bees", kind: "upgrade", cost: 150, desc: "Forever: every crop grows 20% faster." },
+        { id: "baskets", emoji: "🧺", name: "Bigger Baskets", kind: "upgrade", cost: 250, desc: "Forever: building baskets hold 16 hours of shells instead of 8." },
+        { id: "hoe", emoji: "✨", name: "Golden Hoe", kind: "upgrade", cost: 400, desc: "Forever: every harvest sells for 25% more." }
+      ];
+      function renderShop() {
+        var el = document.getElementById("shop");
+        if (!el) return;
+        el.innerHTML = "";
+        SHOP.forEach(function (item) {
+          var d = document.createElement("div");
+          d.className = "building owned";
+          var owned = item.kind === "upgrade" && state.upgrades[item.id];
+          var count = item.kind === "supply" ? state.supplies[item.id] : 0;
+          var info = '<div class="b-info"><div class="b-name">' + item.emoji + " " + item.name +
+            (item.kind === "supply" ? " · you have " + count : "") + "</div>" +
+            '<div class="b-desc">' + item.desc + "</div></div>";
+          var btn = "";
+          if (owned) {
+            btn = '<button class="btn ghost" type="button" disabled>Owned ✓</button>';
+          } else {
+            btn = '<button class="btn gold" type="button" data-shop="buy" data-id="' + item.id + '"' + (state.shells < item.cost ? " disabled" : "") + ">Buy · 🐚 " + item.cost + "</button>";
+            if (item.kind === "supply") {
+              btn += '<button class="btn" type="button" data-shop="use" data-id="' + item.id + '"' + (count <= 0 ? " disabled" : "") + ">Use</button>";
+            }
+          }
+          d.innerHTML = '<div class="b-emoji">' + item.emoji + "</div>" + info + '<div style="display:flex;flex-direction:column;gap:6px">' + btn + "</div>";
+          el.appendChild(d);
+        });
+        el.querySelectorAll("button[data-shop]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var id = btn.getAttribute("data-id");
+            if (btn.getAttribute("data-shop") === "buy") buySupply(id); else useSupply(id);
+          });
+        });
+      }
+      function buySupply(id) {
+        var item = null;
+        SHOP.forEach(function (s) { if (s.id === id) item = s; });
+        if (!item) return;
+        if (state.shells < item.cost) { Sfx.thud(); toast("That costs 🐚 " + item.cost + " — keep harvesting!"); return; }
+        state.shells -= item.cost;
+        if (item.kind === "upgrade") state.upgrades[id] = true; else state.supplies[id] += 1;
+        Sfx.build();
+        toast(item.name + " is yours! 🛒");
+        save(); render();
+      }
+      function useSupply(id) {
+        var now = Date.now();
+        if (id === "sprinkler") {
+          if (state.supplies.sprinkler <= 0) return;
+          var wateredCount = 0;
+          state.plots.forEach(function (p) {
+            var st = plotStage(p, now);
+            if (p.crop && !p.watered && (st === "seed" || st === "growing")) { p.watered = true; wateredCount++; }
+          });
+          if (!wateredCount) { Sfx.thud(); toast("Nothing growing that needs water right now!"); return; }
+          state.supplies.sprinkler -= 1;
+          Sfx.water();
+          toast("💦 Sprinkler day! Watered " + wateredCount + " crop" + (wateredCount === 1 ? "" : "s") + ".");
+        } else if (id === "miracle") {
+          if (state.supplies.miracle <= 0) return;
+          var moved = 0;
+          state.plots.forEach(function (p) {
+            if (!p.crop) return;
+            var st = plotStage(p, now);
+            if (st === "seed" || st === "growing") {
+              var total = p.watered ? effGrowMs(p.crop) / 2 : effGrowMs(p.crop);
+              p.plantedAt = now + 60000 - total; /* ready in about a minute */
+              moved++;
+            }
+          });
+          if (!moved) { Sfx.thud(); toast("Nothing growing right now — plant something first!"); return; }
+          state.supplies.miracle -= 1;
+          Sfx.build();
+          toast("🌟 Miracle Fertilizer! " + moved + " crop" + (moved === 1 ? "" : "s") + " will be ready in a minute!");
+        }
+        save(); render();
+      }
+
+      /* ================= Daily hello bonus ================= */
+      function todayStr() { var d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+      function checkDaily() {
+        var t = todayStr();
+        if (state.lastDaily === t) return;
+        state.lastDaily = t;
+        state.shells += 25;
+        Sfx.coin();
+        setCheer("kim", "Morning! Here's your daily hello bonus — +🐚 25. Come back tomorrow for more! ☀️");
+        toast("☀️ Daily hello bonus: +🐚 25!");
+        save();
+      }
+
+      /* ================= The wandering crab ================= */
+      var crabTimer = null, crabRun = 0;
+      function scheduleCrab() {
+        clearTimeout(crabTimer);
+        crabTimer = setTimeout(showCrab, 45000 + Math.random() * 60000);
+      }
+      function showCrab() {
+        var crab = document.getElementById("crabBtn");
+        if (!crab || document.hidden) { scheduleCrab(); return; }
+        var run = ++crabRun;
+        crab.style.transition = "none";
+        crab.style.left = "-12%";
+        crab.style.display = "block";
+        void crab.offsetWidth; /* restart the crossing */
+        crab.style.transition = "left 13s linear";
+        crab.style.left = "104%";
+        setTimeout(function () {
+          if (run !== crabRun) return;
+          crab.style.display = "none";
+          scheduleCrab();
+        }, 13500);
+      }
+      function initCrab() {
+        var crab = document.getElementById("crabBtn");
+        if (!crab) return;
+        crab.addEventListener("click", function () {
+          if (crab.style.display === "none") return;
+          crabRun++;
+          var prize = 5 + Math.floor(Math.random() * 11);
+          state.shells += prize;
+          Sfx.coin();
+          toast("🦀 Got him! He dropped 🐚 " + prize + "!");
+          crab.style.display = "none";
+          save(); render();
+          scheduleCrab();
+        });
+        scheduleCrab();
+      }
+
+      /* ================= Winter snow ================= */
+      function makeSnow() {
+        var layer = document.getElementById("snowLayer");
+        if (!layer) return;
+        var html = "";
+        for (var i = 0; i < 22; i++) {
+          html += '<span class="flake" style="left:' + (Math.random() * 100) + "%;animation-duration:" + (6 + Math.random() * 7) + "s;animation-delay:" + (-Math.random() * 12) + "s;font-size:" + (10 + Math.random() * 9) + 'px">❄</span>';
+        }
+        layer.innerHTML = html;
+      }
+
       /* ---- seed picker ---- */
       function showPicker(i) {
         selectedPlot = i;
@@ -705,7 +1001,7 @@
           var b = document.createElement("button");
           b.className = "seed";
           b.type = "button";
-          b.innerHTML = '<span class="emoji">' + c.emoji + '</span><span class="nm">' + c.name + '</span><div class="pr">🐚 ' + c.seed + ' seed · sells 🐚 ' + c.sell + '<br/>⏱ ' + fmtLeft(c.growMs) + '</div>';
+          b.innerHTML = '<span class="emoji">' + c.emoji + '</span><span class="nm">' + c.name + '</span><div class="pr">🐚 ' + c.seed + ' seed · sells 🐚 ' + c.sell + '<br/>⏱ ' + fmtLeft(effGrowMs(key)) + '</div>';
           if (state.shells < c.seed) b.disabled = true;
           b.addEventListener("click", function () { plantSeed(key); });
           seedsEl.appendChild(b);
@@ -739,11 +1035,13 @@
         }
         if (stage === "ready") {
           var crop = CROPS[plot.crop];
-          state.shells += crop.sell;
+          var sellPrice = (state.upgrades && state.upgrades.hoe) ? Math.round(crop.sell * 1.25) : crop.sell;
+          state.shells += sellPrice;
           state.plots[i] = { crop: null, plantedAt: 0, watered: false };
           Sfx.harvest();
           cheerForCrop(plot.crop);
-          toast("Harvested " + crop.name + "! +🐚 " + crop.sell);
+          noteHarvest(plot.crop);
+          toast("Harvested " + crop.name + "! +🐚 " + sellPrice);
           hidePicker(); save(); render();
           return;
         }
@@ -822,8 +1120,12 @@
 
       /* ================= Boot ================= */
       load();
+      document.body.classList.add("winter");
+      makeSnow();
+      initCrab();
+      checkDaily();
       render();
-      setInterval(function () { render(); }, 1000);
+      setInterval(function () { checkDaily(); render(); }, 1000);
       setInterval(save, 10000);
       document.addEventListener("visibilitychange", function () { if (document.hidden) save(); });
       window.addEventListener("pagehide", save);
