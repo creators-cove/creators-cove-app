@@ -332,6 +332,18 @@
         <div class="buildings" id="buildings"></div>
       </section>
 
+      <section class="panel" aria-label="Grand project">
+        <h2>🎡 Grand Project</h2>
+        <p class="note">One giant build for the whole village to save toward.</p>
+        <div class="building owned" id="grand"></div>
+      </section>
+
+      <section class="panel" aria-label="Milestones">
+        <h2>🏆 Milestones</h2>
+        <p class="note" id="statsLine"></p>
+        <div class="orders" id="milestones"></div>
+      </section>
+
       <section class="panel" aria-label="Supply store">
         <h2>🛒 Cove Supply Store</h2>
         <p class="note">Spend shells on farm supplies and forever-upgrades. Kim added this one herself — she runs a tight farm.</p>
@@ -487,7 +499,9 @@
         { id: "workshop", emoji: "👓", name: "Gladys's Workshop",  desc: "Gladys fixes gadgets (and Sprocket).",    cost: 200, rate: 16 },
         { id: "shed",     emoji: "🤖", name: "Sprocket's Shed",    desc: "Sprocket wraps presents, day and night.",  cost: 350, rate: 25 },
         { id: "icecream", emoji: "🍦", name: "The Ice Cream Cart", desc: "Brain-freeze central — the line never ends.", cost: 280, rate: 20 },
-        { id: "lighthouse", emoji: "🗼", name: "Cove Lighthouse",  desc: "It keeps the whole Cove glowing, day and night.", cost: 600, rate: 45 }
+        { id: "lighthouse", emoji: "🗼", name: "Cove Lighthouse",  desc: "It keeps the whole Cove glowing, day and night.", cost: 600, rate: 45 },
+        { id: "bakery",   emoji: "🧁", name: "Boardwalk Bakery",  desc: "Smells like cinnamon, all day long.", cost: 450, rate: 32 },
+        { id: "giftshop", emoji: "🎁", name: "The Gift Shop",      desc: "Sprocket wraps, the visitors buy.",   cost: 800, rate: 60 }
       ];
 
       function plotCost(n) { /* cost of the (n+1)th plot, n = current count */
@@ -502,7 +516,11 @@
         var base = def.cost > 0 ? def.cost : 40;
         return Math.round(base * (bState.level + 1));
       }
-      function buildingRate(bState) { return Math.round(buildingDef(bState.id).rate * (1 + 0.5 * (bState.level - 1))); }
+      function buildingRate(bState) {
+        var r = buildingDef(bState.id).rate * (1 + 0.5 * (bState.level - 1));
+        if (state.grand && state.grand.wheel) r *= 1.25; /* the Ferris wheel speeds up the whole village */
+        return Math.round(r);
+      }
 
       /* ================= Save / load ================= */
       function defaultState() {
@@ -511,7 +529,7 @@
         var buildings = BUILDINGS.map(function (b) {
           return { id: b.id, owned: b.id === "canvas", level: 1, banked: 0, lastBankedAt: Date.now() };
         });
-        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false } };
+        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false }, grand: { wheel: false }, stats: { harvested: 0, earned: 0 }, milestones: {} };
       }
       var state = defaultState();
       function save() {
@@ -545,6 +563,11 @@
           if (typeof state.supplies.sprinkler !== "number") state.supplies.sprinkler = 0;
           if (typeof state.supplies.miracle !== "number") state.supplies.miracle = 0;
           if (!state.upgrades) state.upgrades = { baskets: false, bees: false, hoe: false };
+          if (!state.grand) state.grand = { wheel: false };
+          if (!state.stats) state.stats = { harvested: 0, earned: 0 };
+          if (typeof state.stats.harvested !== "number") state.stats.harvested = 0;
+          if (typeof state.stats.earned !== "number") state.stats.earned = 0;
+          if (!state.milestones) state.milestones = {};
         } catch (e) { /* ignore */ }
       }
 
@@ -644,8 +667,8 @@
       }
 
       /* ---- village scene: the actual buildings on their lots ---- */
-      var GIRL_FOR_BUILDING = { canvas: "kim", cottage: "trish", shack: "sandy", workshop: "gladys", shed: "sprocket", icecream: "cove", lighthouse: "cove" };
-      var HOUSE_FOR_BUILDING = { canvas: "🏠", cottage: "🏡", shack: "🏖️", workshop: "🏠", shed: "🏠", icecream: "🍦", lighthouse: "🗼" };
+      var GIRL_FOR_BUILDING = { canvas: "kim", cottage: "trish", shack: "sandy", workshop: "gladys", shed: "sprocket", icecream: "cove", lighthouse: "cove", bakery: "cove", giftshop: "cove" };
+      var HOUSE_FOR_BUILDING = { canvas: "🏠", cottage: "🏡", shack: "🏖️", workshop: "🏠", shed: "🏠", icecream: "🍦", lighthouse: "🗼", bakery: "🧁", giftshop: "🎁" };
       function renderScene() {
         var now = Date.now();
         var scene = document.getElementById("villageScene");
@@ -687,6 +710,20 @@
           }
           scene.appendChild(d);
         });
+        /* the grand project lot */
+        (function () {
+          var d = document.createElement("div");
+          if (!state.grand.wheel) {
+            d.className = "lot locked";
+            d.innerHTML = '<span class="house">🎡</span><div class="l-name">Cove Ferris Wheel</div><div class="l-sub">Grand Project</div><div class="l-bank">🐚 ' + WHEEL_COST + ' to build</div>';
+            d.addEventListener("click", function () { buildWheel(); });
+          } else {
+            d.className = "lot";
+            d.innerHTML = '<span class="theme">🎡</span><span class="house">🎡</span><div class="l-name">Cove Ferris Wheel</div><div class="l-sub">Grand Project ✓</div><div class="l-bank">Village earns +25%!</div>';
+            d.addEventListener("click", function () { Sfx.click(); toast("The Ferris wheel turns over the Cove — every building earns 25% faster. 🎡"); });
+          }
+          scene.appendChild(d);
+        })();
         /* a sunny filler lot so the grid stays even */
         var sun = document.createElement("div");
         sun.className = "lot";
@@ -697,6 +734,7 @@
 
       function render() {
         var now = Date.now();
+        checkMilestones();
         document.getElementById("shellCount").textContent = state.shells;
         document.getElementById("villageLevel").textContent = villageLevel();
         document.getElementById("hourlyRate").textContent = hourlyRate();
@@ -744,6 +782,8 @@
 
         renderOrders(now);
         renderShop();
+        renderGrand();
+        renderMilestones();
 
         /* ---- buildings ---- */
         var bEl = document.getElementById("buildings");
@@ -816,7 +856,7 @@
           if (o.crop !== cropKey || o.have >= o.need) continue;
           o.have += 1;
           if (o.have >= o.need) {
-            state.shells += o.reward;
+            addShells(o.reward);
             Sfx.coin();
             setCheer(o.girl, ORDER_DONE[o.girl]);
             toast("📋 Order complete! Bonus +🐚 " + o.reward);
@@ -933,7 +973,7 @@
         var t = todayStr();
         if (state.lastDaily === t) return;
         state.lastDaily = t;
-        state.shells += 25;
+        addShells(25);
         Sfx.coin();
         setCheer("kim", "Morning! Here's your daily hello bonus — +🐚 25. Come back tomorrow for more! ☀️");
         toast("☀️ Daily hello bonus: +🐚 25!");
@@ -969,7 +1009,7 @@
           if (crab.style.display === "none") return;
           crabRun++;
           var prize = 5 + Math.floor(Math.random() * 11);
-          state.shells += prize;
+          addShells(prize);
           Sfx.coin();
           toast("🦀 Got him! He dropped 🐚 " + prize + "!");
           crab.style.display = "none";
@@ -988,6 +1028,86 @@
           html += '<span class="flake" style="left:' + (Math.random() * 100) + "%;animation-duration:" + (6 + Math.random() * 7) + "s;animation-delay:" + (-Math.random() * 12) + "s;font-size:" + (10 + Math.random() * 9) + 'px">❄</span>';
         }
         layer.innerHTML = html;
+      }
+
+      /* ================= Shells, stats & milestones ================= */
+      function addShells(n) {
+        state.shells += n;
+        if (n > 0) state.stats.earned += n;
+      }
+      function ownedCount() { var c = 0; state.buildings.forEach(function (b) { if (b.owned) c++; }); return c; }
+      var MILESTONES = [
+        { id: "sprout", emoji: "🌱", name: "First Harvest", prize: 25, desc: "Harvest your first crop",
+          test: function () { return state.stats.harvested >= 1; }, prog: function () { return Math.min(state.stats.harvested, 1) + "/1 crops"; } },
+        { id: "green", emoji: "🌿", name: "Green Thumb", prize: 150, desc: "Harvest 50 crops",
+          test: function () { return state.stats.harvested >= 50; }, prog: function () { return Math.min(state.stats.harvested, 50) + "/50 crops"; } },
+        { id: "hero", emoji: "🌾", name: "Harvest Hero", prize: 500, desc: "Harvest 200 crops",
+          test: function () { return state.stats.harvested >= 200; }, prog: function () { return Math.min(state.stats.harvested, 200) + "/200 crops"; } },
+        { id: "founder", emoji: "🏘️", name: "Village Founder", prize: 300, desc: "Build every building in the village",
+          test: function () { return ownedCount() >= BUILDINGS.length; }, prog: function () { return ownedCount() + "/" + BUILDINGS.length + " buildings"; } },
+        { id: "roller", emoji: "💰", name: "High Roller", prize: 250, desc: "Hold 2,500 shells at once",
+          test: function () { return state.shells >= 2500; }, prog: function () { return Math.min(state.shells, 2500) + "/2,500 shells"; } },
+        { id: "tycoon", emoji: "👑", name: "Shell Tycoon", prize: 500, desc: "Earn 10,000 shells all-time",
+          test: function () { return state.stats.earned >= 10000; }, prog: function () { return Math.min(state.stats.earned, 10000) + "/10,000 earned"; } },
+        { id: "wheel", emoji: "🎡", name: "Big Wheel", prize: 750, desc: "Build the Cove Ferris Wheel",
+          test: function () { return !!(state.grand && state.grand.wheel); }, prog: function () { return state.grand && state.grand.wheel ? "Done!" : "Not built yet"; } }
+      ];
+      function checkMilestones() {
+        var hits = [], total = 0;
+        MILESTONES.forEach(function (m) {
+          if (state.milestones[m.id]) return;
+          if (m.test()) { state.milestones[m.id] = true; hits.push(m.name); total += m.prize; state.stats.earned += m.prize; }
+        });
+        if (hits.length) {
+          state.shells += total;
+          Sfx.coin();
+          toast("🏆 Milestone" + (hits.length > 1 ? "s" : "") + ": " + hits.join(", ") + "! +🐚 " + total);
+          save();
+        }
+      }
+      function renderMilestones() {
+        var line = document.getElementById("statsLine");
+        if (line) line.innerHTML = "🌾 Harvested all-time: <strong>" + state.stats.harvested + "</strong> · 🐚 Earned all-time: <strong>" + state.stats.earned + "</strong>";
+        var el = document.getElementById("milestones");
+        if (!el) return;
+        el.innerHTML = "";
+        MILESTONES.forEach(function (m) {
+          var got = !!state.milestones[m.id];
+          var d = document.createElement("div");
+          d.className = "order";
+          d.innerHTML = '<div class="o-face">' + m.emoji + "</div>" +
+            '<div class="o-info"><div class="o-name">' + m.name + "</div>" +
+            '<div class="o-flavor">' + m.desc + "</div>" +
+            '<div class="o-prog">' + (got ? "Done it! ✓" : "Progress: " + m.prog()) + "</div></div>" +
+            '<div class="o-reward">' + (got ? "Got it ✓" : "Prize<br/>🐚 " + m.prize) + "</div>";
+          el.appendChild(d);
+        });
+      }
+
+      /* ================= Grand project: the Ferris wheel ================= */
+      var WHEEL_COST = 5000;
+      function buildWheel() {
+        if (state.grand.wheel) return;
+        if (state.shells < WHEEL_COST) { Sfx.thud(); toast("The Ferris Wheel costs 🐚 " + WHEEL_COST + " — the whole village is saving up!"); return; }
+        state.shells -= WHEEL_COST;
+        state.grand.wheel = true;
+        Sfx.build();
+        setCheer("kim", "THE FERRIS WHEEL IS UP! Every building earns 25% faster now — look at our Cove glow! 🎡");
+        toast("🎡 The Cove Ferris Wheel is built! Village earnings +25%!");
+        save(); render();
+      }
+      function renderGrand() {
+        var el = document.getElementById("grand");
+        if (!el) return;
+        var built = state.grand.wheel;
+        el.innerHTML = '<div class="b-emoji">🎡</div>' +
+          '<div class="b-info"><div class="b-name">🎡 Cove Ferris Wheel' + (built ? " · Built ✓" : "") + "</div>" +
+          '<div class="b-desc">' + (built ? "It turns over the Cove day and night — every building earns 25% faster." : "The biggest build in Cove history. Once it is up, EVERY building earns 25% faster, forever.") + "</div>" +
+          (built ? "" : '<div class="b-bank">You have 🐚 ' + state.shells + " of 🐚 " + WHEEL_COST + "</div>") + "</div>" +
+          (built ? '<button class="btn ghost" type="button" disabled>Built ✓</button>'
+                 : '<button class="btn gold" type="button" id="wheelBtn"' + (state.shells < WHEEL_COST ? " disabled" : "") + ">Build · 🐚 " + WHEEL_COST + "</button>");
+        var btn = document.getElementById("wheelBtn");
+        if (btn) btn.addEventListener("click", buildWheel);
       }
 
       /* ---- seed picker ---- */
@@ -1036,7 +1156,8 @@
         if (stage === "ready") {
           var crop = CROPS[plot.crop];
           var sellPrice = (state.upgrades && state.upgrades.hoe) ? Math.round(crop.sell * 1.25) : crop.sell;
-          state.shells += sellPrice;
+          addShells(sellPrice);
+          state.stats.harvested += 1;
           state.plots[i] = { crop: null, plantedAt: 0, watered: false };
           Sfx.harvest();
           cheerForCrop(plot.crop);
@@ -1091,7 +1212,7 @@
         if (!b.owned) return;
         var banked = bankedNow(b, Date.now());
         if (banked <= 0) { Sfx.click(); return; }
-        state.shells += banked;
+        addShells(banked);
         b.banked = 0; b.lastBankedAt = Date.now();
         Sfx.coin();
         toast("Collected 🐚 " + banked + " from " + bDef.name + "! 💰");
