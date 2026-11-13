@@ -128,10 +128,18 @@
       .plot.locked .emoji { font-size: 1.4rem; opacity: .7; }
       /* ---------- Seed picker ---------- */
       .picker {
-        display: none; margin-top: 12px; padding: 10px;
-        background: var(--chip); border: 2px dashed var(--gold); border-radius: 14px;
+        display: none; position: fixed; left: 50%; transform: translateX(-50%);
+        bottom: 0; width: min(860px, 100%); max-height: 64vh; overflow-y: auto;
+        padding: 14px; background: var(--panel); border: 2px solid var(--gold);
+        border-bottom: none; border-radius: 20px 20px 0 0;
+        box-shadow: 0 -12px 32px rgba(0, 0, 0, .28); z-index: 70;
       }
       .picker.show { display: block; }
+      .picker-backdrop {
+        display: none; position: fixed; inset: 0;
+        background: rgba(20, 30, 40, .35); z-index: 65;
+      }
+      .picker-backdrop.show { display: block; }
       .picker h3 { font-family: "Baloo 2", cursive; margin: 0 0 8px; font-size: 1.05rem; }
       .seeds { display: flex; flex-wrap: wrap; gap: 8px; }
       .seed {
@@ -261,7 +269,7 @@
         position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
         background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 99px;
         font-weight: 800; font-size: .92rem; opacity: 0; pointer-events: none;
-        transition: opacity .25s ease; z-index: 50; max-width: 92vw; text-align: center;
+        transition: opacity .25s ease; z-index: 90; max-width: 92vw; text-align: center;
       }
       .toast.show { opacity: 1; }
       .howto { color: var(--ink-soft); font-weight: 600; font-size: .9rem; }
@@ -320,6 +328,7 @@
           <h3 id="pickerTitle">Plant what?</h3>
           <div class="seeds" id="seeds"></div>
         </div>
+        <div class="picker-backdrop" id="pickerBackdrop"></div>
       </section>
 
       <section class="panel" aria-label="Orders board">
@@ -1244,10 +1253,12 @@
         cancel.addEventListener("click", hidePicker);
         seedsEl.appendChild(cancel);
         document.getElementById("picker").classList.add("show");
+        document.getElementById("pickerBackdrop").classList.add("show");
       }
       function hidePicker() {
         selectedPlot = -1;
         document.getElementById("picker").classList.remove("show");
+        document.getElementById("pickerBackdrop").classList.remove("show");
       }
 
       /* ================= Actions ================= */
@@ -1341,6 +1352,7 @@
         save(); render();
       }
 
+      document.getElementById("pickerBackdrop").addEventListener("click", hidePicker);
       document.getElementById("resetBtn").addEventListener("click", function () {
         if (!window.confirm("Start your farm over? This erases your shells, crops and buildings on this phone.")) return;
         try { window.localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ }
