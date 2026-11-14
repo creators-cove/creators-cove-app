@@ -377,6 +377,7 @@
           <input id="visitCode" type="text" placeholder="Friend's code — e.g. COVE-AB3F9K" maxlength="12" style="flex:1;min-width:170px;padding:10px;border-radius:10px;border:2px solid #cfe3ea;font-size:1rem;text-transform:uppercase" />
           <button type="button" class="btn" id="visitBtn">🚶 Visit Farm</button>
         </div>
+        <div id="neighborsBox"></div>
         <div id="visitView"></div>
       </section>
 
@@ -1613,6 +1614,53 @@
         if (hb) hb.addEventListener("click", function () { helpFarm(snap.code, snap.name); });
       }
 
+      /* ---------- Neighbors: farms you have visited, remembered on this phone ---------- */
+      var NEIGHBORS_KEY = "cove-farm-neighbors";
+      function loadNeighbors() {
+        try { var v = JSON.parse(window.localStorage.getItem(NEIGHBORS_KEY) || "[]"); return (v && v.length) ? v : []; } catch (e) { return []; }
+      }
+      function saveNeighbors(list) {
+        try { window.localStorage.setItem(NEIGHBORS_KEY, JSON.stringify(list)); } catch (e) { /* ignore */ }
+      }
+      function rememberNeighbor(code, name) {
+        if (!code || code === farmCode) return;
+        var list = loadNeighbors().filter(function (n) { return n.code !== code; });
+        list.unshift({ code: code, name: name || "A Cove Farm", last: Date.now() });
+        if (list.length > 24) list = list.slice(0, 24);
+        saveNeighbors(list);
+        renderNeighbors();
+      }
+      function forgetNeighbor(code) {
+        saveNeighbors(loadNeighbors().filter(function (n) { return n.code !== code; }));
+        renderNeighbors();
+      }
+      function renderNeighbors() {
+        var box = document.getElementById("neighborsBox");
+        if (!box) return;
+        var list = loadNeighbors();
+        if (!list.length) { box.innerHTML = ""; return; }
+        var today = new Date().toDateString();
+        var html = "<p class='note' style='margin:12px 0 6px'>🏡 <strong>Your neighbors</strong> — tap one to visit again, no code needed:</p><div style='display:flex;flex-wrap:wrap;gap:8px'>";
+        list.forEach(function (n) {
+          var helped = false;
+          try { helped = window.localStorage.getItem("cove-farm-helped-" + n.code) === today; } catch (e) { /* ignore */ }
+          html += "<span style='display:inline-flex;align-items:center;gap:4px;background:#eef7fa;border:2px solid #bcd9e4;border-radius:999px;padding:4px 6px 4px 12px'>" +
+            "<button type='button' class='neighbor-visit' data-code='" + escHtml(n.code) + "' style='background:none;border:none;font:inherit;cursor:pointer;padding:0'><strong>" + escHtml(n.name || "A Cove Farm") + "</strong> <span style='color:#5b6b73;font-size:.78rem'>" + escHtml(n.code) + (helped ? " · 💧 helped today" : "") + "</span></button>" +
+            "<button type='button' class='neighbor-drop' data-code='" + escHtml(n.code) + "' aria-label='Remove neighbor' style='background:none;border:none;cursor:pointer;color:#9db4bd;font:inherit;padding:0 4px'>✕</button></span>";
+        });
+        html += "</div>";
+        box.innerHTML = html;
+        var visits = box.querySelectorAll(".neighbor-visit");
+        for (var i = 0; i < visits.length; i++) visits[i].addEventListener("click", function () { visitCode(this.getAttribute("data-code")); });
+        var drops = box.querySelectorAll(".neighbor-drop");
+        for (var j = 0; j < drops.length; j++) drops[j].addEventListener("click", function () { forgetNeighbor(this.getAttribute("data-code")); });
+      }
+      function visitCode(code) {
+        var input = document.getElementById("visitCode");
+        if (input) input.value = code;
+        visitFarm();
+      }
+
       function visitFarm() {
         var input = document.getElementById("visitCode");
         var view = document.getElementById("visitView");
@@ -1633,6 +1681,7 @@
               return;
             }
             renderVisit(snap);
+            rememberNeighbor(snap.code, snap.name);
           }, function () {
             view.innerHTML = "<p class='note' style='margin-top:10px'>Couldn't reach the boardwalk (connection hiccup). Try again in a moment.</p>";
           });
@@ -1645,6 +1694,7 @@
         api(["LPUSH", "gifts:" + code, JSON.stringify({ from_code: farmCode, from_name: farmName || "A Cove neighbor", ts: Date.now() })])
           .then(function () {
             try { window.localStorage.setItem(key, today); } catch (e) { /* ignore */ }
+            renderNeighbors();
             var btn = document.getElementById("helpBtn");
             if (btn) { btn.disabled = true; btn.textContent = "💧 Hand lent! They'll find your gift when they open their farm."; }
             Sfx.click();
@@ -1666,6 +1716,7 @@
           try { window.localStorage.setItem(CODE_KEY, farmCode); } catch (e) { /* ignore */ }
         }
         renderMyFarmBox();
+        renderNeighbors();
         document.getElementById("visitBtn").addEventListener("click", visitFarm);
         fetchGifts();
         setTimeout(publishFarm, 4000);
