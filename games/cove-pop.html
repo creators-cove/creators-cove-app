@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Cove Pop — Creator's Cove</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: linear-gradient(180deg, #2b2140 0%, #4a2b5e 60%, #12808f 130%); color: #fdf6e3; min-height: 100vh; padding: 14px 14px 42px; }
+  .wrap { max-width: 480px; margin: 0 auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .back { text-decoration: none; color: #0f6f8f; font-weight: 700; font-size: .95rem; background: #fff; padding: 7px 13px; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .mute { border: none; background: #fff; font-size: 1.05rem; width: 38px; height: 38px; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,.3); cursor: pointer; }
+  h1 { font-size: 1.55rem; text-align: center; }
+  .sub { text-align: center; color: #e8d9f5; font-size: .92rem; margin: 4px 0 12px; }
+  .scorebar { display: flex; justify-content: space-between; background: rgba(255,255,255,.12); border-radius: 12px; padding: 9px 14px; font-weight: 700; font-size: .92rem; margin-bottom: 10px; }
+  .stage { position: relative; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 26px rgba(0,0,0,.4); }
+  canvas { display: block; width: 100%; height: auto; background: linear-gradient(180deg, #7ec8e3 0%, #aee3f5 45%, #fdeec9 78%, #f7d774 100%); touch-action: none; }
+  .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: rgba(24,16,44,.55); padding: 22px; }
+  .overlay .big { font-size: 1.6rem; font-weight: 900; margin-bottom: 6px; }
+  .overlay p { color: #efe6fb; font-size: .95rem; line-height: 1.45; max-width: 320px; }
+  .btn { border: none; border-radius: 999px; padding: 13px 26px; font-size: 1rem; font-weight: 800; cursor: pointer; background: linear-gradient(180deg, #ffd166, #f4a93b); color: #21303a; box-shadow: 0 3px 10px rgba(0,0,0,.35); margin-top: 14px; }
+  .btn:active { transform: scale(.97); }
+  .hidden { display: none !important; }
+  .howto { font-size: .85rem; color: #d9cdea; margin-top: 16px; line-height: 1.45; }
+  #toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); background: #21303a; color: #fff; padding: 11px 18px; border-radius: 999px; font-weight: 700; opacity: 0; pointer-events: none; transition: all .25s; max-width: 92vw; text-align: center; z-index: 50; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="../index.html">← Back to Cove</a>
+    <button class="mute" id="muteBtn" type="button" aria-label="Sound on or off">🔊</button>
+  </div>
+  <h1>🎈 Cove Pop</h1>
+  <p class="sub">The balloons got loose over the beach! Aim the bow, pop them before they float away.</p>
+
+  <div class="scorebar"><span>Round <span id="roundNo">1</span></span><span>Score <span id="scoreNo">0</span></span><span>Target <span id="targetNo">120</span></span><span>🏹 <span id="arrowNo">10</span></span></div>
+
+  <div class="stage">
+    <canvas id="game" width="420" height="560"></canvas>
+    <div class="overlay" id="startBox">
+      <div class="big">🎈 Cove Pop</div>
+      <p>Drag anywhere to aim, let go to shoot. Every balloon has points inside — gold ones are worth 100! Pop 3 in a row without missing and your points double. Hit the round target before your arrows run out!</p>
+      <button class="btn" id="startBtn" type="button">Start popping</button>
+      <p id="bestLine" style="margin-top:12px;font-size:.85rem;color:#ffd166"></p>
+    </div>
+    <div class="overlay hidden" id="overBox">
+      <div class="big">🎈 Out of arrows!</div>
+      <p id="overStats"></p>
+      <button class="btn" id="againBtn" type="button">Play again</button>
+    </div>
+    <div class="overlay hidden" id="clearBox">
+      <div class="big">🎉 Round cleared!</div>
+      <p id="clearStats"></p>
+    </div>
+  </div>
+
+  <p class="howto"><strong>How to play:</strong> press and drag on the sky to aim the bow — the dotted line shows where your arrow flies. Let go to shoot. Balloons drift up and away, so don't dawdle! Bigger points hide in smaller, faster balloons. Pink gift balloons give you +2 arrows. Miss and your combo resets. Each round the target goes up and the balloons get quicker. Your best score is saved on this phone.</p>
+</div>
+<div id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var AC = null, muted = false;
+  try { muted = window.localStorage.getItem("cove-pop-muted") === "1"; } catch (e) { /* ignore */ }
+  function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } } if (AC && AC.state === "suspended") AC.resume(); return AC; }
+  function tone(f, d, type, v, delay, slide) { if (muted) return; var c = ac(); if (!c) return; var t = c.currentTime + (delay || 0); var o = c.createOscillator(), g = c.createGain(); o.type = type || "sine"; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(slide, 1), t + d); g.gain.setValueAtTime(v || .12, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + d + .02); }
+  var Sfx = {
+    shoot: function () { tone(280, .16, "sawtooth", .05, 0, 980); },
+    pop: function (gold) { tone(gold ? 880 : 540 + Math.random() * 260, .13, "square", .13, 0, 110); tone(1500, .07, "sine", .07, .01, 700); },
+    gift: function () { tone(784, .12, "triangle", .12); tone(1047, .16, "triangle", .12, .08); },
+    miss: function () { tone(190, .18, "sine", .09, 0, 90); },
+    clear: function () { var n = [523, 659, 784, 1047]; for (var i = 0; i < n.length; i++) tone(n[i], .2, "triangle", .13, i * .09); },
+    over: function () { var n = [392, 330, 262]; for (var i = 0; i < n.length; i++) tone(n[i], .22, "triangle", .12, i * .13); }
+  };
+  var muteBtn = document.getElementById("muteBtn");
+  function drawMute() { muteBtn.textContent = muted ? "🔇" : "🔊"; }
+  muteBtn.addEventListener("click", function () { muted = !muted; try { window.localStorage.setItem("cove-pop-muted", muted ? "1" : "0"); } catch (e) { /* ignore */ } drawMute(); if (!muted) Sfx.gift(); });
+  drawMute();
+  document.addEventListener("visibilitychange", function () { if (document.hidden && AC) AC.suspend(); });
+  var toastTimer = null;
+  function toast(msg) { var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2200); }
+
+  var cv = document.getElementById("game"), ctx = cv.getContext("2d");
+  var W = cv.width, H = cv.height;
+  var BOW = { x: W / 2, y: H - 44 };
+
+  var COLORS = ["#e0245e", "#1b9bd8", "#57b93c", "#8b46c7", "#f4762a", "#12b5a5", "#f78fb8"];
+  var VALUES = [
+    { v: 5, w: 30, r: 33 }, { v: 10, w: 30, r: 31 }, { v: 15, w: 20, r: 29 },
+    { v: 25, w: 12, r: 27 }, { v: 50, w: 6, r: 25 }, { v: 100, w: 2, r: 25 }
+  ];
+  function pickValue() {
+    var tot = 0, i; for (i = 0; i < VALUES.length; i++) tot += VALUES[i].w;
+    var roll = Math.random() * tot;
+    for (i = 0; i < VALUES.length; i++) { roll -= VALUES[i].w; if (roll <= 0) return VALUES[i]; }
+    return VALUES[0];
+  }
+
+  var mode = "start"; /* start | play | clear | over */
+  var round = 1, score = 0, roundScore = 0, arrowsLeft = 10, target = 120;
+  var streak = 0, best = 0;
+  try { best = parseInt(window.localStorage.getItem("cove-pop-best") || "0", 10) || 0; } catch (e) { /* ignore */ }
+  var balloons = [], shots = [], parts = [], floats = [], clouds = [];
+  var aiming = false, aimAngle = 0, spawnIn = 0, lastT = 0, clearAt = 0;
+  for (var ci = 0; ci < 5; ci++) clouds.push({ x: Math.random() * W, y: 26 + Math.random() * 130, s: .6 + Math.random() * .9, v: 4 + Math.random() * 7 });
+
+  function hud() {
+    document.getElementById("roundNo").textContent = round;
+    document.getElementById("scoreNo").textContent = score;
+    document.getElementById("targetNo").textContent = target;
+    document.getElementById("arrowNo").textContent = arrowsLeft;
+  }
+  function showBest() {
+    document.getElementById("bestLine").textContent = best > 0 ? "Your best score: " + best : "";
+  }
+  function newBalloon(ambient) {
+    var gift = !ambient && Math.random() < 0.06;
+    var pick = pickValue();
+    var gold = pick.v === 100;
+    balloons.push({
+      x: 34 + Math.random() * (W - 68),
+      y: ambient ? Math.random() * (H - 120) : H + 46,
+      r: gift ? 28 : pick.r,
+      vy: (0.55 + Math.random() * 0.7 + (round - 1) * 0.08) * (gold ? 1.18 : 1),
+      phase: Math.random() * Math.PI * 2,
+      color: gift ? "#f78fb8" : (gold ? "#ffcf3f" : COLORS[Math.floor(Math.random() * COLORS.length)]),
+      value: gift ? 10 : pick.v, gold: gold, gift: gift
+    });
+  }
+  function startGame() {
+    round = 1; score = 0; streak = 0;
+    balloons = []; shots = []; parts = []; floats = [];
+    beginRound();
+    document.getElementById("startBox").classList.add("hidden");
+    document.getElementById("overBox").classList.add("hidden");
+    mode = "play"; hud();
+  }
+  function beginRound() {
+    roundScore = 0; arrowsLeft = 10;
+    target = 120 + (round - 1) * 70;
+    spawnIn = 0;
+    for (var i = 0; i < 4; i++) newBalloon(false);
+    hud();
+  }
+  function endRoundCheck() {
+    if (mode !== "play" || arrowsLeft > 0 || shots.length > 0) return;
+    if (roundScore >= target) {
+      score += 50;
+      Sfx.clear();
+      document.getElementById("clearStats").textContent = "You scored " + roundScore + " that round. +50 bonus! Round " + (round + 1) + " coming up — faster balloons, higher target.";
+      document.getElementById("clearBox").classList.remove("hidden");
+      mode = "clear"; clearAt = performance.now();
+      hud();
+    } else {
+      mode = "over"; Sfx.over();
+      var isBest = score > best;
+      if (isBest) { best = score; try { window.localStorage.setItem("cove-pop-best", String(best)); } catch (e) { /* ignore */ } }
+      document.getElementById("overStats").textContent = "You reached round " + round + " with " + score + " points" + (isBest ? " — a new best score!" : ". Best score: " + best + ".") + " The target that round was " + target + " and you got " + roundScore + ". So close — one more go?";
+      document.getElementById("overBox").classList.remove("hidden");
+      showBest();
+    }
+  }
+  function burst(b) {
+    for (var i = 0; i < 14; i++) {
+      var a = Math.random() * Math.PI * 2, sp = 1 + Math.random() * 2.6;
+      parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - .4, life: 26 + Math.random() * 12, color: b.color });
+    }
+  }
+  function popBalloon(b) {
+    burst(b);
+    if (b.gift) {
+      arrowsLeft += 2; Sfx.gift();
+      floats.push({ x: b.x, y: b.y, text: "+2 🏹", t: 0, color: "#0f6f8f" });
+      score += 10; roundScore += 10;
+    } else {
+      streak++;
+      var mult = streak >= 6 ? 3 : (streak >= 3 ? 2 : 1);
+      var gained = b.value * mult;
+      score += gained; roundScore += gained;
+      Sfx.pop(b.gold);
+      floats.push({ x: b.x, y: b.y, text: "+" + gained + (mult > 1 ? " ×" + mult : ""), t: 0, color: b.gold ? "#b8860b" : "#21303a" });
+      if (mult === 2 && streak === 3) toast("Combo! Points doubled — don't miss! 🔥");
+      if (mult === 3 && streak === 6) toast("Triple points! You're on fire! 🔥🔥");
+    }
+    hud();
+  }
+  function fireArrow() {
+    if (mode !== "play" || arrowsLeft <= 0) return;
+    arrowsLeft--;
+    var sp = 13;
+    shots.push({ x: BOW.x, y: BOW.y - 20, vx: Math.sin(aimAngle) * sp, vy: -Math.cos(aimAngle) * sp, angle: aimAngle, hit: false });
+    Sfx.shoot(); hud();
+  }
+
+  function pointerPos(e) {
+    var r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * (W / r.width), y: (e.clientY - r.top) * (H / r.height) };
+  }
+  cv.addEventListener("pointerdown", function (e) {
+    if (mode !== "play") return;
+    e.preventDefault();
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    aiming = true;
+    var p = pointerPos(e);
+    aimAngle = Math.max(-1.15, Math.min(1.15, Math.atan2(p.x - BOW.x, -(p.y - BOW.y))));
+    ac();
+  });
+  cv.addEventListener("pointermove", function (e) {
+    if (!aiming) return;
+    var p = pointerPos(e);
+    aimAngle = Math.max(-1.15, Math.min(1.15, Math.atan2(p.x - BOW.x, -(p.y - BOW.y))));
+  });
+  function release(e) {
+    if (!aiming) return;
+    aiming = false;
+    if (mode === "play") fireArrow();
+  }
+  cv.addEventListener("pointerup", release);
+  cv.addEventListener("pointercancel", function () { aiming = false; });
+
+  function drawBalloon(b, t) {
+    var sway = Math.sin(t / 620 + b.phase) * 5;
+    var x = b.x + sway, y = b.y;
+    ctx.save();
+    /* string */
+    ctx.strokeStyle = "rgba(60,50,80,.55)"; ctx.lineWidth = 1.4; ctx.beginPath();
+    ctx.moveTo(x, y + b.r * 0.98);
+    ctx.quadraticCurveTo(x + Math.sin(t / 300 + b.phase) * 5, y + b.r + 13, x + Math.sin(t / 300 + b.phase) * 8, y + b.r + 24);
+    ctx.stroke();
+    /* knot */
+    ctx.fillStyle = b.color;
+    ctx.beginPath(); ctx.moveTo(x - 5, y + b.r * 0.92); ctx.lineTo(x + 5, y + b.r * 0.92); ctx.lineTo(x, y + b.r + 7); ctx.closePath(); ctx.fill();
+    /* body */
+    var g = ctx.createRadialGradient(x - b.r * .35, y - b.r * .4, b.r * .15, x, y, b.r * 1.15);
+    if (b.gold) { g.addColorStop(0, "#fff3b0"); g.addColorStop(.55, "#ffd166"); g.addColorStop(1, "#f4a93b"); }
+    else { g.addColorStop(0, "rgba(255,255,255,.85)"); g.addColorStop(.25, b.color); g.addColorStop(1, b.color); }
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(x, y, b.r * .84, b.r, 0, 0, Math.PI * 2); ctx.fill();
+    /* shine */
+    ctx.fillStyle = "rgba(255,255,255,.5)";
+    ctx.beginPath(); ctx.ellipse(x - b.r * .34, y - b.r * .42, b.r * .16, b.r * .26, -.5, 0, Math.PI * 2); ctx.fill();
+    /* label */
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (b.gift) {
+      ctx.font = Math.round(b.r * .95) + "px serif";
+      ctx.fillText("🎁", x, y + 1);
+    } else {
+      ctx.font = "900 " + Math.round(b.r * (b.value >= 100 ? .62 : .78)) + "px 'Segoe UI', sans-serif";
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(0,0,0,.28)";
+      var txt = String(b.value);
+      ctx.strokeText(txt, x, y + 1);
+      ctx.fillStyle = "#fff"; ctx.fillText(txt, x, y + 1);
+    }
+    ctx.restore();
+    b._dx = x;
+  }
+  function drawBow(t) {
+    ctx.save();
+    ctx.translate(BOW.x, BOW.y);
+    /* sand mound */
+    ctx.fillStyle = "#e8c877";
+    ctx.beginPath(); ctx.ellipse(0, 26, 52, 14, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.rotate(aiming || shots.length ? aimAngle : Math.sin(t / 900) * .12);
+    /* limbs */
+    ctx.strokeStyle = "#8a5a2b"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(0, 0, 27, -Math.PI / 2 - 1.15, -Math.PI / 2 + 1.15); ctx.stroke();
+    /* string */
+    var ex = Math.cos(-Math.PI / 2 - 1.15) * 27, ey = Math.sin(-Math.PI / 2 - 1.15) * 27;
+    var ex2 = Math.cos(-Math.PI / 2 + 1.15) * 27, ey2 = Math.sin(-Math.PI / 2 + 1.15) * 27;
+    ctx.strokeStyle = "rgba(40,30,20,.7)"; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(ex, ey);
+    if (aiming) { ctx.lineTo(0, 10); } else { ctx.lineTo(0, -27); }
+    ctx.lineTo(ex2, ey2); ctx.stroke();
+    /* nocked arrow */
+    if (aiming) {
+      ctx.strokeStyle = "#d9d9d9"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(0, 12); ctx.lineTo(0, -38); ctx.stroke();
+      ctx.fillStyle = "#c0392b";
+      ctx.beginPath(); ctx.moveTo(0, -46); ctx.lineTo(-5, -36); ctx.lineTo(5, -36); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+  function frame(t) {
+    requestAnimationFrame(frame);
+    var dt = Math.min(50, t - (lastT || t)); lastT = t;
+    ctx.clearRect(0, 0, W, H);
+    /* clouds */
+    ctx.fillStyle = "rgba(255,255,255,.75)";
+    clouds.forEach(function (c) {
+      c.x += c.v * dt / 1000; if (c.x - 46 * c.s > W) c.x = -46 * c.s;
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, 30 * c.s, 13 * c.s, 0, 0, Math.PI * 2);
+      ctx.ellipse(c.x + 20 * c.s, c.y + 3 * c.s, 22 * c.s, 10 * c.s, 0, 0, Math.PI * 2);
+      ctx.ellipse(c.x - 22 * c.s, c.y + 4 * c.s, 18 * c.s, 9 * c.s, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    /* ambient balloons on start screen */
+    if (mode === "start") {
+      if (balloons.length < 6 && Math.random() < .02) newBalloon(true);
+    } else if (mode === "play") {
+      spawnIn -= dt;
+      if (spawnIn <= 0 && balloons.length < 10) { newBalloon(false); spawnIn = Math.max(430, 680 - (round - 1) * 30); }
+    }
+    /* balloons */
+    balloons = balloons.filter(function (b) { return b.y > -60; });
+    balloons.forEach(function (b) {
+      if (mode === "play" || mode === "start") b.y -= b.vy * (dt / 16.7) * (mode === "start" ? .45 : 1);
+      drawBalloon(b, t);
+    });
+    /* shots */
+    shots = shots.filter(function (s) { return s.y > -30 && s.x > -20 && s.x < W + 20 && !s.hit; });
+    shots.forEach(function (s) {
+      s.x += s.vx * (dt / 16.7); s.y += s.vy * (dt / 16.7);
+      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.angle);
+      ctx.strokeStyle = "#e8e8e8"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(0, 14); ctx.lineTo(0, -16); ctx.stroke();
+      ctx.fillStyle = "#c0392b";
+      ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(-5, -14); ctx.lineTo(5, -14); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      /* collision: arrow tip vs balloons */
+      var tx = s.x + Math.sin(s.angle) * -24 * -1, ty = s.y - Math.cos(s.angle) * 24;
+      for (var i = balloons.length - 1; i >= 0; i--) {
+        var b = balloons[i], bx = (b._dx !== undefined ? b._dx : b.x);
+        var dx = tx - bx, dy = ty - b.y;
+        if (dx * dx + dy * dy < (b.r + 7) * (b.r + 7)) {
+          s.hit = true;
+          balloons.splice(i, 1);
+          popBalloon(b);
+          break;
+        }
+      }
+    });
+    /* particles */
+    parts = parts.filter(function (p) { return p.life > 0; });
+    parts.forEach(function (p) {
+      p.x += p.vx; p.y += p.vy; p.vy += .05; p.life--;
+      ctx.globalAlpha = Math.max(0, p.life / 30);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+    /* floating score text */
+    floats = floats.filter(function (f) { return f.t < 55; });
+    floats.forEach(function (f) {
+      f.t++; f.y -= .8;
+      ctx.globalAlpha = 1 - f.t / 60;
+      ctx.font = "900 19px 'Segoe UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,.75)";
+      ctx.strokeText(f.text, f.x, f.y);
+      ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y);
+      ctx.globalAlpha = 1;
+    });
+    drawBow(t);
+    /* streak indicator */
+    if (mode === "play" && streak >= 2) {
+      ctx.font = "800 15px 'Segoe UI', sans-serif"; ctx.textAlign = "left";
+      ctx.fillStyle = streak >= 3 ? "#e25822" : "#5b6b73";
+      ctx.fillText("🔥 Streak " + streak + (streak >= 6 ? " — triple points!" : streak >= 3 ? " — double points!" : ""), 10, 22);
+    }
+    if (mode === "play") endRoundCheck();
+    if (mode === "clear" && t - clearAt > 2600) {
+      document.getElementById("clearBox").classList.add("hidden");
+      round++; beginRound(); mode = "play";
+      toast("Round " + round + " — target " + target + "!");
+    }
+  }
+  document.getElementById("startBtn").addEventListener("click", function () { ac(); startGame(); });
+  document.getElementById("againBtn").addEventListener("click", function () { ac(); startGame(); });
+  showBest(); hud();
+  requestAnimationFrame(frame);
+  /* miss detection: wrap the shots filter by observing hit-less removals */
+  var lastShotObjs = [];
+  setInterval(function () {
+    if (mode !== "play") { lastShotObjs = shots.slice(); return; }
+    lastShotObjs.forEach(function (s) {
+      if (shots.indexOf(s) === -1 && !s.hit && (s.y <= -29 || s.x <= -19 || s.x >= W + 19)) {
+        if (streak > 0) { streak = 0; Sfx.miss(); }
+      }
+    });
+    lastShotObjs = shots.slice();
+  }, 50);
+})();
+</script>
+</body>
+</html>
