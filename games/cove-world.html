@@ -1347,9 +1347,13 @@
           toast("\uD83D\uDDBC\uFE0F A print washes up — " + any.name + ", one already on your board! The Cove shop trades it for \uD83D\uDC1A 45.");
         }
       }
+      var galSig = "";
       function renderGallery() {
         var box = document.getElementById("galleryBox");
         if (!box) return;
+        var sig = state.prints.join(",") + "|" + Object.keys(state.setsDone).sort().join(",") + "|" + state.boardPrize;
+        if (sig === galSig && box.innerHTML) return;
+        galSig = sig;
         var html = '<p class="note" style="margin-top:0">Your board: <strong>' + state.prints.length + " of " + PRINTS.length + "</strong> prints found." +
           (state.prints.length >= PRINTS.length
             ? (state.boardPrize ? " \uD83C\uDFC6 Board complete — your prize print is downloaded and yours to keep!" : " \uD83C\uDFC6 Board complete! Tap any print to choose your full-size download.")
