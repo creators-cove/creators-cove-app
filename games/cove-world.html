@@ -544,6 +544,7 @@
       var MAX_PLOTS = 18;
       var START_PLOTS = 6;
       var WITHER_MS = 12 * 60 * 60 * 1000; /* withers 12h after ready */
+      var MIRACLE_COOLDOWN_MS = 4 * 60 * 60 * 1000; /* Miracle Fertilizer: one use every 4 hours — it readies EVERY crop at once */
       var BANK_CAP_HOURS = 8;
 
       var CROPS = {
@@ -632,6 +633,7 @@
           if (!state.supplies) state.supplies = { sprinkler: 0, miracle: 0 };
           if (typeof state.supplies.sprinkler !== "number") state.supplies.sprinkler = 0;
           if (typeof state.supplies.miracle !== "number") state.supplies.miracle = 0;
+          if (typeof state.miracleNext !== "number") state.miracleNext = 0;
           if (!state.upgrades) state.upgrades = { baskets: false, bees: false, hoe: false };
           if (!state.grand) state.grand = { wheel: false, pier: false };
           if (typeof state.grand.pier !== "boolean") state.grand.pier = false;
@@ -983,7 +985,7 @@
       /* ================= Supply store ================= */
       var SHOP = [
         { id: "sprinkler", emoji: "💦", name: "Sprinkler", kind: "supply", cost: 15, desc: "Use it to water every growing crop at once." },
-        { id: "miracle", emoji: "🌟", name: "Miracle Fertilizer", kind: "supply", cost: 40, desc: "Use it and every growing crop is ready within a minute." },
+        { id: "miracle", emoji: "🌟", name: "Miracle Fertilizer", kind: "supply", cost: 40, desc: "Use it and every growing crop is ready within a minute. Powerful stuff — one use every 4 hours." },
         { id: "bees", emoji: "🐝", name: "Busy Bees", kind: "upgrade", cost: 150, desc: "Forever: every crop grows 20% faster." },
         { id: "baskets", emoji: "🧺", name: "Bigger Baskets", kind: "upgrade", cost: 250, desc: "Forever: building baskets hold 16 hours of shells instead of 8." },
         { id: "hoe", emoji: "✨", name: "Golden Hoe", kind: "upgrade", cost: 400, desc: "Forever: every harvest sells for 25% more." }
@@ -1006,7 +1008,12 @@
           } else {
             btn = '<button class="btn gold" type="button" data-shop="buy" data-id="' + item.id + '"' + (state.shells < item.cost ? " disabled" : "") + ">Buy · 🐚 " + item.cost + "</button>";
             if (item.kind === "supply") {
-              btn += '<button class="btn" type="button" data-shop="use" data-id="' + item.id + '"' + (count <= 0 ? " disabled" : "") + ">Use</button>";
+              var useLabel = "Use", useOff = count <= 0;
+              if (item.id === "miracle") {
+                var mLeft = (state.miracleNext || 0) - Date.now();
+                if (mLeft > 0) { useLabel = "🌟 Ready in " + fmtDur(mLeft); useOff = true; }
+              }
+              btn += '<button class="btn" type="button" data-shop="use" data-id="' + item.id + '"' + (useOff ? " disabled" : "") + ">" + useLabel + "</button>";
             }
           }
           d.innerHTML = '<div class="b-emoji">' + item.emoji + "</div>" + info + '<div style="display:flex;flex-direction:column;gap:6px">' + btn + "</div>";
@@ -1045,6 +1052,7 @@
           toast("💦 Sprinkler day! Watered " + wateredCount + " crop" + (wateredCount === 1 ? "" : "s") + ".");
         } else if (id === "miracle") {
           if (state.supplies.miracle <= 0) return;
+          if (state.miracleNext && now < state.miracleNext) { Sfx.thud(); toast("🌟 Still soaking in! Miracle Fertilizer is ready again in " + fmtDur(state.miracleNext - now) + "."); return; }
           var moved = 0;
           state.plots.forEach(function (p) {
             if (!p.crop) return;
@@ -1057,8 +1065,9 @@
           });
           if (!moved) { Sfx.thud(); toast("Nothing growing right now — plant something first!"); return; }
           state.supplies.miracle -= 1;
+          state.miracleNext = now + MIRACLE_COOLDOWN_MS;
           Sfx.build();
-          toast("🌟 Miracle Fertilizer! " + moved + " crop" + (moved === 1 ? "" : "s") + " will be ready in a minute!");
+          toast("🌟 Miracle Fertilizer! " + moved + " crop" + (moved === 1 ? "" : "s") + " will be ready in a minute! The garden needs 4 hours to soak it in before the next dose.");
         }
         save(); render();
       }
@@ -1551,6 +1560,12 @@
           }, function () { /* offline — gifts wait for next time */ });
       }
 
+      function fmtDur(ms) {
+        var mins = Math.ceil(ms / 60000);
+        if (mins < 60) return mins + "m";
+        var h = Math.floor(mins / 60), m = mins % 60;
+        return m ? h + "h " + m + "m" : h + "h";
+      }
       function fmtAgo(ts) {
         var s = Math.floor((Date.now() - ts) / 1000);
         if (s < 90) return "just now";
