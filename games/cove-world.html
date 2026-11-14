@@ -305,6 +305,8 @@
       @keyframes goldPulse { from { transform: scale(1); } to { transform: scale(1.18) rotate(-6deg); } }
       #bottleBtn, #chestBtn, #printBtn { font-size: 2.3rem; filter: drop-shadow(0 3px 5px rgba(0,0,0,.35));
         animation: bobFloat 2.2s ease-in-out infinite; }
+      #printBtn { animation: bobFloat 2.2s ease-in-out infinite, printGlow .9s ease-in-out infinite alternate; }
+      @keyframes printGlow { from { filter: drop-shadow(0 0 4px rgba(255, 201, 60, .55)) drop-shadow(0 3px 5px rgba(0,0,0,.35)); } to { filter: drop-shadow(0 0 16px rgba(255, 201, 60, .98)) drop-shadow(0 3px 5px rgba(0,0,0,.35)); } }
       @keyframes bobFloat { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-9px) rotate(4deg); } }
       .gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; margin: 8px 0 14px; }
       .gal-tile { background: #fff; border: 2px solid #cfe3ea; border-radius: 12px; padding: 6px; text-align: center; cursor: pointer; }
@@ -1230,7 +1232,7 @@
           surpriseHideTimer = setTimeout(function () {
             if (run !== surpriseRun) return;
             hideSurprise(); scheduleSurprise();
-          }, 45000);
+          }, kind === "print" ? 90000 : 45000);
         }
       }
       function initSurprises() {
