@@ -1808,13 +1808,21 @@
         var box = document.getElementById("myFarmBox");
         if (!box) return;
         box.innerHTML =
-          "<div style='background:#fdf6e3;border:2px dashed #e3c878;border-radius:12px;padding:10px 12px'>" +
+          "<div style='background:#fdf6e3;color:#0b3d54;border:2px dashed #e3c878;border-radius:12px;padding:12px 14px'>" +
           "<div style='font-size:1.05rem'>🏡 <strong>" + escHtml(farmName || "A Cove Farm") + "</strong></div>" +
-          "<div style='margin:4px 0'>Your farm code: <strong style='font-size:1.15rem;letter-spacing:1px'>" + farmCode + "</strong></div>" +
-          "<div class='note'>Name your farm: " +
+          "<div style='margin:8px 0 4px;font-size:1rem'>Your farm code:</div>" +
+          "<div><span id='farmCodeBig' title='Tap to copy' style='display:inline-block;background:#ffffff;border:2px solid #0b3d54;border-radius:10px;padding:4px 14px;font-size:1.55rem;font-weight:800;letter-spacing:2px;color:#0b3d54;cursor:pointer'>" + farmCode + "</span> <span style='font-size:.85rem'> (tap the code to copy it)</span></div>" +
+          "<div class='note' style='color:#14586e;margin-top:8px'>Name your farm: " +
           "<input id='farmNameInput' type='text' maxlength='30' placeholder='e.g. Kim's Shell Farm' value='" + escHtml(farmName) + "' style='padding:7px;border-radius:8px;border:2px solid #cfe3ea;max-width:180px' /> " +
           "<button type='button' class='btn' id='farmNameBtn'>Save name</button></div>" +
-          "<div class='note' id='giftNote'></div></div>";
+          "<div class='note' id='giftNote' style='color:#14586e'></div></div>";
+        var codeEl = document.getElementById("farmCodeBig");
+        if (codeEl) codeEl.addEventListener("click", function () {
+          function done() { toast("📋 Farm code copied: " + farmCode); }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(farmCode).then(done, function () { toast("Your farm code: " + farmCode); });
+          } else { toast("Your farm code: " + farmCode); }
+        });
         document.getElementById("farmNameBtn").addEventListener("click", function () {
           var v = document.getElementById("farmNameInput").value.replace(/^\s+|\s+$/g, "");
           farmName = v.slice(0, 30);
