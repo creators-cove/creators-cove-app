@@ -1616,9 +1616,11 @@
       function visitFarm() {
         var input = document.getElementById("visitCode");
         var view = document.getElementById("visitView");
-        var code = (input.value || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
-        if (code && code.indexOf("COVE-") !== 0) code = "COVE-" + code.replace(/^COVE-?/, "");
-        if (!code || code.length < 8) { toast("Type a farm code first — like COVE-AB3F9K"); return; }
+        var raw = (input.value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+        if (raw.indexOf("COVE") === 0) raw = raw.slice(4);
+        var code = raw ? "COVE-" + raw : "";
+        if (!code || raw.length !== 6) { toast("Type a farm code first — like COVE-AB3F9K"); return; }
+        input.value = code;
         if (code === farmCode) { toast("That's your own farm, silly 😄"); return; }
         if (!apiReady()) { toast("The boardwalk isn't open yet — try again later."); return; }
         view.innerHTML = "<p class='note' style='margin-top:10px'>Walking down the boardwalk… 🚶</p>";
