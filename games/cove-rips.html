@@ -272,7 +272,7 @@
           <span class="refill-timer" id="refillTimer" aria-live="polite">--:--:--</span>
           <span class="refill-sub" id="refillSub">Come back tomorrow to claim them</span>
         </button>
-        <div class="prize-banner">Your coins are make-believe — there's nothing to buy. Pull an <strong>Epic or Gold card</strong> and you win the <strong>Little Garden Witch Journal Kit</strong> — your Winner Card shows a claim code. Redeem the code right in the app and the kit downloads to your phone. One prize per member, per round.</div>
+        <div class="prize-banner">Your coins are make-believe — there's nothing to buy. Pull a <strong>Gold card</strong> and you win the <strong>Little Garden Witch Journal Kit</strong> — your Winner Card shows a claim code. Redeem the code right in the app and the kit downloads to your phone. One prize per member, per round.</div>
       </section>
 
       <section class="panel" aria-label="Your session">
@@ -298,8 +298,8 @@
       <section class="panel" aria-label="How to play">
         <h2>How it works in the group</h2>
         <p>Rip packs just for fun — the coins are make-believe and there's nothing to buy. Every pack has <strong>5 cards</strong>. Most pulls are Common, some are Rare, a few are Epic — and a lucky few are <strong>Gold</strong>, and Gold cards glow.</p>
-        <p><strong>Elite Pack</strong> costs more coins, but it boosts your Epic and Gold odds — and it always has at least one Epic or better inside.</p>
-        <p><strong>Your pulls can win a real prize.</strong> Pull an <strong>Epic</strong> or <strong>Gold</strong> card and you win the current prize — right now it's the <strong>Little Garden Witch Journal Kit</strong>. Tap <strong>WINNER CARD</strong> to see your claim code, then hit <strong>Redeem</strong> — the kit downloads right to your phone, no waiting on anybody. Screenshot your win for the group if you want to show off. One prize per member, per round, and each code works once. Your codes stay saved right here in the game, under "Your prize codes," so you can't lose them.</p>
+        <p><strong>Elite Pack</strong> costs more coins, but it boosts your Epic and Gold odds. Nothing is guaranteed, though — that's what makes a Gold pull worth celebrating.</p>
+        <p><strong>Your pulls can win a real prize.</strong> Pull a <strong>Gold</strong> card and you win the current prize — right now it's the <strong>Little Garden Witch Journal Kit</strong>. Tap <strong>WINNER CARD</strong> to see your claim code, then hit <strong>Redeem</strong> — the kit downloads right to your phone, no waiting on anybody. Screenshot your win for the group if you want to show off. One prize per member, per round, and each code works once. Your codes stay saved right here in the game, under "Your prize codes," so you can't lose them.</p>
         <p class="note">Run out of coins? Your next 100 free coins arrive tomorrow — when you hit zero, a countdown timer appears showing exactly how long is left until midnight. Come back tomorrow, tap to claim your 100, and you're ripping again. Your coin balance and your Vault are saved on this device, so they're right where you left them when you come back — your session scores start fresh each visit.</p>
       </section>
     </main>
@@ -506,7 +506,7 @@
         { id: "crew",      name: "Crew Pack",      art: "🎒", price: 10,  pool: ["kim", "trish", "sandy", "gladys", "sprocket"], tag: "" },
         { id: "christmas", name: "Christmas Grails", art: "🎄", price: 25, pool: ["grinch", "snowman", "treecake", "canvas", "shell"], tag: "Holiday" },
         { id: "mermaid",   name: "Mermaid Pack",   art: "🧜‍♀️", price: 25, pool: ["kim", "trish", "sandy", "wave", "anchor"], tag: "Under the sea" },
-        { id: "elite",     name: "Elite Pack",     art: "👑", price: 100, pool: CARDS.map(function (c) { return c.id; }), tag: "Epic or better guaranteed", elite: true }
+        { id: "elite",     name: "Elite Pack",     art: "👑", price: 100, pool: CARDS.map(function (c) { return c.id; }), tag: "Boosted odds", elite: true }
       ];
 
       /* ================= Coins + refill (same pattern as Cove Slots) ================= */
@@ -561,7 +561,7 @@
         try { window.localStorage.setItem(VAULT_KEY, JSON.stringify(vault)); } catch (e) { /* ignore */ }
       }
 
-      /* ================= Prize codes (Epic/Gold pulls win the current prize) ================= */
+      /* ================= Prize codes (Gold pulls win the current prize) ================= */
       var CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
       function loadPrizeCodes() {
         try {
@@ -666,7 +666,7 @@
             "<h3>" + pack.name + "</h3>" +
             '<div class="price">🪙 ' + pack.price + " coins</div>" +
             '<div class="pulls">5 cards · ' + poolNames + "</div>" +
-            (pack.elite ? '<div class="tag">Epic or better guaranteed</div>' : (pack.tag ? '<div class="tag">' + pack.tag + "</div>" : ""));
+            (pack.elite ? '<div class="tag">Boosted odds</div>' : (pack.tag ? '<div class="tag">' + pack.tag + "</div>" : ""));
           btn.addEventListener("click", function () { ripPack(pack); });
           shopEl.appendChild(btn);
         });
@@ -719,7 +719,7 @@
         var list = document.getElementById("prizeCodeList");
         if (!list) return;
         if (!prizeCodes.length) {
-          list.innerHTML = '<p class="note">No prize codes yet — pull an Epic or Gold card and you win one.</p>';
+          list.innerHTML = '<p class="note">No prize codes yet — pull a Gold card and you win one.</p>';
           return;
         }
         var html = "";
@@ -750,16 +750,9 @@
         coins -= pack.price;
         saveCoins();
         if (coins < CHEAPEST && !refillAt) { refillAt = nextMidnight(); saveRefillAt(); }
-        /* Roll 5 cards now; Elite guarantees at least 1 Epic or better */
+        /* Roll 5 cards now — Elite gets boosted odds, but nothing is guaranteed */
         var pulls = [];
         for (var i = 0; i < 5; i++) pulls.push(pickCard(pack));
-        if (pack.elite) {
-          var hasEpicPlus = pulls.some(function (p) { return RARITY_RANK[p.rarity] >= 2; });
-          if (!hasEpicPlus) {
-            var idx = Math.floor(Math.random() * pulls.length);
-            pulls[idx].rarity = Math.random() < 0.3 ? "gold" : "epic";
-          }
-        }
         lastPull = pulls;
         renderAll();
         setDisplay("Ripping your " + pack.name + "…");
@@ -777,7 +770,7 @@
       }
       function revealCards(pulls, pack) {
         var goldPulls = pulls.filter(function (p) { return p.rarity === "gold"; });
-        var prizePulls = pulls.filter(function (p) { return RARITY_RANK[p.rarity] >= 2; });
+        var prizePulls = pulls.filter(function (p) { return p.rarity === "gold"; });
         var best = pulls.slice().sort(function (a, b) { return RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity]; })[0];
         /* Save to vault + stats */
         pulls.forEach(function (p) {

@@ -67,7 +67,7 @@
           <a class="btn big" id="downloadBtn" href="../downloads/gw-kit-7f3a9c2e.pdf" download>⬇️ Download my kit</a>
           <p class="note">12 printable journal pages. Save it somewhere safe — your code has now been used.</p>
         </div>
-        <p class="note" style="margin-top:16px;">No code yet? <a href="cove-rips.html">Play Cove Rips</a> — pull an Epic or Gold card and you win one.</p>
+        <p class="note" style="margin-top:16px;">No code yet? <a href="cove-rips.html">Play Cove Rips</a> — pull a Gold card and you win one.</p>
       </div>
     </main>
 
@@ -107,7 +107,7 @@
         prizeArea.classList.add("hidden");
         api(["GET", "rips:" + code]).then(function (raw) {
           if (!raw) {
-            setMsg("Hmm — that code doesn't match any prize. Check the letters and try again. (Codes come from Epic and Gold pulls in Cove Rips.)", true);
+            setMsg("Hmm — that code doesn't match any prize. Check the letters and try again. (Codes come from Gold pulls in Cove Rips.)", true);
             busy = false; btn.disabled = false;
             return;
           }
