@@ -1325,7 +1325,7 @@
           return;
         }
         var missing = PRINTS.filter(function (p) { return state.prints.indexOf(p.id) < 0; });
-        if (missing.length && Math.random() < 0.78) {
+        if (missing.length && (state.prints.length === 0 || Math.random() < 0.78)) {
           var p = missing[Math.floor(Math.random() * missing.length)];
           state.prints.push(p.id);
           Sfx.coin();
@@ -1342,7 +1342,8 @@
           }
           longToast(msg);
         } else {
-          var any = PRINTS[Math.floor(Math.random() * PRINTS.length)];
+          var ownedPrints = PRINTS.filter(function (p) { return state.prints.indexOf(p.id) >= 0; });
+          var any = ownedPrints[Math.floor(Math.random() * ownedPrints.length)];
           addShells(45); Sfx.coin();
           toast("\uD83D\uDDBC\uFE0F A print washes up — " + any.name + ", one already on your board! The Cove shop trades it for \uD83D\uDC1A 45.");
         }
