@@ -295,6 +295,17 @@
         background: none; border: none; font-size: 1.9rem; cursor: pointer;
         padding: 6px; line-height: 1; filter: drop-shadow(0 3px 4px rgba(0,0,0,.3));
       }
+      .surpriseBtn {
+        position: fixed; z-index: 60; background: none; border: none; cursor: pointer;
+        padding: 8px; line-height: 1; display: none;
+      }
+      #goldCrabBtn { bottom: 136px; left: -12%; font-size: 2.1rem;
+        filter: drop-shadow(0 0 10px rgba(255, 201, 60, .95)) drop-shadow(0 3px 4px rgba(0,0,0,.3));
+        animation: goldPulse .8s ease-in-out infinite alternate; }
+      @keyframes goldPulse { from { transform: scale(1); } to { transform: scale(1.18) rotate(-6deg); } }
+      #bottleBtn, #chestBtn { font-size: 2.3rem; filter: drop-shadow(0 3px 5px rgba(0,0,0,.35));
+        animation: bobFloat 2.2s ease-in-out infinite; }
+      @keyframes bobFloat { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-9px) rotate(4deg); } }
       .toast {
         position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
         background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 99px;
@@ -417,11 +428,14 @@
         <div class="buildings" id="shop"></div>
       </section>
 
-      <p class="howto"><strong>How it works:</strong> crops grow in real time, even while the app is closed. Buildings fill their baskets while you are away (up to 8 hours). Your farm is saved on this phone, just like the game coins — if you switch phones or clear the browser, it starts over. The <strong>Orders Board</strong> pays bonus shells for harvesting what the girls ask for, a <strong>daily hello bonus</strong> waits every morning, and if you spot a crab scuttling across the screen — tap him, he drops shells!</p>
+      <p class="howto"><strong>How it works:</strong> crops grow in real time, even while the app is closed. Buildings fill their baskets while you are away (up to 8 hours). Your farm is saved on this phone, just like the game coins — if you switch phones or clear the browser, it starts over. The <strong>Orders Board</strong> pays bonus shells for harvesting what the girls ask for, a <strong>daily hello bonus</strong> waits every morning, and if you spot a crab scuttling across the screen — tap him, he drops shells! Every so often the Cove sends a little surprise, too — a golden crab, a bottle with a note from one of the girls, even a washed-up treasure chest.</p>
       <button class="reset-link" id="resetBtn" type="button">Start my farm over</button>
     </div>
     <div class="toast" id="toast" role="status"></div>
     <button id="crabBtn" type="button" aria-label="A wandering crab — tap him!">🦀</button>
+    <button id="goldCrabBtn" class="surpriseBtn" type="button" aria-label="A golden crab — tap him!">🦀</button>
+    <button id="bottleBtn" class="surpriseBtn" type="button" aria-label="A message in a bottle — tap to open it">🍾</button>
+    <button id="chestBtn" class="surpriseBtn" type="button" aria-label="A washed-up treasure chest — tap to open it">🎁</button>
     <div id="snowLayer" aria-hidden="true"></div>
     <script>
       "use strict";
@@ -702,6 +716,13 @@
         t.classList.add("show");
         clearTimeout(toastTimer);
         toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2400);
+      }
+      function longToast(msg) {
+        var t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { t.classList.remove("show"); }, 5600);
       }
       var selectedPlot = -1;
 
@@ -1122,6 +1143,97 @@
           scheduleCrab();
         });
         scheduleCrab();
+      }
+
+      /* ================= Little surprises — moments, not grind ================= */
+      var BOTTLE_NOTES = [
+        "Kim left a note: \"You found the good beach. Stay a while.\"",
+        "Trish left a note: \"The stars are doing something pretty over the Cove tonight.\"",
+        "Sandy left a note: \"Dance break. That is the whole message.\"",
+        "Gladys left a note: \"For the record: you are doing better than you think.\"",
+        "A note in Sprocket's writing: \"BEEP.\" (He is glad you are here.)",
+        "Kim left a note: \"Shells are nice. Rest is better. Take both.\"",
+        "Gladys left a note: \"Somebody at the Cove left this for whoever needed it. It was you.\"",
+        "Sandy left a note: \"The tide brings everybody something. Today it is yours.\"",
+        "Trish left a note: \"Sketch what you see. It does not have to be good.\"",
+        "Kim left a note: \"This beach has never once asked anybody to be perfect.\""
+      ];
+      var surpriseTimer = null, surpriseKind = null, surpriseRun = 0, surpriseHideTimer = null;
+      function scheduleSurprise() {
+        clearTimeout(surpriseTimer);
+        surpriseTimer = setTimeout(showSurprise, 100000 + Math.random() * 160000);
+      }
+      function hideSurprise() {
+        var ids = ["goldCrabBtn", "bottleBtn", "chestBtn"];
+        for (var i = 0; i < ids.length; i++) {
+          var el = document.getElementById(ids[i]);
+          if (el) el.style.display = "none";
+        }
+        surpriseKind = null;
+      }
+      function showSurprise() {
+        if (document.hidden || surpriseKind) { scheduleSurprise(); return; }
+        var roll = Math.random();
+        var kind = roll < 0.4 ? "gold" : (roll < 0.75 ? "bottle" : "chest");
+        surpriseKind = kind;
+        var run = ++surpriseRun;
+        clearTimeout(surpriseHideTimer);
+        if (kind === "gold") {
+          var crab = document.getElementById("goldCrabBtn");
+          crab.style.transition = "none";
+          crab.style.left = "-12%";
+          crab.style.display = "block";
+          void crab.offsetWidth; /* restart the crossing */
+          crab.style.transition = "left 11s linear";
+          crab.style.left = "104%";
+          surpriseHideTimer = setTimeout(function () {
+            if (run !== surpriseRun) return;
+            hideSurprise(); scheduleSurprise();
+          }, 11500);
+        } else {
+          var el = document.getElementById(kind === "bottle" ? "bottleBtn" : "chestBtn");
+          el.style.left = (8 + Math.random() * 70) + "%";
+          el.style.bottom = (kind === "bottle" ? 120 : 152) + "px";
+          el.style.display = "block";
+          surpriseHideTimer = setTimeout(function () {
+            if (run !== surpriseRun) return;
+            hideSurprise(); scheduleSurprise();
+          }, 45000);
+        }
+      }
+      function initSurprises() {
+        document.getElementById("goldCrabBtn").addEventListener("click", function () {
+          if (surpriseKind !== "gold") return;
+          surpriseRun++;
+          var prize = 60 + Math.floor(Math.random() * 81);
+          addShells(prize);
+          Sfx.coin();
+          toast("✨ A GOLDEN crab! He dropped 🐚 " + prize + "!");
+          hideSurprise(); save(); render();
+          scheduleSurprise();
+        });
+        document.getElementById("bottleBtn").addEventListener("click", function () {
+          if (surpriseKind !== "bottle") return;
+          surpriseRun++;
+          var prize = 15 + Math.floor(Math.random() * 26);
+          addShells(prize);
+          Sfx.coin();
+          var note = BOTTLE_NOTES[Math.floor(Math.random() * BOTTLE_NOTES.length)];
+          longToast("🍾 " + note + "  (+" + prize + " 🐚)");
+          hideSurprise(); save(); render();
+          scheduleSurprise();
+        });
+        document.getElementById("chestBtn").addEventListener("click", function () {
+          if (surpriseKind !== "chest") return;
+          surpriseRun++;
+          var prize = 120 + Math.floor(Math.random() * 161);
+          addShells(prize);
+          Sfx.coin();
+          toast("🎁 A treasure chest washed up! Inside: 🐚 " + prize + "!");
+          hideSurprise(); save(); render();
+          scheduleSurprise();
+        });
+        scheduleSurprise();
       }
 
       /* ================= Village moods (weather the player picks) ================= */
@@ -1744,6 +1856,7 @@
       initMood();
       farmNetInit();
       initCrab();
+      initSurprises();
       checkDaily();
       render();
       setInterval(function () { checkDaily(); render(); }, 1000);
