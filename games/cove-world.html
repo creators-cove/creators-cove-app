@@ -303,9 +303,21 @@
         filter: drop-shadow(0 0 10px rgba(255, 201, 60, .95)) drop-shadow(0 3px 4px rgba(0,0,0,.3));
         animation: goldPulse .8s ease-in-out infinite alternate; }
       @keyframes goldPulse { from { transform: scale(1); } to { transform: scale(1.18) rotate(-6deg); } }
-      #bottleBtn, #chestBtn { font-size: 2.3rem; filter: drop-shadow(0 3px 5px rgba(0,0,0,.35));
+      #bottleBtn, #chestBtn, #printBtn { font-size: 2.3rem; filter: drop-shadow(0 3px 5px rgba(0,0,0,.35));
         animation: bobFloat 2.2s ease-in-out infinite; }
       @keyframes bobFloat { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-9px) rotate(4deg); } }
+      .gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; margin: 8px 0 14px; }
+      .gal-tile { background: #fff; border: 2px solid #cfe3ea; border-radius: 12px; padding: 6px; text-align: center; cursor: pointer; }
+      .gal-tile img { width: 100%; border-radius: 8px; display: block; }
+      .gal-tile .gname { font-size: .72rem; font-weight: 700; color: #14586e; margin-top: 5px; line-height: 1.25; }
+      .gal-tile.missing { cursor: default; background: #eef4f6; }
+      .gal-tile.missing img { filter: brightness(0) opacity(.25); }
+      .gal-tile.missing .gname { color: #8aa5ae; }
+      .gal-set { font-size: 1rem; font-weight: 800; color: #0b3d54; margin: 12px 0 2px; }
+      #printViewer { position: fixed; inset: 0; z-index: 200; background: rgba(6, 32, 43, .88); display: none; align-items: center; justify-content: center; padding: 18px; }
+      #printViewer.open { display: flex; }
+      #printViewer .pv-card { background: #fff; border-radius: 16px; padding: 14px; max-width: 420px; width: 100%; max-height: 92vh; overflow: auto; text-align: center; }
+      #printViewer img { width: 100%; border-radius: 10px; }
       .toast {
         position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
         background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 99px;
@@ -422,20 +434,36 @@
         <div class="orders" id="milestones"></div>
       </section>
 
+      <section class="panel" aria-label="Cove gallery">
+        <h2>🖼️ The Cove Gallery</h2>
+        <p class="note">Art prints wash ashore in the Cove's surprises — tap one when it bobs up! Collect all 30 for your board. Finishing a set pays a shell bonus, and a complete board earns a full-size download of any one print you choose.</p>
+        <div id="galleryBox"></div>
+      </section>
+
       <section class="panel" aria-label="Supply store">
         <h2>🛒 Cove Supply Store</h2>
         <p class="note">Spend shells on farm supplies and forever-upgrades. Kim added this one herself — she runs a tight farm.</p>
         <div class="buildings" id="shop"></div>
       </section>
 
-      <p class="howto"><strong>How it works:</strong> crops grow in real time, even while the app is closed. Buildings fill their baskets while you are away (up to 8 hours). Your farm is saved on this phone, just like the game coins — if you switch phones or clear the browser, it starts over. The <strong>Orders Board</strong> pays bonus shells for harvesting what the girls ask for, a <strong>daily hello bonus</strong> waits every morning, and if you spot a crab scuttling across the screen — tap him, he drops shells! Every so often the Cove sends a little surprise, too — a golden crab, a bottle with a note from one of the girls, even a washed-up treasure chest.</p>
+      <p class="howto"><strong>How it works:</strong> crops grow in real time, even while the app is closed. Buildings fill their baskets while you are away (up to 8 hours). Your farm is saved on this phone, just like the game coins — if you switch phones or clear the browser, it starts over. The <strong>Orders Board</strong> pays bonus shells for harvesting what the girls ask for, a <strong>daily hello bonus</strong> waits every morning, and if you spot a crab scuttling across the screen — tap him, he drops shells! Every so often the Cove sends a little surprise, too — a golden crab, a bottle with a note from one of the girls, even a washed-up treasure chest. Some surprises are <strong>art prints</strong> for your Cove Gallery board — collect all 30 and a full-size print of your choice is yours to download.</p>
       <button class="reset-link" id="resetBtn" type="button">Start my farm over</button>
     </div>
     <div class="toast" id="toast" role="status"></div>
+    <div id="printViewer" role="dialog" aria-label="Art print">
+      <div class="pv-card">
+        <img id="pvImg" alt="Art print">
+        <h3 id="pvName" style="margin:10px 0 2px;color:#0b3d54"></h3>
+        <p id="pvSet" class="note" style="margin:0 0 10px"></p>
+        <div id="pvActions"></div>
+        <button type="button" class="btn" id="pvClose" style="margin-top:10px">Close</button>
+      </div>
+    </div>
     <button id="crabBtn" type="button" aria-label="A wandering crab — tap him!">🦀</button>
     <button id="goldCrabBtn" class="surpriseBtn" type="button" aria-label="A golden crab — tap him!">🦀</button>
     <button id="bottleBtn" class="surpriseBtn" type="button" aria-label="A message in a bottle — tap to open it">🍾</button>
     <button id="chestBtn" class="surpriseBtn" type="button" aria-label="A washed-up treasure chest — tap to open it">🎁</button>
+    <button id="printBtn" class="surpriseBtn" type="button" aria-label="A washed-up art print — tap to collect it">🖼️</button>
     <div id="snowLayer" aria-hidden="true"></div>
     <script>
       "use strict";
@@ -614,7 +642,7 @@
         var buildings = BUILDINGS.map(function (b) {
           return { id: b.id, owned: b.id === "canvas", level: 1, banked: 0, lastBankedAt: Date.now() };
         });
-        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false }, grand: { wheel: false, pier: false }, stats: { harvested: 0, earned: 0 }, milestones: {}, decor: {} };
+        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false }, grand: { wheel: false, pier: false }, stats: { harvested: 0, earned: 0 }, milestones: {}, decor: {}, prints: [], setsDone: {}, boardPrize: "" };
       }
       var state = defaultState();
       function save() {
@@ -656,6 +684,9 @@
           if (typeof state.stats.harvested !== "number") state.stats.harvested = 0;
           if (typeof state.stats.earned !== "number") state.stats.earned = 0;
           if (!state.milestones) state.milestones = {};
+          if (!Array.isArray(state.prints)) state.prints = [];
+          if (!state.setsDone) state.setsDone = {};
+          if (typeof state.boardPrize !== "string") state.boardPrize = "";
         } catch (e) { /* ignore */ }
       }
 
@@ -857,6 +888,7 @@
         document.getElementById("villageLevel").textContent = villageLevel();
         document.getElementById("hourlyRate").textContent = hourlyRate();
         renderScene();
+        renderGallery();
 
         /* ---- plots ---- */
         var plotsEl = document.getElementById("plots");
@@ -1164,7 +1196,7 @@
         surpriseTimer = setTimeout(showSurprise, 100000 + Math.random() * 160000);
       }
       function hideSurprise() {
-        var ids = ["goldCrabBtn", "bottleBtn", "chestBtn"];
+        var ids = ["goldCrabBtn", "bottleBtn", "chestBtn", "printBtn"];
         for (var i = 0; i < ids.length; i++) {
           var el = document.getElementById(ids[i]);
           if (el) el.style.display = "none";
@@ -1174,7 +1206,7 @@
       function showSurprise() {
         if (document.hidden || surpriseKind) { scheduleSurprise(); return; }
         var roll = Math.random();
-        var kind = roll < 0.4 ? "gold" : (roll < 0.75 ? "bottle" : "chest");
+        var kind = roll < 0.32 ? "gold" : (roll < 0.58 ? "bottle" : (roll < 0.78 ? "chest" : "print"));
         surpriseKind = kind;
         var run = ++surpriseRun;
         clearTimeout(surpriseHideTimer);
@@ -1191,9 +1223,9 @@
             hideSurprise(); scheduleSurprise();
           }, 11500);
         } else {
-          var el = document.getElementById(kind === "bottle" ? "bottleBtn" : "chestBtn");
+          var el = document.getElementById(kind === "bottle" ? "bottleBtn" : (kind === "chest" ? "chestBtn" : "printBtn"));
           el.style.left = (8 + Math.random() * 70) + "%";
-          el.style.bottom = (kind === "bottle" ? 120 : 152) + "px";
+          el.style.bottom = (kind === "bottle" ? 120 : (kind === "chest" ? 152 : 184)) + "px";
           el.style.display = "block";
           surpriseHideTimer = setTimeout(function () {
             if (run !== surpriseRun) return;
@@ -1233,7 +1265,154 @@
           hideSurprise(); save(); render();
           scheduleSurprise();
         });
+        document.getElementById("printBtn").addEventListener("click", function () {
+          if (surpriseKind !== "print") return;
+          surpriseRun++;
+          collectPrint();
+          hideSurprise(); save(); render();
+          scheduleSurprise();
+        });
         scheduleSurprise();
+      }
+
+
+      /* ================= The Cove Gallery (collectible art prints) ================= */
+      var PRINT_SETS = {
+        christmas: { label: "\uD83C\uDF84 Christmas", bonus: 180 },
+        classics: { label: "\uD83D\uDCFA Cartoon Classics", bonus: 300 },
+        seasons: { label: "\uD83C\uDF42 Seasons", bonus: 90 },
+        lucy: { label: "\uD83C\uDFAC I Love Lucy", bonus: 120 },
+        pets: { label: "\uD83D\uDC3E Pets", bonus: 210 }
+      };
+      var PRINT_SET_ORDER = ["christmas", "classics", "pets", "lucy", "seasons"];
+      var PRINTS = [
+        { id: "p1", name: "Frosty at the North Pole", set: "christmas", img: "gallery/p1.jpg", dl: "../downloads/print-3dd14e3d.jpg" },
+        { id: "p2", name: "Rudolph", set: "christmas", img: "gallery/p2.jpg", dl: "../downloads/print-f94e43b6.jpg" },
+        { id: "p3", name: "The Elf Workshop", set: "christmas", img: "gallery/p3.jpg", dl: "../downloads/print-f9272d79.jpg" },
+        { id: "p4", name: "Naughty, Not Nice", set: "christmas", img: "gallery/p4.jpg", dl: "../downloads/print-243718c1.jpg" },
+        { id: "p5", name: "The Grinch of Whoville", set: "christmas", img: "gallery/p5.jpg", dl: "../downloads/print-8512e2d5.jpg" },
+        { id: "p6", name: "Tweety", set: "classics", img: "gallery/p6.jpg", dl: "../downloads/print-3125b4ad.jpg" },
+        { id: "p7", name: "Tom", set: "classics", img: "gallery/p7.jpg", dl: "../downloads/print-fa840c72.jpg" },
+        { id: "p8", name: "Jerry", set: "classics", img: "gallery/p8.jpg", dl: "../downloads/print-e9fdb479.jpg" },
+        { id: "p9", name: "Snoopy", set: "classics", img: "gallery/p9.jpg", dl: "../downloads/print-cd0576e7.jpg" },
+        { id: "p10", name: "Charlie Brown", set: "classics", img: "gallery/p10.jpg", dl: "../downloads/print-144fe70e.jpg" },
+        { id: "p11", name: "Raggedy Ann", set: "seasons", img: "gallery/p11.jpg", dl: "../downloads/print-f2c7a888.jpg" },
+        { id: "p12", name: "The Chipmunks", set: "classics", img: "gallery/p12.jpg", dl: "../downloads/print-fa0165dd.jpg" },
+        { id: "p13", name: "Hello Fall Scarecrow", set: "seasons", img: "gallery/p13.jpg", dl: "../downloads/print-a221e905.jpg" },
+        { id: "p14", name: "Snowman Blues", set: "christmas", img: "gallery/p14.jpg", dl: "../downloads/print-868035e5.jpg" },
+        { id: "p15", name: "Little Witch", set: "seasons", img: "gallery/p15.jpg", dl: "../downloads/print-9cb52486.jpg" },
+        { id: "p16", name: "Care Bears", set: "classics", img: "gallery/p16.jpg", dl: "../downloads/print-8301319a.jpg" },
+        { id: "p17", name: "Smurfette", set: "classics", img: "gallery/p17.jpg", dl: "../downloads/print-6de4774b.jpg" },
+        { id: "p18", name: "Garfield", set: "classics", img: "gallery/p18.jpg", dl: "../downloads/print-4e9a6153.jpg" },
+        { id: "p19", name: "Strawberry Shortcake", set: "classics", img: "gallery/p19.jpg", dl: "../downloads/print-8e052a68.jpg" },
+        { id: "p20", name: "Fred Mertz", set: "lucy", img: "gallery/p20.jpg", dl: "../downloads/print-44ade4c6.jpg" },
+        { id: "p21", name: "Ethel Mertz", set: "lucy", img: "gallery/p21.jpg", dl: "../downloads/print-ecb2779b.jpg" },
+        { id: "p22", name: "Ricky Ricardo", set: "lucy", img: "gallery/p22.jpg", dl: "../downloads/print-f0269573.jpg" },
+        { id: "p23", name: "Lucille Ball", set: "lucy", img: "gallery/p23.jpg", dl: "../downloads/print-e86d1a56.jpg" },
+        { id: "p24", name: "Cavalier King Charles", set: "pets", img: "gallery/p24.jpg", dl: "../downloads/print-e3ad2e9c.jpg" },
+        { id: "p25", name: "Golden Retriever", set: "pets", img: "gallery/p25.jpg", dl: "../downloads/print-030de8a0.jpg" },
+        { id: "p26", name: "Yorkie", set: "pets", img: "gallery/p26.jpg", dl: "../downloads/print-55952def.jpg" },
+        { id: "p27", name: "Border Collie", set: "pets", img: "gallery/p27.jpg", dl: "../downloads/print-07dbdc9b.jpg" },
+        { id: "p28", name: "Beagle", set: "pets", img: "gallery/p28.jpg", dl: "../downloads/print-061552db.jpg" },
+        { id: "p29", name: "Pomeranian", set: "pets", img: "gallery/p29.jpg", dl: "../downloads/print-cf52117d.jpg" },
+        { id: "p30", name: "Siamese Cat", set: "pets", img: "gallery/p30.jpg", dl: "../downloads/print-0a7703b5.jpg" }
+      ];
+      function printById(id) { for (var i = 0; i < PRINTS.length; i++) if (PRINTS[i].id === id) return PRINTS[i]; return null; }
+      function collectPrint() {
+        if (state.prints.length >= PRINTS.length) {
+          addShells(60); Sfx.coin();
+          toast("\uD83D\uDDBC\uFE0F Another print washes up — your board is complete, so the Cove shop trades it for \uD83D\uDC1A 60!");
+          return;
+        }
+        var missing = PRINTS.filter(function (p) { return state.prints.indexOf(p.id) < 0; });
+        if (missing.length && Math.random() < 0.78) {
+          var p = missing[Math.floor(Math.random() * missing.length)];
+          state.prints.push(p.id);
+          Sfx.coin();
+          var msg = "\uD83D\uDDBC\uFE0F A print washed ashore: " + p.name + "! (" + state.prints.length + " of " + PRINTS.length + ")";
+          var setPrints = PRINTS.filter(function (x) { return x.set === p.set; });
+          var have = setPrints.filter(function (x) { return state.prints.indexOf(x.id) >= 0; }).length;
+          if (have === setPrints.length && !state.setsDone[p.set]) {
+            state.setsDone[p.set] = true;
+            addShells(PRINT_SETS[p.set].bonus);
+            msg += "  \uD83C\uDF89 Set complete: " + PRINT_SETS[p.set].label + " — bonus \uD83D\uDC1A " + PRINT_SETS[p.set].bonus + "!";
+          }
+          if (state.prints.length >= PRINTS.length) {
+            msg += "  \uD83C\uDFC6 BOARD COMPLETE! Open the Cove Gallery below and pick your full-size download!";
+          }
+          longToast(msg);
+        } else {
+          var any = PRINTS[Math.floor(Math.random() * PRINTS.length)];
+          addShells(45); Sfx.coin();
+          toast("\uD83D\uDDBC\uFE0F A print washes up — " + any.name + ", one already on your board! The Cove shop trades it for \uD83D\uDC1A 45.");
+        }
+      }
+      function renderGallery() {
+        var box = document.getElementById("galleryBox");
+        if (!box) return;
+        var html = '<p class="note" style="margin-top:0">Your board: <strong>' + state.prints.length + " of " + PRINTS.length + "</strong> prints found." +
+          (state.prints.length >= PRINTS.length
+            ? (state.boardPrize ? " \uD83C\uDFC6 Board complete — your prize print is downloaded and yours to keep!" : " \uD83C\uDFC6 Board complete! Tap any print to choose your full-size download.")
+            : "") + "</p>";
+        PRINT_SET_ORDER.forEach(function (key) {
+          var set = PRINT_SETS[key];
+          var items = PRINTS.filter(function (p) { return p.set === key; });
+          var have = items.filter(function (p) { return state.prints.indexOf(p.id) >= 0; }).length;
+          html += '<div class="gal-set">' + set.label + " · " + have + "/" + items.length + (have === items.length ? " ✓ (+" + set.bonus + " \uD83D\uDC1A)" : "") + "</div>";
+          html += '<div class="gal-grid">';
+          items.forEach(function (p) {
+            var owned = state.prints.indexOf(p.id) >= 0;
+            html += '<div class="gal-tile' + (owned ? "" : " missing") + '" data-print="' + p.id + '">' +
+              '<img src="' + p.img + '" alt="' + (owned ? p.name : "A print you have not found yet") + '" loading="lazy">' +
+              '<div class="gname">' + (owned ? p.name : "Not found yet") + "</div></div>";
+          });
+          html += "</div>";
+        });
+        box.innerHTML = html;
+        var tiles = box.querySelectorAll(".gal-tile[data-print]");
+        for (var i = 0; i < tiles.length; i++) {
+          tiles[i].addEventListener("click", function () {
+            var id = this.getAttribute("data-print");
+            if (state.prints.indexOf(id) < 0) { toast("\uD83D\uDDBC\uFE0F That print hasn't washed ashore for you yet — keep an eye on the water!"); return; }
+            openPrintViewer(id);
+          });
+        }
+      }
+      var pvConfirmId = null;
+      function openPrintViewer(id) {
+        var p = printById(id); if (!p) return;
+        pvConfirmId = null;
+        document.getElementById("pvImg").src = p.img;
+        document.getElementById("pvName").textContent = p.name;
+        document.getElementById("pvSet").textContent = PRINT_SETS[p.set].label + " set";
+        var act = document.getElementById("pvActions");
+        if (state.prints.length >= PRINTS.length && !state.boardPrize) {
+          act.innerHTML = '<button type="button" class="btn" id="pvClaim">\u2B07\uFE0F Download this print — my board prize</button>' +
+            '<p class="note" style="margin:8px 0 0">This is your one board prize, full size and print-ready. Choose carefully!</p>';
+          document.getElementById("pvClaim").addEventListener("click", function () { claimPrint(id); });
+        } else if (state.boardPrize === id) {
+          act.innerHTML = '<p class="note" style="margin:0">\uD83C\uDFC6 This was your board prize — downloaded and yours to keep.</p>';
+        } else if (state.boardPrize) {
+          act.innerHTML = '<p class="note" style="margin:0">Your board prize is already claimed.</p>';
+        } else {
+          act.innerHTML = "";
+        }
+        document.getElementById("printViewer").classList.add("open");
+      }
+      function claimPrint(id) {
+        var p = printById(id); if (!p) return;
+        if (pvConfirmId !== id) {
+          pvConfirmId = id;
+          var b = document.getElementById("pvClaim");
+          if (b) b.textContent = "Tap again to confirm — " + p.name + " is your pick";
+          return;
+        }
+        state.boardPrize = id; save();
+        var a = document.createElement("a");
+        a.href = p.dl; a.download = "";
+        document.body.appendChild(a); a.click(); a.remove();
+        toast("\uD83C\uDFC6 " + p.name + " is yours — downloading full size now!");
+        openPrintViewer(id); renderGallery();
       }
 
       /* ================= Village moods (weather the player picks) ================= */
@@ -1857,6 +2036,8 @@
       farmNetInit();
       initCrab();
       initSurprises();
+      document.getElementById("pvClose").addEventListener("click", function () { document.getElementById("printViewer").classList.remove("open"); });
+      document.getElementById("printViewer").addEventListener("click", function (e) { if (e.target === this) this.classList.remove("open"); });
       checkDaily();
       render();
       setInterval(function () { checkDaily(); render(); }, 1000);
