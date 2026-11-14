@@ -272,7 +272,7 @@
           <span class="refill-timer" id="refillTimer" aria-live="polite">--:--:--</span>
           <span class="refill-sub" id="refillSub">Come back tomorrow to claim them</span>
         </button>
-        <div class="prize-banner">Your coins are make-believe — there's nothing to buy. Pull a <strong>Gold card</strong> and you win the <strong>Little Garden Witch Journal Kit</strong> — your Winner Card shows a claim code. Redeem the code right in the app and the kit downloads to your phone. One prize per member, per round.</div>
+        <div class="prize-banner">Your coins are make-believe — there's nothing to buy. Pull a <strong>Gold card</strong> and you win a <strong>journal kit</strong> — your pick of the <strong>Little Garden Witch</strong> kit or the new <strong>Farmhouse</strong> kit. Your Winner Card shows a claim code. Redeem the code right in the app and the kit downloads to your phone. One prize per member, per round.</div>
       </section>
 
       <section class="panel" aria-label="Your session">
@@ -299,7 +299,7 @@
         <h2>How it works in the group</h2>
         <p>Rip packs just for fun — the coins are make-believe and there's nothing to buy. Every pack has <strong>5 cards</strong>. Most pulls are Common, some are Rare, a few are Epic — and a lucky few are <strong>Gold</strong>, and Gold cards glow.</p>
         <p><strong>Elite Pack</strong> costs more coins, but it boosts your Epic and Gold odds. Nothing is guaranteed, though — that's what makes a Gold pull worth celebrating.</p>
-        <p><strong>Your pulls can win a real prize.</strong> Pull a <strong>Gold</strong> card and you win the current prize — right now it's the <strong>Little Garden Witch Journal Kit</strong>. Tap <strong>WINNER CARD</strong> to see your claim code, then hit <strong>Redeem</strong> — the kit downloads right to your phone, no waiting on anybody. Screenshot your win for the group if you want to show off. One prize per member, per round, and each code works once. Your codes stay saved right here in the game, under "Your prize codes," so you can't lose them.</p>
+        <p><strong>Your pulls can win a real prize.</strong> Pull a <strong>Gold</strong> card and you win the current prize — right now you pick between the <strong>Little Garden Witch Journal Kit</strong> and the <strong>Farmhouse Journal Kit</strong>. Tap <strong>WINNER CARD</strong> to see your claim code, then hit <strong>Redeem</strong> — the kit downloads right to your phone, no waiting on anybody. Screenshot your win for the group if you want to show off. One prize per member, per round, and each code works once. Your codes stay saved right here in the game, under "Your prize codes," so you can't lose them.</p>
         <p class="note">Run out of coins? Your next 100 free coins arrive tomorrow — when you hit zero, a countdown timer appears showing exactly how long is left until midnight. Come back tomorrow, tap to claim your 100, and you're ripping again. Your coin balance and your Vault are saved on this device, so they're right where you left them when you come back — your session scores start fresh each visit.</p>
       </section>
     </main>
@@ -514,7 +514,7 @@
       var REFILL_KEY = "cove-rips-next-refill";
       var VAULT_KEY = "cove-rips-vault";
       var PRIZE_KEY = "cove-rips-prize-codes";
-      var CURRENT_PRIZE = "Little Garden Witch Journal Kit";
+      var CURRENT_PRIZE = "Journal Kit (Winner's Pick)";
       var CHEAPEST = 10;
 
       function loadCoins() {
@@ -728,7 +728,7 @@
           var when = isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
           html += '<p style="margin:6px 0;"><strong style="font-family:Fredoka,sans-serif; letter-spacing:0.06em; font-size:1.1rem;">' + p.code + "</strong> — " + rarityLabel(p.rarity) + " " + p.card + (when ? " · " + when : "") + ' · <a href="cove-redeem.html?code=' + p.code + '">Redeem</a></p>';
         });
-        html += '<p class="note">Tap Redeem next to a code and the ' + CURRENT_PRIZE + ' downloads right to your phone. Screenshot your win for the group first if you want to show off. One prize per member, per round — each code works once.</p>';
+        html += '<p class="note">Tap Redeem next to a code and your journal kit downloads right to your phone — you pick which one. Screenshot your win for the group first if you want to show off. One prize per member, per round — each code works once.</p>';
         list.innerHTML = html;
       }
       function renderAll() {
