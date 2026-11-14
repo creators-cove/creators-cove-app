@@ -311,7 +311,7 @@
       .gal-tile img { width: 100%; border-radius: 8px; display: block; }
       .gal-tile .gname { font-size: .72rem; font-weight: 700; color: #14586e; margin-top: 5px; line-height: 1.25; }
       .gal-tile.missing { cursor: default; background: #eef4f6; }
-      .gal-tile.missing img { filter: brightness(0) opacity(.25); }
+      .gal-tile.missing img { opacity: .92; }
       .gal-tile.missing .gname { color: #8aa5ae; }
       .gal-set { font-size: 1rem; font-weight: 800; color: #0b3d54; margin: 12px 0 2px; }
       #printViewer { position: fixed; inset: 0; z-index: 200; background: rgba(6, 32, 43, .88); display: none; align-items: center; justify-content: center; padding: 18px; }
@@ -1363,7 +1363,7 @@
           items.forEach(function (p) {
             var owned = state.prints.indexOf(p.id) >= 0;
             html += '<div class="gal-tile' + (owned ? "" : " missing") + '" data-print="' + p.id + '">' +
-              '<img src="' + p.img + '" alt="' + (owned ? p.name : "A print you have not found yet") + '" loading="lazy">' +
+              '<img src="' + (owned ? p.img : ("gallery/sil-" + p.id + ".png")) + '" alt="' + (owned ? p.name : "A print you have not found yet") + '" loading="lazy">' +
               '<div class="gname">' + (owned ? p.name : "Not found yet") + "</div></div>";
           });
           html += "</div>";
