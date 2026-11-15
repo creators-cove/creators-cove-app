@@ -757,6 +757,13 @@
         clearTimeout(toastTimer);
         toastTimer = setTimeout(function () { t.classList.remove("show"); }, 5600);
       }
+      function slowToast(msg) {
+        var t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { t.classList.remove("show"); }, 11000);
+      }
       var selectedPlot = -1;
 
       /* ---- the girls cheer you on ---- */
@@ -1232,7 +1239,7 @@
           surpriseHideTimer = setTimeout(function () {
             if (run !== surpriseRun) return;
             hideSurprise(); scheduleSurprise();
-          }, kind === "print" ? 90000 : 45000);
+          }, kind === "print" ? 90000 : kind === "bottle" ? 75000 : 45000);
         }
       }
       function initSurprises() {
@@ -1253,7 +1260,7 @@
           addShells(prize);
           Sfx.coin();
           var note = BOTTLE_NOTES[Math.floor(Math.random() * BOTTLE_NOTES.length)];
-          longToast("🍾 " + note + "  (+" + prize + " 🐚)");
+          slowToast("🍾 " + note + "  (+" + prize + " 🐚)");
           hideSurprise(); save(); render();
           scheduleSurprise();
         });
