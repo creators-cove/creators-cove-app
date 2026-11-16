@@ -290,6 +290,11 @@
       @keyframes snowfall { to { transform: translateY(112vh) translateX(5vw) rotate(300deg); } }
       .decor-strip { grid-column: 1 / -1; }
       .decor-row { font-size: 1.9rem; letter-spacing: .2em; line-height: 1.2; }
+      .pasture-strip { text-align: center; padding: 8px 6px 4px; }
+      .pasture-strip .pals { font-size: 2.4rem; letter-spacing: .12em; line-height: 1.3; }
+      .pasture-strip .pals span { display: inline-block; animation: palBob 2.6s ease-in-out infinite; }
+      @keyframes palBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+      .pasture-strip .p-name { color: #0b3d54; font-weight: 600; margin-top: 2px; }
       #crabBtn {
         position: fixed; bottom: 84px; left: -12%; display: none; z-index: 60;
         background: none; border: none; font-size: 1.9rem; cursor: pointer;
@@ -430,6 +435,13 @@
         <div class="buildings" id="decor"></div>
       </section>
 
+      <section class="panel" aria-label="Pasture">
+        <h2>🐾 The Pasture</h2>
+        <p class="note">Cute company for your farm — every animal brings its own little perk, and once a friend moves in, they stay for good.</p>
+        <div class="pasture-strip" id="pastureStrip"></div>
+        <div class="buildings" id="animals"></div>
+      </section>
+
       <section class="panel" aria-label="Milestones">
         <h2>🏆 Milestones</h2>
         <p class="note" id="statsLine"></p>
@@ -448,7 +460,7 @@
         <div class="buildings" id="shop"></div>
       </section>
 
-      <p class="howto"><strong>How it works:</strong> crops grow in real time, even while the app is closed. Buildings fill their baskets while you are away (up to 8 hours). Your farm is saved on this phone, just like the game coins — if you switch phones or clear the browser, it starts over. The <strong>Orders Board</strong> pays bonus shells for harvesting what the girls ask for, a <strong>daily hello bonus</strong> waits every morning, and if you spot a crab scuttling across the screen — tap him, he drops shells! Every so often the Cove sends a little surprise, too — a golden crab, a bottle with a note from one of the girls, even a washed-up treasure chest. Some surprises are <strong>art prints</strong> for your Cove Gallery board — collect all 30 and a full-size print of your choice is yours to download.</p>
+      <p class="howto"><strong>How it works:</strong> crops grow in real time, even while the app is closed. Buildings fill their baskets while you are away (up to 8 hours). Your farm is saved on this phone, just like the game coins — if you switch phones or clear the browser, it starts over. The <strong>Orders Board</strong> pays bonus shells for harvesting what the girls ask for, a <strong>daily hello bonus</strong> waits every morning, and if you spot a crab scuttling across the screen — tap him, he drops shells! Every so often the Cove sends a little surprise, too — a golden crab, a bottle with a note from one of the girls, even a washed-up treasure chest. Some surprises are <strong>art prints</strong> for your Cove Gallery board — collect all 30 and a full-size print of your choice is yours to download. The <strong>Pasture</strong> animals each bring a perk of their own — eggs with your harvests, faster crops, double crab shells, truffles, and more.</p>
       <button class="reset-link" id="resetBtn" type="button">Start my farm over</button>
     </div>
     <div class="toast" id="toast" role="status"></div>
@@ -644,7 +656,7 @@
         var buildings = BUILDINGS.map(function (b) {
           return { id: b.id, owned: b.id === "canvas", level: 1, banked: 0, lastBankedAt: Date.now() };
         });
-        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false }, grand: { wheel: false, pier: false }, stats: { harvested: 0, earned: 0 }, milestones: {}, decor: {}, prints: [], setsDone: {}, boardPrize: "" };
+        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false }, grand: { wheel: false, pier: false }, stats: { harvested: 0, earned: 0 }, milestones: {}, decor: {}, animals: {}, prints: [], setsDone: {}, boardPrize: "" };
       }
       var state = defaultState();
       function save() {
@@ -682,6 +694,7 @@
           if (!state.grand) state.grand = { wheel: false, pier: false };
           if (typeof state.grand.pier !== "boolean") state.grand.pier = false;
           if (!state.decor) state.decor = {};
+          if (!state.animals) state.animals = {};
           if (!state.stats) state.stats = { harvested: 0, earned: 0 };
           if (typeof state.stats.harvested !== "number") state.stats.harvested = 0;
           if (typeof state.stats.earned !== "number") state.stats.earned = 0;
@@ -696,6 +709,7 @@
       function effGrowMs(key) {
         var g = CROPS[key].growMs;
         if (state.upgrades && state.upgrades.bees) g = Math.round(g * 0.8); /* Busy Bees: 20% faster */
+        if (state.animals && state.animals.bunny) g = Math.round(g * 0.9); /* Clover the Bunny: 10% faster */
         return g;
       }
       function readyAt(plot) {
@@ -706,7 +720,7 @@
       function plotStage(plot, now) {
         if (!plot.crop) return "empty";
         var r = readyAt(plot);
-        if (now >= r + WITHER_MS) return "withered";
+        if (now >= r + WITHER_MS && !hasAnimal("goat")) return "withered"; /* Nibbles the Goat: crops never wither */
         if (now >= r) return "ready";
         var grow = effGrowMs(plot.crop);
         var elapsed = now - plot.plantedAt;
@@ -941,6 +955,7 @@
 
         renderOrders(now);
         renderShop();
+        renderAnimals();
         renderGrand();
         renderDecor();
         renderMilestones();
@@ -1045,6 +1060,19 @@
       }
 
       /* ================= Supply store ================= */
+      /* ================= The Pasture — cute animals, each with a perk ================= */
+      var ANIMALS = [
+        { id: "chick",  emoji: "🐥", name: "Nugget the Chick",   pal: "Nugget",  cost: 150,   desc: "Sells her eggs with every harvest — crops pay 15% more shells." },
+        { id: "bunny",  emoji: "🐰", name: "Clover the Bunny",   pal: "Clover",  cost: 500,   desc: "Keeps the weeds nibbled down — crops grow 10% faster." },
+        { id: "cat",    emoji: "🐱", name: "Biscuit the Cat",    pal: "Biscuit", cost: 1000,  desc: "The wandering crab adores her — crab catches pay double shells." },
+        { id: "puppy",  emoji: "🐶", name: "Waffles the Puppy",  pal: "Waffles", cost: 2000,  desc: "Charms every visitor — Lend a Hand gifts are worth 20 shells instead of 10." },
+        { id: "piglet", emoji: "🐷", name: "Pudding the Piglet", pal: "Pudding", cost: 4500,  desc: "Snuffles up truffles — a 1-in-4 chance of a bonus 40\u2013120 shells whenever you collect from a building." },
+        { id: "goat",   emoji: "🐐", name: "Nibbles the Goat",   pal: "Nibbles", cost: 8000,  desc: "Eats everything except your crops — ready crops never wither." },
+        { id: "owl",    emoji: "🦉", name: "Hoot the Owl",       pal: "Hoot",    cost: 12000, desc: "Keeps watch over the Cove — little surprises wash up much more often." }
+      ];
+      function hasAnimal(id) { return !!(state.animals && state.animals[id]); }
+      function animalCount() { var c = 0; ANIMALS.forEach(function (a) { if (state.animals && state.animals[a.id]) c++; }); return c; }
+
       var SHOP = [
         { id: "sprinkler", emoji: "💦", name: "Sprinkler", kind: "supply", cost: 15, desc: "Use it to water every growing crop at once." },
         { id: "miracle", emoji: "🌟", name: "Miracle Fertilizer", kind: "supply", cost: 40, desc: "Use it and every growing crop is ready within a minute. Powerful stuff — one use every 4 hours." },
@@ -1087,6 +1115,49 @@
             if (btn.getAttribute("data-shop") === "buy") buySupply(id); else useSupply(id);
           });
         });
+      }
+      var pastureSig = "__none__";
+      function renderAnimals() {
+        var strip = document.getElementById("pastureStrip");
+        var owned = ANIMALS.filter(function (a) { return state.animals && state.animals[a.id]; });
+        var sig = owned.map(function (a) { return a.id; }).join(",");
+        if (strip && sig !== pastureSig) {
+          pastureSig = sig;
+          if (owned.length) {
+            strip.innerHTML = '<div class="pals">' + owned.map(function (a, i) { return '<span style="animation-delay:' + (i * 0.35) + 's">' + a.emoji + '</span>'; }).join(" ") + '</div><div class="p-name">' + owned.map(function (a) { return a.pal; }).join(" \u2022 ") + '</div>';
+          } else {
+            strip.innerHTML = '<div class="p-name" style="font-weight:400">No animals yet — the pasture is quiet. Adopt a friend below!</div>';
+          }
+        }
+        var el = document.getElementById("animals");
+        if (!el) return;
+        el.innerHTML = "";
+        ANIMALS.forEach(function (a) {
+          var d = document.createElement("div");
+          d.className = "building owned";
+          var has = !!(state.animals && state.animals[a.id]);
+          var info = '<div class="b-info"><div class="b-name">' + a.emoji + " " + a.name + '</div><div class="b-desc">' + a.desc + '</div></div>';
+          var btn = has
+            ? '<button class="btn ghost" type="button" disabled>Lives here \u2713</button>'
+            : '<button class="btn gold" type="button" data-animal="' + a.id + '"' + (state.shells < a.cost ? " disabled" : "") + ">Adopt \u00b7 \ud83d\udc1a " + a.cost + "</button>";
+          d.innerHTML = '<div class="b-emoji">' + a.emoji + "</div>" + info + '<div style="display:flex;flex-direction:column;gap:6px">' + btn + "</div>";
+          el.appendChild(d);
+        });
+        el.querySelectorAll("button[data-animal]").forEach(function (btn) {
+          btn.addEventListener("click", function () { buyAnimal(btn.getAttribute("data-animal")); });
+        });
+      }
+      function buyAnimal(id) {
+        var a = null;
+        ANIMALS.forEach(function (x) { if (x.id === id) a = x; });
+        if (!a || hasAnimal(a.id)) return;
+        if (state.shells < a.cost) { Sfx.thud(); toast("That costs \ud83d\udc1a " + a.cost + " — keep harvesting!"); return; }
+        state.shells -= a.cost;
+        if (!state.animals) state.animals = {};
+        state.animals[a.id] = true;
+        Sfx.build();
+        longToast(a.emoji + " " + a.name + " has moved into the pasture! " + a.desc);
+        save(); render();
       }
       function buySupply(id) {
         var item = null;
@@ -1176,9 +1247,10 @@
           if (crab.style.display === "none") return;
           crabRun++;
           var prize = 5 + Math.floor(Math.random() * 11);
+          if (hasAnimal("cat")) prize *= 2; /* the wandering crab adores Biscuit */
           addShells(prize);
           Sfx.coin();
-          toast("🦀 Got him! He dropped 🐚 " + prize + "!");
+          toast("🦀 Got him! He dropped 🐚 " + prize + "!" + (hasAnimal("cat") ? " 🐱 Biscuit batted him your way." : ""));
           crab.style.display = "none";
           save(); render();
           scheduleCrab();
@@ -1202,7 +1274,9 @@
       var surpriseTimer = null, surpriseKind = null, surpriseRun = 0, surpriseHideTimer = null;
       function scheduleSurprise() {
         clearTimeout(surpriseTimer);
-        surpriseTimer = setTimeout(showSurprise, 100000 + Math.random() * 160000);
+        var sDelay = 100000 + Math.random() * 160000;
+        if (hasAnimal("owl")) sDelay = Math.round(sDelay * 0.6); /* Hoot keeps watch — surprises come sooner */
+        surpriseTimer = setTimeout(showSurprise, sDelay);
       }
       function hideSurprise() {
         var ids = ["goldCrabBtn", "bottleBtn", "chestBtn", "printBtn"];
@@ -1497,7 +1571,11 @@
         { id: "wheel", emoji: "🎡", name: "Big Wheel", prize: 750, desc: "Build the Cove Ferris Wheel",
           test: function () { return !!(state.grand && state.grand.wheel); }, prog: function () { return state.grand && state.grand.wheel ? "Done!" : "Not built yet"; } },
         { id: "pier", emoji: "🌉", name: "Pier Builder", prize: 1500, desc: "Build the Cove Pier",
-          test: function () { return !!(state.grand && state.grand.pier); }, prog: function () { return state.grand && state.grand.pier ? "Done!" : "Not built yet"; } }
+          test: function () { return !!(state.grand && state.grand.pier); }, prog: function () { return state.grand && state.grand.pier ? "Done!" : "Not built yet"; } },
+        { id: "friend", emoji: "🐾", name: "First Friend", prize: 50, desc: "Adopt your first pasture animal",
+          test: function () { return animalCount() >= 1; }, prog: function () { return Math.min(animalCount(), 1) + "/1 animals"; } },
+        { id: "pasture", emoji: "🐮", name: "Full Pasture", prize: 1000, desc: "Adopt every pasture animal",
+          test: function () { return animalCount() >= ANIMALS.length; }, prog: function () { return animalCount() + "/" + ANIMALS.length + " animals"; } }
       ];
       function checkMilestones() {
         var hits = [], total = 0;
@@ -1677,6 +1755,7 @@
         if (stage === "ready") {
           var crop = CROPS[plot.crop];
           var sellPrice = (state.upgrades && state.upgrades.hoe) ? Math.round(crop.sell * 1.25) : crop.sell;
+          if (hasAnimal("chick")) sellPrice = Math.round(sellPrice * 1.15); /* Nugget's eggs sell with the harvest */
           addShells(sellPrice);
           state.stats.harvested += 1;
           state.plots[i] = { crop: null, plantedAt: 0, watered: false };
@@ -1736,7 +1815,13 @@
         addShells(banked);
         b.banked = 0; b.lastBankedAt = Date.now();
         Sfx.coin();
-        toast("Collected 🐚 " + banked + " from " + bDef.name + "!");
+        var msg = "Collected 🐚 " + banked + " from " + bDef.name + "!";
+        if (hasAnimal("piglet") && Math.random() < 0.25) {
+          var truffle = 40 + Math.floor(Math.random() * 81);
+          addShells(truffle);
+          msg += " 🐷 Pudding snuffled up a truffle: +🐚 " + truffle + "!";
+        }
+        toast(msg);
         save(); render();
       }
       function upgradeBuilding(i) {
@@ -1858,7 +1943,8 @@
               if (gifts[i].from_name && names.indexOf(gifts[i].from_name) < 0) names.push(gifts[i].from_name);
             }
             var n = gifts.length, now = Date.now(), watered = 0;
-            state.shells += n * 10;
+            var perGift = hasAnimal("puppy") ? 20 : 10; /* Waffles charms every visitor */
+            state.shells += n * perGift;
             state.plots.forEach(function (p) {
               if (!p.crop || p.watered) return;
               var st = plotStage(p, now);
@@ -1866,9 +1952,9 @@
             });
             save();
             render();
-            toast("🎁 " + n + " neighbor visit" + (n > 1 ? "s" : "") + "! +" + (n * 10) + " 🐚" + (watered ? " — crops watered 💧" : ""));
+            toast("🎁 " + n + " neighbor visit" + (n > 1 ? "s" : "") + "! +" + (n * perGift) + " 🐚" + (watered ? " — crops watered 💧" : ""));
             var note = document.getElementById("giftNote");
-            if (note) note.innerHTML = "🎁 <strong>" + escHtml(names.join(", ")) + "</strong> stopped by and lent a hand — +" + (n * 10) + " 🐚" + (watered ? ", and your crops got watered 💧" : "") + ".";
+            if (note) note.innerHTML = "🎁 <strong>" + escHtml(names.join(", ")) + "</strong> stopped by and lent a hand — +" + (n * perGift) + " 🐚" + (watered ? ", and your crops got watered 💧" : "") + ".";
             api(["DEL", "gifts:" + farmCode]).then(function () { /* done */ }, function () { /* they may reappear once; harmless */ });
           }, function () { /* offline — gifts wait for next time */ });
       }
