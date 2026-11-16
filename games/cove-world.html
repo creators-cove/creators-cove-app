@@ -1881,12 +1881,14 @@
         state.buildings.forEach(function (b) { if (b.owned) buildings.push({ id: b.id, level: b.level, rate: buildingRate(b) }); });
         var decor = [];
         DECORATIONS.forEach(function (d) { if (state.decor[d.id]) decor.push(d.id); });
+        var animals = [];
+        ANIMALS.forEach(function (a) { if (state.animals && state.animals[a.id]) animals.push(a.id); });
         var mood = "snow";
         try { mood = window.localStorage.getItem(MOOD_KEY) || "snow"; } catch (e) { /* ignore */ }
         return {
           v: 1, name: farmName || "A Cove Farm", code: farmCode, updatedAt: now,
           shells: Math.floor(state.shells), villageLevel: villageLevel(), hourlyRate: hourlyRate(),
-          plots: plots, buildings: buildings, decor: decor,
+          plots: plots, buildings: buildings, decor: decor, animals: animals, noWither: animals.indexOf("goat") >= 0,
           wheel: !!(state.grand && state.grand.wheel), pier: !!(state.grand && state.grand.pier),
           harvested: state.stats.harvested, earned: state.stats.earned, mood: mood
         };
@@ -1985,6 +1987,10 @@
         });
         if (snap.wheel) bHtml += "<div style='text-align:center;min-width:54px'><div style='font-size:1.9rem'>🎡</div><div style='font-size:.62rem;color:#5b6b73'>Ferris Wheel</div></div>";
         if (snap.pier) bHtml += "<div style='text-align:center;min-width:54px'><div style='font-size:1.9rem'>🌉</div><div style='font-size:.62rem;color:#5b6b73'>Cove Pier</div></div>";
+        var animalHtml = "";
+        (snap.animals || []).forEach(function (id) {
+          for (var i = 0; i < ANIMALS.length; i++) if (ANIMALS[i].id === id) animalHtml += "<div style='text-align:center;min-width:54px'><div style='font-size:1.9rem'>" + ANIMALS[i].emoji + "</div><div style='font-size:.62rem;color:#5b6b73'>" + ANIMALS[i].pal + "</div></div>";
+        });
         var decorHtml = "";
         (snap.decor || []).forEach(function (id) {
           for (var i = 0; i < DECORATIONS.length; i++) if (DECORATIONS[i].id === id) decorHtml += DECORATIONS[i].emoji + " ";
@@ -1994,7 +2000,7 @@
           var cell = "·", label = "Empty";
           if (p.crop && CROPS[p.crop]) {
             var c = CROPS[p.crop];
-            if (now >= (p.readyAt || 0) + WITHER_MS) { cell = "🥀"; label = "Withered"; }
+            if (!snap.noWither && now >= (p.readyAt || 0) + WITHER_MS) { cell = "🥀"; label = "Withered"; }
             else if (now >= (p.readyAt || 0)) { cell = c.emoji; label = "Ready!"; }
             else {
               var total = (p.readyAt - p.plantedAt) || 1;
@@ -2014,6 +2020,7 @@
           "<div style='font-size:1.1rem'>🏡 <strong>" + escHtml(snap.name || "A Cove Farm") + "</strong> " + (moodEmoji[snap.mood] || "❄️") + "</div>" +
           "<div class='note'>" + escHtml(snap.code) + " · Village Lv " + snap.villageLevel + " · 🐚 " + snap.shells + " · earns 🐚 " + snap.hourlyRate + "/hr · last tended " + fmtAgo(snap.updatedAt || now) + "</div>" +
           "<div style='display:flex;flex-wrap:wrap;gap:6px;margin:10px 0'>" + bHtml + "</div>" +
+          (animalHtml ? "<div style='display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px'>" + animalHtml + "</div>" : "") +
           (decorHtml ? "<div style='font-size:1.15rem;margin:2px 0 8px'>" + decorHtml + "</div>" : "") +
           "<div style='display:grid;grid-template-columns:repeat(6,1fr);gap:6px'>" + plotHtml + "</div>" +
           "<div class='note' style='margin-top:8px'>🌾 " + (snap.harvested || 0) + " harvests · 🐚 " + (snap.earned || 0) + " shells earned all-time</div>" +
