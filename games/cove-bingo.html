@@ -171,6 +171,7 @@
         <div class="controls">
           <button class="btn" id="playBtn" type="button">⏸ Pause</button>
           <button class="btn secondary" id="newBtn" type="button">🆕 New Card</button>
+          <button class="btn secondary" id="speedBtn" type="button">🐢 Relaxed</button>
         </div>
         <div class="history" id="historyStrip"><span class="none">The caller is warming up…</span></div>
       </section>
@@ -242,7 +243,15 @@
 
       /* ================= Game state ================= */
       var LETTERS = ["C", "O", "V", "E", "S"];
-      var DRAW_MS = 3500;
+      var SPEEDS = [
+        { id: "relaxed", label: "\uD83D\uDC22 Relaxed", ms: 6500 },
+        { id: "standard", label: "\uD83D\uDEB6 Standard", ms: 5000 },
+        { id: "speedy", label: "\uD83D\uDC07 Speedy", ms: 3500 }
+      ];
+      var SPEED_KEY = "cove-bingo-speed";
+      var speedIdx = 0;
+      try { var sv = parseInt(window.localStorage.getItem(SPEED_KEY) || "0", 10); if (sv >= 0 && sv < SPEEDS.length) speedIdx = sv; } catch (e) { /* ignore */ }
+      var DRAW_MS = SPEEDS[speedIdx].ms;
       var card = [];            /* card[row][col] = number, 0 = FREE */
       var daubed = {};          /* "r,c" -> true */
       var deck = [];            /* shuffled 1..75 */
@@ -477,6 +486,18 @@
 
       playBtn.addEventListener("click", function () { ac(); if (!over) setPlaying(!playing); });
       document.getElementById("newBtn").addEventListener("click", function () { ac(); newGame(); toast("Fresh card — good luck!"); });
+      var speedBtn = document.getElementById("speedBtn");
+      function paintSpeed() { speedBtn.textContent = SPEEDS[speedIdx].label; }
+      paintSpeed();
+      speedBtn.addEventListener("click", function () {
+        ac();
+        speedIdx = (speedIdx + 1) % SPEEDS.length;
+        DRAW_MS = SPEEDS[speedIdx].ms;
+        try { window.localStorage.setItem(SPEED_KEY, String(speedIdx)); } catch (e) { /* ignore */ }
+        paintSpeed();
+        if (playing) setPlaying(true);
+        toast("Caller speed: " + SPEEDS[speedIdx].label.replace(/^\S+\s/, "") + " — a new ball every " + (DRAW_MS / 1000) + " seconds.");
+      });
       document.getElementById("winAgainBtn").addEventListener("click", function () { ac(); newGame(); });
       document.getElementById("endAgainBtn").addEventListener("click", function () { ac(); newGame(); });
 
