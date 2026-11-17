@@ -403,6 +403,17 @@
         <h2>👋 Visit a Neighbor</h2>
         <p class="note">Every farm has its own code. Share yours so Cove friends can drop by, peek at your village, and lend a hand — a visit waters their crops and leaves them 10 shells. Your farm itself still lives on your phone; visiting just shares a picture of it.</p>
         <div id="myFarmBox"></div>
+        <div style="background:#fdf6e3;border:2px solid #e3c878;border-radius:14px;padding:12px;margin-top:12px;color:#0b3d54">
+          <div style="font-size:1.05rem">\uD83D\uDD11 <strong>Your Save Code</strong></div>
+          <p style="margin:6px 0">This is the key to your farm \u2014 different from your farm code, and just for you. <strong>Write it down!</strong> If you get a new phone, or the app opens in a different browser and your farm looks gone, type this code in below and your farm comes right back.</p>
+          <div id="mySaveCode" style="font-size:1.35rem;font-weight:800;letter-spacing:1px;background:#fff;border:2px solid #0b3d54;border-radius:10px;padding:8px 12px;display:inline-block;cursor:pointer" title="Tap to copy"></div>
+          <div id="backupState" style="color:#5f7a86;margin-top:6px;font-size:.9rem">Your farm backs itself up here as you play.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <input id="restoreCode" type="text" placeholder="Save Code \u2014 e.g. KEY-AB3F9K" maxlength="10" style="flex:1;min-width:170px;padding:10px;border-radius:10px;border:2px solid #cfe3ea;font-size:1rem;text-transform:uppercase">
+            <button type="button" class="btn" id="restoreBtn">\uD83D\uDD11 Bring back my farm</button>
+          </div>
+          <div id="restoreState" style="color:#5f7a86;margin-top:6px;font-size:.9rem"></div>
+        </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
           <input id="visitCode" type="text" placeholder="Friend's code — e.g. COVE-AB3F9K" maxlength="12" style="flex:1;min-width:170px;padding:10px;border-radius:10px;border:2px solid #cfe3ea;font-size:1rem;text-transform:uppercase" />
           <button type="button" class="btn" id="visitBtn">🚶 Visit Farm</button>
@@ -674,7 +685,9 @@
       }
       var state = defaultState();
       function save() {
+        if (restoringFarm) return;
         try { window.localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+        scheduleBackup(4000);
       }
       function healSocial() {
         if (!state.spares) state.spares = {};
@@ -2116,6 +2129,89 @@
             if (maxTs > (state.guestSeen || 0)) { state.guestSeen = maxTs; save(); }
           }, function () { /* offline */ });
       }
+      var SAVECODE_KEY = "cove-farm-savecode";
+      var restoringFarm = false;
+      var saveCode = "";
+      var backupTimer = null;
+      function genSaveCode() {
+        var chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+        var out = "";
+        for (var i = 0; i < 6; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+        return "KEY-" + out;
+      }
+      function initSaveCode() {
+        try { saveCode = window.localStorage.getItem(SAVECODE_KEY) || ""; } catch (e) { saveCode = ""; }
+        if (!saveCode) {
+          saveCode = genSaveCode();
+          try { window.localStorage.setItem(SAVECODE_KEY, saveCode); } catch (e) { /* ignore */ }
+        }
+        var el = document.getElementById("mySaveCode");
+        if (el) {
+          el.textContent = saveCode;
+          el.addEventListener("click", function () {
+            var done = function () { toast("\uD83D\uDD11 Save Code copied \u2014 keep it somewhere safe!"); };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(saveCode).then(done, function () { toast("Your Save Code: " + saveCode); });
+            else toast("Your Save Code: " + saveCode);
+          });
+        }
+        var rb = document.getElementById("restoreBtn");
+        if (rb) rb.addEventListener("click", restoreFarm);
+        try {
+          if (window.localStorage.getItem("cove-restored-welcome")) {
+            window.localStorage.removeItem("cove-restored-welcome");
+            window.setTimeout(function () { toast("\uD83D\uDD11 Welcome back! Your farm is restored."); }, 1200);
+          }
+        } catch (e) { /* ignore */ }
+        window.addEventListener("pagehide", function () { cloudBackup(true); });
+        scheduleBackup(2500);
+      }
+      function scheduleBackup(delay) {
+        if (!saveCode || backupTimer) return;
+        backupTimer = window.setTimeout(function () { backupTimer = null; cloudBackup(false); }, delay || 4000);
+      }
+      function cloudBackup(useKeepalive) {
+        if (!saveCode || restoringFarm) return;
+        var pet = null;
+        try { pet = JSON.parse(window.localStorage.getItem("cove-pet-v1") || "null"); } catch (e) { pet = null; }
+        var payload = { v: 1, ts: Date.now(), code: farmCode, name: farmName, farm: state, pet: pet };
+        if (useKeepalive) {
+          try {
+            fetch(COVE_API_URL, { method: "POST", headers: { "Authorization": "Bearer " + COVE_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(["SET", "save:" + saveCode, JSON.stringify(payload)]), keepalive: true }).catch(function () { /* ignore */ });
+          } catch (e) { /* ignore */ }
+          return;
+        }
+        api(["SET", "save:" + saveCode, JSON.stringify(payload)]).then(function () {
+          var el = document.getElementById("backupState");
+          if (el) el.textContent = "\u2601\uFE0F Farm backed up just now \u2014 it is safe on the Cove shelf.";
+        }, function () { /* offline: the next save tries again */ });
+      }
+      function restoreFarm() {
+        var input = document.getElementById("restoreCode");
+        var st = document.getElementById("restoreState");
+        var code = (input.value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+        if (code.indexOf("KEY") === 0) code = code.slice(3);
+        if (code.length !== 6) { st.textContent = "That does not look like a Save Code \u2014 they look like KEY-AB3F9K."; return; }
+        code = "KEY-" + code;
+        st.textContent = "Looking for your farm\u2026";
+        api(["GET", "save:" + code]).then(function (raw) {
+          if (!raw) { st.textContent = "No farm found under that code \u2014 double-check the letters and try again."; return; }
+          var data = null;
+          try { data = JSON.parse(raw); } catch (e) { data = null; }
+          if (!data || !data.farm) { st.textContent = "That backup could not be read \u2014 try again in a moment."; return; }
+          if (!window.confirm("Bring back the farm saved as \u201C" + (data.name || "your farm") + "\u201D? It will replace the farm on this phone.")) { st.textContent = ""; return; }
+          restoringFarm = true;
+          try {
+            window.localStorage.setItem(SAVE_KEY, JSON.stringify(data.farm));
+            if (data.code) window.localStorage.setItem("cove-farm-code", data.code);
+            if (data.name) window.localStorage.setItem("cove-farm-name", data.name);
+            window.localStorage.setItem(SAVECODE_KEY, code);
+            if (data.pet) window.localStorage.setItem("cove-pet-v1", JSON.stringify(data.pet));
+            window.localStorage.setItem("cove-restored-welcome", "1");
+          } catch (e) { /* ignore */ }
+          st.textContent = "Found it! Bringing your farm back\u2026";
+          window.setTimeout(function () { window.location.reload(); }, 150);
+        }, function () { st.textContent = "Could not reach the Cove shelf \u2014 check your connection and try again."; });
+      }
       var BOTTLE_BLOCK = ["damn", "hell", "crap", "stupid", "hate you", "shut up"];
       function bottleSentToday() { try { return window.localStorage.getItem("cove-bottle-sent") === new Date().toDateString(); } catch (e) { return false; } }
       function renderBottleState() {
@@ -2407,6 +2503,7 @@
           setTimeout(function () { toast("\uD83D\uDC3E Your Cove pet fetched you \uD83D\uDC1A " + petShellsMsg + "!"); }, 1600);
         }
       } catch (e) { /* ignore */ }
+      initSaveCode();
       initMood();
       farmNetInit();
       initCrab();
