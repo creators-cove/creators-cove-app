@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cove Champions — Creator's Cove</title>
+<style>
+      :root {
+        --gold: #ffc93c; --gold-deep: #e89b0c;
+        --panel: rgba(255, 248, 234, 0.97); --panel-ink: #17384a;
+        --shadow: 0 18px 40px rgba(4, 40, 56, 0.35);
+        --col-c: #ef6351; --col-o: #f4842c; --col-v: #7d5ba6; --col-e: #2a9d8f; --col-s: #277da1;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Nunito", system-ui, sans-serif; color: var(--panel-ink);
+        background: radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.4), rgba(255,255,255,0) 60%),
+          linear-gradient(180deg, #8fe0f2 0%, #2a9db8 46%, #0d5a74 100%);
+        min-height: 100vh; padding: 14px 12px 44px;
+        -webkit-tap-highlight-color: transparent;
+      }
+      main { max-width: 560px; margin: 0 auto; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; max-width: 560px; margin: 0 auto; }
+      .cove-back-btn { display: inline-block; min-height: 48px; line-height: 48px; padding: 0 18px; border-radius: 999px; background: #ffffff; color: #12303e; font-weight: 800; text-decoration: none; font-size: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+      .mute { border: none; background: #fff; font-size: 1.15rem; width: 48px; height: 48px; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,.25); cursor: pointer; }
+      h1 { font-family: "Fredoka", sans-serif; font-size: 2rem; margin: 10px 0 2px; text-align: center; color: #fff; text-shadow: 0 2px 10px rgba(4,40,56,.45); }
+      .sub { text-align: center; color: #eaf7fa; font-weight: 700; margin: 0 0 14px; line-height: 1.45; }
+      .panel {
+        background: var(--panel); border-radius: 24px; box-shadow: var(--shadow);
+        padding: 18px 16px; margin-top: 14px; border: 3px solid var(--gold);
+      }
+      .panel h2 { font-family: "Fredoka", sans-serif; font-size: 1.15rem; margin: 0 0 10px; text-align: center; }
+
+      /* ---------- caller ---------- */
+      .caller-row { display: flex; align-items: center; gap: 16px; justify-content: center; flex-wrap: wrap; }
+      .ball {
+        width: 118px; height: 118px; border-radius: 50%; flex: 0 0 auto;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: radial-gradient(circle at 32% 28%, #ffffff 0%, #ffe9a8 34%, var(--gold) 68%, var(--gold-deep) 100%);
+        border: 4px solid #fff; box-shadow: 0 8px 20px rgba(4,40,56,.35), inset 0 -8px 14px rgba(146, 90, 0, .35);
+        color: #4a2c00;
+      }
+      .ball .ball-letter { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.25rem; line-height: 1; letter-spacing: .14em; }
+      .ball .ball-num { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 2.9rem; line-height: 1.05; }
+      .ball.empty { background: radial-gradient(circle at 32% 28%, #ffffff 0%, #e8f2f4 40%, #cfe3ea 100%); color: #5b7a82; box-shadow: 0 8px 20px rgba(4,40,56,.2); }
+      .ball.pop { animation: ballpop .45s ease; }
+      @keyframes ballpop { 0% { transform: scale(.6); } 55% { transform: scale(1.12); } 100% { transform: scale(1); } }
+      .caller-stats { font-weight: 800; font-size: 1.02rem; line-height: 1.7; text-align: center; }
+      .caller-stats .stat-num { font-family: "Fredoka", sans-serif; color: #0d5a74; }
+      .controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+      .btn {
+        font-family: "Fredoka", sans-serif; font-weight: 700; cursor: pointer;
+        border: 2px solid var(--gold-deep); border-radius: 999px; padding: 12px 24px; min-height: 52px;
+        background: linear-gradient(180deg, #ffe08a, var(--gold)); color: #4a2c00;
+        box-shadow: 0 3px 0 var(--gold-deep); font-size: 1.08rem;
+      }
+      .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--gold-deep); }
+      .btn.secondary { background: #fff; border-color: #b9d2da; color: #0d5a74; box-shadow: 0 3px 0 #b9d2da; }
+      .btn:disabled { opacity: .55; cursor: default; }
+      .history { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 14px; min-height: 34px; }
+      .chip {
+        font-family: "Fredoka", sans-serif; font-weight: 600; font-size: .92rem;
+        border-radius: 999px; padding: 5px 11px; color: #fff; background: #5b7a82;
+      }
+      .chip.c0 { background: var(--col-c); } .chip.c1 { background: var(--col-o); }
+      .chip.c2 { background: var(--col-v); } .chip.c3 { background: var(--col-e); }
+      .chip.c4 { background: var(--col-s); }
+      .history .none { color: #5b7a82; font-weight: 700; font-size: .95rem; align-self: center; }
+
+      /* ---------- player card ---------- */
+      .bingo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+      .col-head {
+        font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.55rem; text-align: center;
+        color: #fff; border-radius: 14px; padding: 5px 0 7px; text-shadow: 0 1px 3px rgba(0,0,0,.25);
+      }
+      .col-head.c0 { background: var(--col-c); } .col-head.c1 { background: var(--col-o); }
+      .col-head.c2 { background: var(--col-v); } .col-head.c3 { background: var(--col-e); }
+      .col-head.c4 { background: var(--col-s); }
+      .cell {
+        font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 1.35rem;
+        min-height: 58px; border-radius: 14px; border: 3px solid #d8e6ea; background: #fff;
+        color: var(--panel-ink); cursor: pointer; padding: 4px 0;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .cell.called { border-color: var(--gold-deep); background: #fff6d8; animation: glowpulse 1.6s ease-in-out infinite; }
+      @keyframes glowpulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(255, 201, 60, .0), inset 0 0 0 0 rgba(255,201,60,.0); }
+        50% { box-shadow: 0 0 14px 3px rgba(255, 201, 60, .75), inset 0 0 8px 0 rgba(255,201,60,.5); }
+      }
+      .cell.daubed {
+        background: radial-gradient(circle at 50% 42%, #ffe08a 0%, var(--gold) 58%, var(--gold-deep) 100%);
+        border-color: var(--gold-deep); color: #4a2c00; animation: none;
+        box-shadow: inset 0 -4px 8px rgba(146, 90, 0, .35);
+      }
+      .cell.free { font-size: 1.7rem; background: linear-gradient(180deg, #bdeef7, #5fc3d8); border-color: #2a9db8; cursor: default; }
+      .cell.shake { animation: shake .3s ease; }
+      @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+      .claim-row { text-align: center; margin-top: 16px; }
+      .btn.claim { font-size: 1.45rem; padding: 14px 38px; min-height: 62px; }
+      .claim-msg { min-height: 26px; font-weight: 800; margin-top: 10px; line-height: 1.4; }
+      .claim-msg.err { color: #b3372c; }
+      .wins-line { text-align: center; font-weight: 800; color: #0d5a74; margin-top: 6px; }
+
+      /* ---------- called board ---------- */
+      .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+      .board-col { display: flex; flex-direction: column; gap: 4px; }
+      .board-head { font-family: "Fredoka", sans-serif; font-weight: 700; text-align: center; color: #fff; border-radius: 9px; padding: 2px 0 4px; font-size: 1.05rem; }
+      .board-head.c0 { background: var(--col-c); } .board-head.c1 { background: var(--col-o); }
+      .board-head.c2 { background: var(--col-v); } .board-head.c3 { background: var(--col-e); }
+      .board-head.c4 { background: var(--col-s); }
+      .board-num {
+        font-family: "Fredoka", sans-serif; font-weight: 600; font-size: .98rem; text-align: center;
+        border-radius: 9px; padding: 4px 0; background: #eef4f5; color: #8aa3ab; border: 2px solid transparent;
+      }
+      .board-num.on { color: #fff; }
+      .board-num.on.c0 { background: var(--col-c); } .board-num.on.c1 { background: var(--col-o); }
+      .board-num.on.c2 { background: var(--col-v); } .board-num.on.c3 { background: var(--col-e); }
+      .board-num.on.c4 { background: var(--col-s); }
+      .howto { font-size: .95rem; line-height: 1.55; font-weight: 600; }
+
+      /* ---------- overlays ---------- */
+      .overlay {
+        position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+        background: rgba(7, 42, 56, .72); padding: 18px;
+      }
+      .overlay.hidden { display: none; }
+      .overlay-card {
+        background: var(--panel); border: 4px solid var(--gold); border-radius: 26px; box-shadow: var(--shadow);
+        max-width: 440px; width: 100%; text-align: center; padding: 28px 22px; position: relative; overflow: hidden;
+      }
+      .overlay-card .big { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 3rem; margin: 2px 0 6px; color: #0d5a74; letter-spacing: .06em; }
+      .overlay-card p { font-weight: 700; line-height: 1.55; margin: 6px 0; }
+      .overlay-card .score-line { font-family: "Fredoka", sans-serif; font-size: 1.5rem; color: #b97e06; margin: 10px 0 2px; }
+      .confetti { position: absolute; top: -14px; width: 10px; height: 16px; border-radius: 2px; opacity: .95; animation: confall linear forwards; pointer-events: none; }
+      @keyframes confall { to { transform: translateY(560px) rotate(620deg); } }
+
+      #toast {
+        position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
+        background: #21303a; color: #fff; padding: 12px 20px; border-radius: 999px; font-weight: 800;
+        opacity: 0; pointer-events: none; transition: all .25s; max-width: 92vw; text-align: center; z-index: 70;
+      }
+      #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    </style>
+<style>
+  .board { background:#fff; border-radius:16px; padding:14px 16px; margin:14px 0; box-shadow:0 4px 14px rgba(4,40,56,.12); text-align:left; }
+  .board h3 { margin:2px 0 8px; color:#0b3d54; }
+  .row { display:flex; justify-content:space-between; gap:10px; padding:6px 8px; border-radius:8px; }
+  .row:nth-child(even) { background:#f2f8fa; }
+  .row.me { background:#fff3c4; border:2px solid #e3c878; }
+  .row .who { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row .score { font-weight:700; color:#0b3d54; white-space:nowrap; }
+  .empty { color:#5b6b73; font-size:.92rem; }
+  #goalBarWrap { background:#dceef3; border-radius:999px; height:20px; overflow:hidden; }
+  #goalBar { background:linear-gradient(90deg,#2a9db8,#ffc93c); height:100%; width:0%; transition:width .8s; }
+  input[type="text"] { padding:10px; border-radius:10px; border:2px solid #bcd9e4; font:inherit; }
+</style>
+</head>
+<body>
+  <a class="back" href="../index.html">← Back to Cove</a>
+  <h1>🏆 Cove Champions</h1>
+  <p class="sub">The Cove's friendly leaderboard. Post your scores, see how the neighborhood stacks up — and when we announce a contest in the group, this board is where the bragging rights live.</p>
+
+  <div class="board" id="goalBoard">
+    <h3>🌊 The Whole Cove</h3>
+    <p class="empty" id="goalText">Adding up every shell the Cove has earned together…</p>
+    <div id="goalBarWrap"><div id="goalBar"></div></div>
+    <p class="empty" id="goalNext"></p>
+  </div>
+
+  <div class="board" id="meBoard">
+    <h3>📣 Your scores</h3>
+    <div id="myScores" class="empty">Reading your games…</div>
+    <div id="nameRow" style="margin-top:10px"></div>
+    <button type="button" class="btn gold" id="postBtn" style="margin-top:10px">🏆 Post my scores</button>
+    <p class="empty" id="postNote">Posting is up to you — nothing goes up unless you tap the button.</p>
+  </div>
+
+  <div id="boards"></div>
+
+  <script>
+    var COVE_API_URL = "https://enabled-platypus-167183.upstash.io";
+    var COVE_API_KEY = "gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg";
+    function api(cmd) {
+      return fetch(COVE_API_URL, { method: "POST", headers: { "Authorization": "Bearer " + COVE_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(cmd) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { return j ? j.result : null; });
+    }
+    function escHtml(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+    function genCode() {
+      var chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789", out = "";
+      for (var i = 0; i < 6; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+      return "COVE-" + out;
+    }
+    var myCode = "", myName = "";
+    try {
+      myCode = window.localStorage.getItem("cove-farm-code") || "";
+      myName = window.localStorage.getItem("cove-farm-name") || "";
+    } catch (e) { /* ignore */ }
+    if (!myCode) {
+      myCode = genCode();
+      try { window.localStorage.setItem("cove-farm-code", myCode); } catch (e) { /* ignore */ }
+    }
+    function farmSave() {
+      try { return JSON.parse(window.localStorage.getItem("cove-farm-village-v1") || "null"); } catch (e) { return null; }
+    }
+    function myScores() {
+      var coins = 0;
+      ["cove-slots-coins", "cove-tumble-coins", "cove-mermaid-coins"].forEach(function (k) {
+        var v = 0;
+        try { v = parseInt(window.localStorage.getItem(k) || "0", 10) || 0; } catch (e) { /* ignore */ }
+        coins += v;
+      });
+      var save = farmSave();
+      var shells = save && save.stats ? (save.stats.earned || 0) : 0;
+      var prints = save && Array.isArray(save.prints) ? save.prints.length : 0;
+      var bingo = 0;
+      try { bingo = parseInt(window.localStorage.getItem("cove-bingo-wins") || "0", 10) || 0; } catch (e) { /* ignore */ }
+      var quest = 0;
+      for (var i = 0; i < 6; i++) {
+        try { if (window.localStorage.getItem("cove-quest-best-" + i)) quest++; } catch (e) { /* ignore */ }
+      }
+      return [
+        { key: "coins", label: "🪙 Coin Champs", unit: "coins", score: coins, how: "Slots + Tumble + Mermaid coins, added up" },
+        { key: "shells", label: "🐚 Farm Shells", unit: "shells earned", score: shells, how: "lifetime shells earned on your farm" },
+        { key: "prints", label: "🖼️ Gallery Prints", unit: "of 30 prints", score: prints, how: "prints on your Cove Gallery board" },
+        { key: "bingo", label: "🎱 Bingo Wins", unit: "wins", score: bingo, how: "Cove Bingo games won" },
+        { key: "quest", label: "🏃 Cove Quest", unit: "of 6 levels beaten", score: quest, how: "Cove Quest levels finished" }
+      ];
+    }
+    var CATS = myScores();
+    function renderMine() {
+      var html = CATS.map(function (c) {
+        return "<div class='row'><span class='who'>" + c.label + "</span><span class='score'>" + c.score.toLocaleString() + "</span></div>";
+      }).join("");
+      document.getElementById("myScores").innerHTML = html;
+      var nr = document.getElementById("nameRow");
+      if (!myName) {
+        nr.innerHTML = "<label class='empty'>Your board name: <input type='text' id='nameInput' maxlength='24' placeholder='e.g. Tina C.'> <button type='button' class='btn' id='nameSave'>Save</button></label>";
+        document.getElementById("nameSave").addEventListener("click", function () {
+          var v = document.getElementById("nameInput").value.replace(/^\s+|\s+$/g, "");
+          if (!v) return;
+          myName = v.slice(0, 24);
+          try { window.localStorage.setItem("cove-farm-name", myName); } catch (e) { /* ignore */ }
+          renderMine();
+        });
+      } else {
+        nr.innerHTML = "<span class='empty'>Posting as <strong>" + escHtml(myName) + "</strong> (" + escHtml(myCode) + ")</span>";
+      }
+    }
+    function renderBoards(names) {
+      var wrap = document.getElementById("boards");
+      wrap.innerHTML = "";
+      CATS.forEach(function (c) {
+        var div = document.createElement("div");
+        div.className = "board";
+        div.innerHTML = "<h3>" + c.label + "</h3><p class='empty'>" + c.how + "</p><div id='board-" + c.key + "'><p class='empty'>Loading…</p></div>";
+        wrap.appendChild(div);
+        api(["ZREVRANGE", "champ:" + c.key, 0, 9, "WITHSCORES"]).then(function (flat) {
+          var box = document.getElementById("board-" + c.key);
+          if (!flat || !flat.length) { box.innerHTML = "<p class='empty'>No scores yet — be the first on the board!</p>"; return; }
+          var html = "", seenMe = false;
+          for (var i = 0; i < flat.length; i += 2) {
+            var code = flat[i], sc = parseInt(flat[i + 1], 10) || 0;
+            var me = code === myCode;
+            if (me) seenMe = true;
+            html += "<div class='row" + (me ? " me" : "") + "'><span class='who'>" + (i / 2 + 1) + ". " + escHtml(names[code] || "A Cove player") + (me ? " (you)" : "") + "</span><span class='score'>" + sc.toLocaleString() + "</span></div>";
+          }
+          box.innerHTML = html;
+          if (!seenMe) {
+            api(["ZREVRANK", "champ:" + c.key, myCode]).then(function (rank) {
+              if (rank === null || rank === undefined) return;
+              var mine = CATS.filter(function (x) { return x.key === c.key; })[0];
+              box.innerHTML += "<p class='empty' style='margin-top:6px'>You: #" + (rank + 1) + " with " + (mine ? mine.score.toLocaleString() : "0") + "</p>";
+            }, function () { /* ignore */ });
+          }
+        }, function () {
+          var box = document.getElementById("board-" + c.key);
+          if (box) box.innerHTML = "<p class='empty'>Couldn't load this board — check your connection and reopen.</p>";
+        });
+      });
+    }
+    function loadAll() {
+      api(["HGETALL", "champ:names"]).then(function (flat) {
+        var names = {};
+        if (flat) for (var i = 0; i < flat.length; i += 2) names[flat[i]] = flat[i + 1];
+        renderBoards(names);
+      }, function () { renderBoards({}); });
+      api(["GET", "covegoal:total"]).then(function (raw) {
+        var total = parseInt(raw || "0", 10) || 0;
+        var steps = [100000, 500000, 1000000];
+        var next = steps.filter(function (s) { return total < s; })[0];
+        document.getElementById("goalText").textContent = "Together, Cove players have earned 🐚 " + total.toLocaleString() + " on their farms.";
+        if (next) {
+          document.getElementById("goalBar").style.width = Math.min(100, Math.round(total / next * 100)) + "%";
+          document.getElementById("goalNext").textContent = "Next celebration at " + next.toLocaleString() + " — every shell you earn on your farm counts!";
+        } else {
+          document.getElementById("goalBar").style.width = "100%";
+          document.getElementById("goalNext").textContent = "A million shells and beyond — this Cove just keeps shining.";
+        }
+      }, function () { /* ignore */ });
+    }
+    document.getElementById("postBtn").addEventListener("click", function () {
+      if (!myName) { document.getElementById("postNote").textContent = "Add your board name above first, so neighbors know who you are!"; return; }
+      var btn = this;
+      btn.disabled = true;
+      btn.textContent = "Posting…";
+      var jobs = [api(["HSET", "champ:names", myCode, myName])];
+      CATS = myScores();
+      CATS.forEach(function (c) { if (c.score > 0) jobs.push(api(["ZADD", "champ:" + c.key, c.score, myCode])); });
+      Promise.all(jobs).then(function () {
+        btn.disabled = false;
+        btn.textContent = "🏆 Post my scores";
+        document.getElementById("postNote").textContent = "Posted! The boards below are up to date.";
+        renderMine();
+        loadAll();
+      }, function () {
+        btn.disabled = false;
+        btn.textContent = "🏆 Post my scores";
+        document.getElementById("postNote").textContent = "The boardwalk path washed out — try again in a moment.";
+      });
+    });
+    renderMine();
+    loadAll();
+  </script>
+</body>
+</html>

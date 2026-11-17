@@ -409,6 +409,20 @@
         </div>
         <div id="neighborsBox"></div>
         <div id="visitView"></div>
+        <div id="guestbookBox"></div>
+        <div style="margin-top:14px">
+          <p class="note" style="margin:0 0 6px">🍾 <strong>Cove Post</strong> — write a kind note, seal it in a bottle, and it washes up on somebody else’s farm. One a day keeps them special.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="bottleNoteInput" type="text" maxlength="120" placeholder="e.g. Your sunflowers made my morning!" style="flex:1;min-width:170px;padding:10px;border-radius:10px;border:2px solid #bcd9e4;font:inherit">
+            <button type="button" class="btn" id="bottleSendBtn">🍾 Send a bottle</button>
+          </div>
+          <p class="note" id="bottleNoteState" style="margin-top:6px"></p>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="The whole Cove goal">
+        <h2>🌊 The Whole Cove</h2>
+        <div id="goalBox"><p class="note">Adding up every shell the Cove has earned together…</p></div>
       </section>
 
       <section class="panel" aria-label="Orders board">
@@ -661,6 +675,13 @@
       var state = defaultState();
       function save() {
         try { window.localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+      }
+      function healSocial() {
+        if (!state.spares) state.spares = {};
+        if (!state.stats) state.stats = { harvested: 0, earned: 0 };
+        if (typeof state.goalSynced !== "number") state.goalSynced = state.stats.earned || 0;
+        if (!state.goalClaimed) state.goalClaimed = {};
+        if (typeof state.guestSeen !== "number") state.guestSeen = 0;
       }
       function load() {
         try {
@@ -1333,7 +1354,14 @@
           var prize = 15 + Math.floor(Math.random() * 26);
           addShells(prize);
           Sfx.coin();
-          var note = BOTTLE_NOTES[Math.floor(Math.random() * BOTTLE_NOTES.length)];
+          var note;
+          if (pendingBottle) {
+            note = pendingBottle.text + "  \u2014 " + (pendingBottle.name || "a Cove friend");
+            pendingBottle = null;
+            fetchPendingBottle();
+          } else {
+            note = BOTTLE_NOTES[Math.floor(Math.random() * BOTTLE_NOTES.length)];
+          }
           slowToast("🍾 " + note + "  (+" + prize + " 🐚)");
           hideSurprise(); save(); render();
           scheduleSurprise();
@@ -1427,21 +1455,88 @@
         } else {
           var ownedPrints = PRINTS.filter(function (p) { return state.prints.indexOf(p.id) >= 0; });
           var any = ownedPrints[Math.floor(Math.random() * ownedPrints.length)];
-          addShells(45); Sfx.coin();
-          toast("\uD83D\uDDBC\uFE0F A print washes up — " + any.name + ", one already on your board! The Cove shop trades it for \uD83D\uDC1A 45.");
+          if (!state.spares) state.spares = {};
+          state.spares[any.id] = (state.spares[any.id] || 0) + 1;
+          Sfx.coin();
+          toast("\uD83D\uDDBC\uFE0F A print washes up \u2014 " + any.name + ", one already on your board! It goes into your giftable spares in the Gallery below \u2014 gift it to a friend, or trade it in for \uD83D\uDC1A 45.");
         }
+      }
+      function giftSpare(pid) {
+        var p = printById(pid);
+        if (!p || !state.spares || !state.spares[pid]) return;
+        var rawIn = window.prompt("\uD83C\uDF81 Gift " + p.name + " to a friend \u2014 type their farm code (like COVE-AB3F9K):", "");
+        if (rawIn === null) return;
+        var raw = String(rawIn).toUpperCase().replace(/[^A-Z0-9]/g, "");
+        if (raw.indexOf("COVE") === 0) raw = raw.slice(4);
+        if (raw.length !== 6) { toast("That code doesn\u2019t look right \u2014 it should look like COVE-AB3F9K."); return; }
+        var code = "COVE-" + raw;
+        if (code === farmCode) { toast("That\u2019s your own farm \u2014 pick a friend!"); return; }
+        if (!apiReady()) { toast("The boardwalk isn\u2019t open yet \u2014 try again later."); return; }
+        api(["LPUSH", "printgift:" + code, JSON.stringify({ pid: pid, from: farmName || "A Cove friend", ts: Date.now() })])
+          .then(function () {
+            state.spares[pid]--; if (state.spares[pid] <= 0) delete state.spares[pid];
+            save(); render();
+            toast("\uD83C\uDF81 " + p.name + " is on its way to " + code + " \u2014 they\u2019ll find it when they open their farm!");
+          }, function () { toast("The gift boat couldn\u2019t set sail \u2014 try again in a moment."); });
+      }
+      function fetchPrintGifts() {
+        if (!apiReady() || !farmCode) return;
+        api(["LRANGE", "printgift:" + farmCode, 0, -1])
+          .then(function (items) {
+            if (!items || !items.length) return;
+            var got = [], tradedShells = 0, names = [];
+            items.forEach(function (rawItem) {
+              var g = null;
+              try { g = JSON.parse(rawItem); } catch (e) { /* skip */ }
+              if (!g || !printById(g.pid)) return;
+              if (g.from && names.indexOf(g.from) < 0) names.push(g.from);
+              var pr = printById(g.pid);
+              if (state.prints.indexOf(g.pid) < 0) {
+                state.prints.push(g.pid);
+                got.push(pr.name);
+                var setPrints = PRINTS.filter(function (x) { return x.set === pr.set; });
+                var have = setPrints.filter(function (x) { return state.prints.indexOf(x.id) >= 0; }).length;
+                if (have === setPrints.length && !state.setsDone[pr.set]) {
+                  state.setsDone[pr.set] = true;
+                  addShells(PRINT_SETS[pr.set].bonus);
+                }
+              } else {
+                addShells(45);
+                tradedShells += 45;
+              }
+            });
+            api(["DEL", "printgift:" + farmCode]).then(function () { /* done */ }, function () { /* ignore */ });
+            if (!got.length && !tradedShells) return;
+            save(); render();
+            var msg = "\uD83C\uDF81 Print gifts arrived from " + names.join(", ") + "!";
+            if (got.length) msg += " On your board now: " + got.join(", ") + ".";
+            if (tradedShells) msg += " (Ones you already had traded in for \uD83D\uDC1A " + tradedShells + ".)";
+            longToast(msg);
+          }, function () { /* offline \u2014 gifts wait */ });
       }
       var galSig = "";
       function renderGallery() {
         var box = document.getElementById("galleryBox");
         if (!box) return;
-        var sig = state.prints.join(",") + "|" + Object.keys(state.setsDone).sort().join(",") + "|" + state.boardPrize;
+        var sig = state.prints.join(",") + "|" + Object.keys(state.setsDone).sort().join(",") + "|" + state.boardPrize + "|" + JSON.stringify(state.spares || {});
         if (sig === galSig && box.innerHTML) return;
         galSig = sig;
         var html = '<p class="note" style="margin-top:0">Your board: <strong>' + state.prints.length + " of " + PRINTS.length + "</strong> prints found." +
           (state.prints.length >= PRINTS.length
             ? (state.boardPrize ? " \uD83C\uDFC6 Board complete — your prize print is downloaded and yours to keep!" : " \uD83C\uDFC6 Board complete! Tap any print to choose your full-size download.")
             : "") + "</p>";
+        var spareIds = Object.keys(state.spares || {}).filter(function (id) { return state.spares[id] > 0 && printById(id); });
+        if (spareIds.length) {
+          html += '<div class="gal-set">\uD83C\uDF81 Giftable spares \u2014 prints you found twice</div><div class="gal-grid">';
+          spareIds.forEach(function (id) {
+            var sp = printById(id);
+            html += '<div class="gal-tile"><img src="' + sp.img + '" alt="' + sp.name + '"><div class="gname">' + sp.name + ' \u00D7' + state.spares[id] + '</div>' +
+              '<button type="button" class="btn spare-trade" data-print="' + id + '" style="margin:4px 2px;padding:6px 8px;font-size:.8rem">Trade \uD83D\uDC1A 45</button>' +
+              '<button type="button" class="btn gold spare-gift" data-print="' + id + '" style="margin:4px 2px;padding:6px 8px;font-size:.8rem">\uD83C\uDF81 Gift</button></div>';
+          });
+          html += "</div>";
+          html += '<p class="note">Gifting sends the print to a friend\u2019s farm \u2014 if their board is missing it, it lands right on their board. Trading gives you \uD83D\uDC1A 45, like before.</p>';
+        }
         PRINT_SET_ORDER.forEach(function (key) {
           var set = PRINT_SETS[key];
           var items = PRINTS.filter(function (p) { return p.set === key; });
@@ -1465,6 +1560,16 @@
             openPrintViewer(id);
           });
         }
+        var trades = box.querySelectorAll(".spare-trade");
+        for (var ti = 0; ti < trades.length; ti++) trades[ti].addEventListener("click", function () {
+          var id = this.getAttribute("data-print");
+          if (!state.spares || !state.spares[id]) return;
+          state.spares[id]--; if (state.spares[id] <= 0) delete state.spares[id];
+          addShells(45); Sfx.coin(); save(); render();
+          toast("\uD83D\uDDBC\uFE0F Traded in \u2014 \uD83D\uDC1A 45!");
+        });
+        var giftBtns = box.querySelectorAll(".spare-gift");
+        for (var gi = 0; gi < giftBtns.length; gi++) giftBtns[gi].addEventListener("click", function () { giftSpare(this.getAttribute("data-print")); });
       }
       var pvConfirmId = null;
       function openPrintViewer(id) {
@@ -1975,6 +2080,111 @@
         return Math.floor(h / 24) + "d ago";
       }
 
+      function signGuestbook(code, sticker, gbEl) {
+        var text = "";
+        var inp = document.getElementById("gbText");
+        if (inp) text = inp.value.replace(/^\s+|\s+$/g, "").slice(0, 80);
+        api(["LPUSH", "guest:" + code, JSON.stringify({ name: farmName || "A Cove neighbor", sticker: sticker, text: text, ts: Date.now() })])
+          .then(function () { return api(["LTRIM", "guest:" + code, 0, 29]); })
+          .then(function () {
+            try { window.localStorage.setItem("cove-guest-signed-" + code, new Date().toDateString()); } catch (e) { /* ignore */ }
+            if (gbEl) gbEl.innerHTML = "<span class='note'>\uD83D\uDCD6 Signed! They'll see it in their guestbook.</span>";
+            Sfx.click();
+            toast("\uD83D\uDCD6 Guestbook signed!");
+          }, function () { toast("The guestbook blew shut \u2014 try again in a moment."); });
+      }
+      function fetchGuestbook() {
+        if (!apiReady() || !farmCode) return;
+        api(["LRANGE", "guest:" + farmCode, 0, 11])
+          .then(function (items) {
+            var box = document.getElementById("guestbookBox");
+            if (!box) return;
+            if (!items || !items.length) { box.innerHTML = ""; return; }
+            var entries = [];
+            items.forEach(function (rawItem) { try { var g = JSON.parse(rawItem); if (g) entries.push(g); } catch (e) { /* skip */ } });
+            if (!entries.length) { box.innerHTML = ""; return; }
+            var fresh = entries.filter(function (g) { return g.ts > (state.guestSeen || 0); }).length;
+            var html = "<div style='background:#fdf6e3;border:2px solid #e3c878;border-radius:14px;padding:12px;margin-top:12px'><div style='font-size:1.05rem'>\uD83D\uDCD6 <strong>Your guestbook</strong>" + (fresh ? " \u00B7 \u2728 " + fresh + " new" : "") + "</div>";
+            entries.slice(0, 8).forEach(function (g) {
+              html += "<div style='margin-top:8px'><span style='font-size:1.15rem'>" + escHtml(g.sticker || "\uD83C\uDF0A") + "</span> <strong>" + escHtml(g.name || "A Cove neighbor") + "</strong> <span class='note'>" + fmtAgo(g.ts || Date.now()) + "</span>" + (g.text ? "<div style='margin-left:26px'>" + escHtml(g.text) + "</div>" : "") + "</div>";
+            });
+            html += "</div>";
+            box.innerHTML = html;
+            var maxTs = 0;
+            entries.forEach(function (g) { if ((g.ts || 0) > maxTs) maxTs = g.ts; });
+            if (maxTs > (state.guestSeen || 0)) { state.guestSeen = maxTs; save(); }
+          }, function () { /* offline */ });
+      }
+      var BOTTLE_BLOCK = ["damn", "hell", "crap", "stupid", "hate you", "shut up"];
+      function bottleSentToday() { try { return window.localStorage.getItem("cove-bottle-sent") === new Date().toDateString(); } catch (e) { return false; } }
+      function renderBottleState() {
+        var el = document.getElementById("bottleNoteState");
+        var btn = document.getElementById("bottleSendBtn");
+        if (!el || !btn) return;
+        if (bottleSentToday()) { el.textContent = "\uD83C\uDF7E Your bottle is already out on the tide today \u2014 send another tomorrow."; btn.disabled = true; }
+        else { el.textContent = ""; btn.disabled = false; }
+      }
+      function sendBottleNote() {
+        var inp = document.getElementById("bottleNoteInput");
+        var text = (inp.value || "").replace(/^\s+|\s+$/g, "");
+        if (!text) { toast("Write a little note first!"); return; }
+        var low = " " + text.toLowerCase().replace(/[^a-z]+/g, " ") + " ";
+        for (var i = 0; i < BOTTLE_BLOCK.length; i++) if (low.indexOf(" " + BOTTLE_BLOCK[i] + " ") >= 0) { toast("Bottles carry kind notes only \u2014 try rewording it."); return; }
+        if (!apiReady()) { toast("The tide is out \u2014 try again later."); return; }
+        api(["LPUSH", "bottles:pool", JSON.stringify({ name: farmName || "A Cove friend", text: text.slice(0, 120), ts: Date.now() })])
+          .then(function () { return api(["LTRIM", "bottles:pool", 0, 49]); })
+          .then(function () {
+            try { window.localStorage.setItem("cove-bottle-sent", new Date().toDateString()); } catch (e) { /* ignore */ }
+            inp.value = "";
+            renderBottleState();
+            toast("\uD83C\uDF7E Your note is on the tide \u2014 it'll wash up on someone's farm!");
+          }, function () { toast("The bottle slipped away \u2014 try again in a moment."); });
+      }
+      var pendingBottle = null;
+      function fetchPendingBottle() {
+        if (pendingBottle || !apiReady() || !farmCode) return;
+        api(["RPOP", "bottles:pool"]).then(function (raw) {
+          if (!raw) return;
+          try { var g = JSON.parse(raw); if (g && g.text) pendingBottle = g; } catch (e) { /* ignore */ }
+        }, function () { /* ignore */ });
+      }
+      var GOAL_STEPS = [100000, 500000, 1000000];
+      function renderGoal(total) {
+        var box = document.getElementById("goalBox");
+        if (!box) return;
+        var next = null;
+        for (var i = 0; i < GOAL_STEPS.length; i++) if (total < GOAL_STEPS[i]) { next = GOAL_STEPS[i]; break; }
+        var html = "<p class='note' style='margin-top:0'>Every shell earned on every Cove farm counts toward one shared goal. Together we've earned <strong>\uD83D\uDC1A " + total.toLocaleString() + "</strong>.</p>";
+        if (next) {
+          var pct = Math.min(100, Math.floor(total / next * 100));
+          html += "<div style='background:#dceef3;border-radius:999px;height:22px;overflow:hidden'><div style='background:linear-gradient(90deg,#2a9db8,#ffc93c);height:100%;width:" + pct + "%'></div></div>" +
+            "<p class='note' style='margin-top:6px'>Next celebration: <strong>" + next.toLocaleString() + " shells</strong> \u2014 when we cross it, everybody who opens their farm gets \uD83D\uDC1A 100!</p>";
+        } else {
+          html += "<p class='note' style='margin-top:0'>\uD83C\uDF89 A million shells and beyond \u2014 this Cove just keeps shining.</p>";
+        }
+        box.innerHTML = html;
+      }
+      function goalSync() {
+        if (!apiReady() || !farmCode) return;
+        healSocial();
+        var delta = Math.max(0, Math.floor(state.stats.earned || 0) - state.goalSynced);
+        var chain = delta > 0
+          ? api(["INCRBY", "covegoal:total", delta]).then(function () { state.goalSynced = Math.floor(state.stats.earned || 0); save(); }, function () { /* retry next time */ })
+          : Promise.resolve();
+        chain.then(function () { return api(["GET", "covegoal:total"]); })
+          .then(function (raw) {
+            var total = parseInt(raw || "0", 10) || 0;
+            renderGoal(total);
+            GOAL_STEPS.forEach(function (m) {
+              if (total >= m && !state.goalClaimed[m]) {
+                state.goalClaimed[m] = true; save();
+                addShells(100); Sfx.coin();
+                longToast("\uD83C\uDF0A THE WHOLE COVE did it \u2014 " + m.toLocaleString() + " shells earned together! Here's \uD83D\uDC1A 100 for being part of it!");
+                render();
+              }
+            });
+          }, function () { /* offline */ });
+      }
       function renderVisit(snap) {
         var view = document.getElementById("visitView");
         var now = Date.now();
@@ -2033,6 +2243,30 @@
         document.getElementById("visitClose").addEventListener("click", function () { view.innerHTML = ""; });
         var hb = document.getElementById("helpBtn");
         if (hb) hb.addEventListener("click", function () { helpFarm(snap.code, snap.name); });
+        var gbSigned = false;
+        try { gbSigned = window.localStorage.getItem("cove-guest-signed-" + snap.code) === new Date().toDateString(); } catch (e) { /* ignore */ }
+        var gb = document.createElement("div");
+        gb.style.marginTop = "10px";
+        if (gbSigned) {
+          gb.innerHTML = "<span class='note'>\uD83D\uDCD6 You signed the guestbook here today \u2014 come back tomorrow to sign again.</span>";
+        } else {
+          gb.innerHTML = "<div class='note' style='margin-bottom:6px'>\uD83D\uDCD6 <strong>Sign the guestbook</strong> \u2014 pick a sticker, leave a kind note:</div>" +
+            "<div style='display:flex;gap:6px;font-size:1.35rem;margin-bottom:6px'>" +
+            ["\uD83C\uDF0A", "\uD83D\uDC1A", "\uD83C\uDFA8", "\uD83C\uDF3B", "\uD83E\uDD8B", "\u2B50"].map(function (em, ix) { return "<button type='button' class='gb-sticker' data-e='" + em + "' style='background:" + (ix === 0 ? "#ffe9a8" : "#fff") + ";border:2px solid #bcd9e4;border-radius:10px;padding:2px 8px;cursor:pointer'>" + em + "</button>"; }).join("") +
+            "</div>" +
+            "<div style='display:flex;gap:8px;flex-wrap:wrap'><input id='gbText' type='text' maxlength='80' placeholder='A kind note (optional)' style='flex:1;min-width:150px;padding:9px;border-radius:10px;border:2px solid #bcd9e4;font:inherit'>" +
+            "<button type='button' class='btn' id='gbSign'>\uD83D\uDCD6 Sign</button></div>";
+        }
+        if (view.firstElementChild) view.firstElementChild.appendChild(gb);
+        var gbChosen = "\uD83C\uDF0A";
+        var gbStickers = gb.querySelectorAll(".gb-sticker");
+        for (var gsi = 0; gsi < gbStickers.length; gsi++) gbStickers[gsi].addEventListener("click", function () {
+          gbChosen = this.getAttribute("data-e");
+          for (var gj = 0; gj < gbStickers.length; gj++) gbStickers[gj].style.background = "#fff";
+          this.style.background = "#ffe9a8";
+        });
+        var gbBtn = document.getElementById("gbSign");
+        if (gbBtn) gbBtn.addEventListener("click", function () { signGuestbook(snap.code, gbChosen, gb); });
       }
 
       /* ---------- Neighbors: farms you have visited, remembered on this phone ---------- */
@@ -2140,6 +2374,15 @@
         renderNeighbors();
         document.getElementById("visitBtn").addEventListener("click", visitFarm);
         fetchGifts();
+        fetchPrintGifts();
+        fetchGuestbook();
+        fetchPendingBottle();
+        renderBottleState();
+        var bsb = document.getElementById("bottleSendBtn");
+        if (bsb) bsb.addEventListener("click", sendBottleNote);
+        setTimeout(goalSync, 6000);
+        setInterval(goalSync, 90000);
+        setInterval(fetchGuestbook, 75000);
         setTimeout(publishFarm, 4000);
         setInterval(function () { if (publishDirty && Date.now() - lastPublish > 45000) publishFarm(); }, 20000);
         document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden" && publishDirty) publishFarm(); });
@@ -2147,6 +2390,7 @@
 
       /* ================= Boot ================= */
       load();
+      healSocial();
       initMood();
       farmNetInit();
       initCrab();
