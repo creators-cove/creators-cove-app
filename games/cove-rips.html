@@ -909,5 +909,18 @@
         setDisplay(refillReady() ? "Welcome back! Your 100 free coins are ready — tap below to claim them." : "Out of coins — your next 100 free coins arrive tomorrow. Timer below!");
       }
     </script>
-  </body>
+  
+<script>
+/* Cove traffic tally - counts page opens per day, never who */
+(function () {
+  try {
+    var d = new Date();
+    var day = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    var H = { "Authorization": "Bearer gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg", "Content-Type": "application/json" };
+    fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "cove-rips", 1]), keepalive: true }).catch(function () {});
+    fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "_total", 1]), keepalive: true }).catch(function () {});
+  } catch (e) { /* counting is never worth breaking a game */ }
+})();
+</script>
+</body>
 </html>
