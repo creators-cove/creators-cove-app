@@ -121,7 +121,7 @@
         <div class="pick-label">Pick your girl</div>
         <div class="girl-row" id="girlRow"></div>
         <button class="big-btn" id="startBtn" type="button">Start the Quest!</button>
-        <p style="margin-top:8px;font-size:.8rem;opacity:.85">Hold JUMP in the air to glide · In the water, tap JUMP to paddle · Finish a level to unlock the next — 5 levels in all!</p>
+        <p style="margin-top:8px;font-size:.8rem;opacity:.85">Hold JUMP in the air to glide · In the water, tap JUMP to paddle · Finish a level to unlock the next — 6 levels in all!</p>
       </div>
 
       <p class="howto"><strong>How to play:</strong> run with the arrow buttons, jump with the JUMP button. Stomp crabs flat for bonus shells — a pinch just knocks you back, but fall in a gap and you splash back to the last checkpoint, minus a heart. In the lagoon, tap JUMP to paddle, mind the jellyfish — and from Level 2 on, there's a <strong>shark</strong> in there with them. Watch the sky for swooping <strong>seagulls</strong> (bonk one from above for +2 shells!) and don't step on the spiky <strong>sea urchins</strong>. Every level bites a little harder than the one before. Off the pier's edge, hold JUMP to glide on your umbrella. Reach the lighthouse — or the old Beacon — to finish the level!</p>
@@ -457,7 +457,56 @@
           glideSignX: 5660, goalDrawX: 7830
         };
       }
-      var LEVEL_BUILDERS = [buildLevel1, buildLevel2, buildLevel3, buildLevel4, buildLevel5];
+      function buildLevel6() {
+        return {
+          title: "Level 6 — Santa's Run",
+          sub: "Level 6 — Santa's Run: Santa's sleigh scattered the last 5 Golden Shells across a snowy Cove night! Dash under the Christmas lights, mind the slick ice, and glide home to the lighthouse.",
+          night: true, sky: "xmas", icon: "🎄", goalType: "lighthouse", goalX: 7560, levelW: 8000,
+          water: { x: 2900, y: 322, w: 1520, h: 218 },
+          platforms: [
+            { x: -40, y: GROUND_Y, w: 820, t: "snow" },
+            { x: 780, y: GROUND_Y, w: 700, t: "ice" },
+            { x: 300, y: 380, w: 120, t: "candy" }, { x: 505, y: 310, w: 120, t: "candy" },
+            { x: 1480, y: GROUND_Y, w: 470, t: "wood" }, { x: 2070, y: GROUND_Y, w: 430, t: "wood" },
+            { x: 2620, y: GROUND_Y, w: 300, t: "wood" },
+            { x: 1700, y: 360, w: 120, t: "candy" },
+            { x: 2920, y: GROUND_Y, w: 130, t: "snow" },
+            { x: 2980, y: 520, w: 1440, t: "snow" },
+            { x: 3260, y: 424, w: 110, t: "rock" }, { x: 3700, y: 356, w: 110, t: "rock" },
+            { x: 4140, y: 428, w: 110, t: "rock" }, { x: 4300, y: 484, w: 120, t: "rock" },
+            { x: 4420, y: GROUND_Y, w: 430, t: "snow" },
+            { x: 4920, y: 400, w: 120, t: "rock" }, { x: 5120, y: 330, w: 120, t: "rock" },
+            { x: 5320, y: 258, w: 130, t: "rock" },
+            { x: 5450, y: 258, w: 280, t: "wood" },
+            { x: 6340, y: 430, w: 300, t: "rock" },
+            { x: 6520, y: GROUND_Y, w: 620, t: "snow" },
+            { x: 7140, y: GROUND_Y, w: 860, t: "ice" },
+            { x: 7260, y: 380, w: 120, t: "candy" }
+          ],
+          shells: [
+            [340, 346, 0], [560, 272, 1], [900, 430, 0], [1250, 430, 0],
+            [1760, 322, 1], [1980, 430, 0], [2300, 430, 0], [2760, 430, 0],
+            [3140, 382, 0], [3320, 390, 0], [3560, 464, 1], [3760, 322, 0], [4020, 424, 0], [4320, 430, 0],
+            [4980, 366, 0], [5180, 296, 0], [5560, 218, 0], [6100, 306, 1],
+            [6940, 430, 0], [7320, 342, 1], [7700, 430, 0]
+          ],
+          crabs: [
+            { x: 1050, min: 900, max: 1400, dir: 1, y: GROUND_Y },
+            { x: 2280, min: 2140, max: 2460, dir: 1, y: GROUND_Y },
+            { x: 4620, min: 4480, max: 4800, dir: 1, y: GROUND_Y },
+            { x: 6900, min: 6780, max: 7060, dir: -1, y: GROUND_Y },
+            { x: 7420, min: 7280, max: 7560, dir: -1, y: GROUND_Y }
+          ],
+          jellies: [ { x: 3400, baseY: 394, phase: 0 }, { x: 3980, baseY: 404, phase: 2.4 }, { x: 4280, baseY: 384, phase: 4.2 } ],
+          crabSpeed: 0.7, jellySpeed: 47, gullSpeed: 1.35,
+          sharks: [ { x: 3700, min: 3180, max: 4280, y: 440, dir: 1, spd: 1.2 } ],
+          gulls: [ { x: 950, y: 252, min: 650, max: 1300, dir: 1, phase: 0 }, { x: 2350, y: 300, min: 2100, max: 2600, dir: 1, phase: 1.6 }, { x: 6050, y: 300, min: 5850, max: 6300, dir: 1, phase: 3.1 } ],
+          urchins: [ { x: 5030, y: 400 }, { x: 4200, y: 428 }, { x: 7180, y: 470 } ],
+          checkpoints: [ { x: 60, y: 360 }, { x: 1520, y: 360 }, { x: 2940, y: 360 }, { x: 4460, y: 360 }, { x: 5480, y: 150 }, { x: 6560, y: 360 } ],
+          glideSignX: 5690, goalDrawX: 7610
+        };
+      }
+      var LEVEL_BUILDERS = [buildLevel1, buildLevel2, buildLevel3, buildLevel4, buildLevel5, buildLevel6];
       var levelIdx = 0, selectedLevel = 0;
       var L = null, LEVEL_W = 7200, GOAL_X = 6940;
       var PLATFORMS = [], WATER = { x: 0, y: 0, w: 0, h: 0 }, SHELLS = [], CRABS = [], JELLIES = [], CHECKPOINTS = [];
@@ -467,7 +516,12 @@
       function unlocked() {
         var u = 1;
         try { u = parseInt(window.localStorage.getItem("cove-quest-unlocked") || "1", 10); } catch (e) { /* ignore */ }
-        return isNaN(u) ? 1 : u;
+        if (isNaN(u)) u = 1;
+        /* Players who beat Level 5 back when it was the last level never got an
+           unlock write for it — but a win always saved a best time. Honor that:
+           a recorded Level 5 time means Santa's Run is already unlocked. */
+        try { if (u < 6 && window.localStorage.getItem("cove-quest-best-4")) u = 6; } catch (e) { /* ignore */ }
+        return u;
       }
       function loadLevel(idx) {
         levelIdx = idx;
@@ -515,6 +569,7 @@
       var hearts = 5, shellCount = 0, goldCount = 0, score = 0, startTime = 0, elapsed = 0;
       var running = false, finished = false, camX = 0, tick = 0, paddleAt = 0;
       var keys = { left: false, right: false, jump: false };
+      var groundT = "";
       var jumpPressedAt = -99;
 
       function resetGame() {
@@ -579,7 +634,9 @@
           if (isBest) { try { window.localStorage.setItem(bestKey, String(Math.round(elapsed))); } catch (e) { /* ignore */ } }
           var isLast = levelIdx >= LEVEL_BUILDERS.length - 1;
           if (!isLast) {
-            var uNow = unlocked();
+            var uNow = 1;
+            try { uNow = parseInt(window.localStorage.getItem("cove-quest-unlocked") || "1", 10); } catch (e) { /* ignore */ }
+            if (isNaN(uNow)) uNow = 1;
             if (levelIdx + 2 > uNow) { try { window.localStorage.setItem("cove-quest-unlocked", String(levelIdx + 2)); } catch (e) { /* ignore */ } }
             renderLevelPicks();
             var nxt = LEVEL_BUILDERS[levelIdx + 1]();
@@ -639,7 +696,8 @@
         if (want !== 0) P.face = want;
         var targetVx = want * speed;
         if (P.gliding) targetVx = P.face * 4.5;
-        P.vx += (targetVx - P.vx) * (P.onGround || P.inWater ? 0.4 : 0.18);
+        var grip = (P.onGround && groundT === "ice") ? 0.13 : (P.onGround || P.inWater ? 0.4 : 0.18);
+        P.vx += (targetVx - P.vx) * grip;
 
         P.gliding = false;
         if (P.inWater) {
@@ -667,12 +725,13 @@
         if (P.x > LEVEL_W - P.w) P.x = LEVEL_W - P.w;
 
         P.onGround = false;
+        groundT = "";
         var newFeet = P.y + P.h;
         for (var i = 0; i < PLATFORMS.length; i++) {
           var pl = PLATFORMS[i];
           if (P.x + P.w < pl.x + 4 || P.x > pl.x + pl.w - 4) continue;
           if (P.vy >= 0 && prevFeet <= pl.y + 8 && newFeet >= pl.y) {
-            P.y = pl.y - P.h; P.vy = 0; P.onGround = true; newFeet = pl.y;
+            P.y = pl.y - P.h; P.vy = 0; P.onGround = true; newFeet = pl.y; groundT = pl.t;
           }
         }
 
@@ -779,6 +838,29 @@
           for (var b = 0; b < pl.w; b += 34) ctx2.fillRect(x + b, pl.y, 2, 16);
           ctx2.fillStyle = "#8a5a2b";
           for (var p = 30; p < pl.w; p += 130) ctx2.fillRect(x + p, pl.y + 16, 12, 60);
+        } else if (pl.t === "snow") {
+          ctx2.fillStyle = "#c9d8e6"; ctx2.fillRect(x, pl.y, pl.w, VIEW_H - pl.y + 80);
+          ctx2.fillStyle = "#ffffff"; ctx2.fillRect(x, pl.y, pl.w, 12);
+          ctx2.fillStyle = "rgba(140,170,200,.35)";
+          for (var sd2 = 0; sd2 < pl.w; sd2 += 46) ctx2.fillRect(x + sd2 + 8, pl.y + 26, 5, 3);
+        } else if (pl.t === "ice") {
+          ctx2.fillStyle = "#9fd3e8"; ctx2.fillRect(x, pl.y, pl.w, VIEW_H - pl.y + 80);
+          ctx2.fillStyle = "#e2f5fd"; ctx2.fillRect(x, pl.y, pl.w, 12);
+          ctx2.fillStyle = "rgba(255,255,255,.55)";
+          for (var sh2 = 0; sh2 < pl.w; sh2 += 92) ctx2.fillRect(x + sh2 + 12, pl.y + 26, 28, 3);
+        } else if (pl.t === "candy") {
+          ctx2.save();
+          ctx2.beginPath(); ctx2.rect(x, pl.y, pl.w, 16); ctx2.clip();
+          ctx2.fillStyle = "#fdf6e3"; ctx2.fillRect(x, pl.y, pl.w, 16);
+          ctx2.fillStyle = "#e05252";
+          for (var cd = -16; cd < pl.w + 16; cd += 28) {
+            ctx2.beginPath();
+            ctx2.moveTo(x + cd, pl.y + 16); ctx2.lineTo(x + cd + 10, pl.y + 16);
+            ctx2.lineTo(x + cd + 22, pl.y); ctx2.lineTo(x + cd + 12, pl.y);
+            ctx2.closePath(); ctx2.fill();
+          }
+          ctx2.restore();
+          ctx2.fillStyle = "#ffffff"; ctx2.fillRect(x, pl.y, pl.w, 5);
         } else {
           ctx2.fillStyle = "#8d99a6"; ctx2.fillRect(x, pl.y, pl.w, VIEW_H - pl.y + 80);
           ctx2.fillStyle = "#aeb9c2"; ctx2.fillRect(x, pl.y, pl.w, 10);
@@ -796,6 +878,8 @@
         var sky = ctx2.createLinearGradient(0, 0, 0, VIEW_H);
         if (skyType === "night") {
           sky.addColorStop(0, "#141f42"); sky.addColorStop(0.7, "#33507e"); sky.addColorStop(1, "#6f87a0");
+        } else if (skyType === "xmas") {
+          sky.addColorStop(0, "#0d1533"); sky.addColorStop(0.7, "#274268"); sky.addColorStop(1, "#5b7ca6");
         } else if (skyType === "dusk") {
           sky.addColorStop(0, "#2e1a47"); sky.addColorStop(0.55, "#b34a6b"); sky.addColorStop(1, "#f2a65a");
         } else if (skyType === "snow") {
@@ -804,28 +888,62 @@
           sky.addColorStop(0, "#8fd4e8"); sky.addColorStop(0.7, "#d8f2f4"); sky.addColorStop(1, "#fdf3d8");
         }
         ctx2.fillStyle = sky; ctx2.fillRect(0, 0, VIEW_W, VIEW_H);
-        if (skyType === "night" || skyType === "dusk") {
-          ctx2.fillStyle = skyType === "night" ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.4)";
+        if (skyType === "night" || skyType === "dusk" || skyType === "xmas") {
+          ctx2.fillStyle = skyType === "dusk" ? "rgba(255,255,255,.4)" : "rgba(255,255,255,.85)";
           for (var st = 0; st < STARS.length; st++) {
             var sx = ((STARS[st].x - camX * 0.15) % 1200 + 1200) % 1200;
             ctx2.beginPath(); ctx2.arc(sx, STARS[st].y, STARS[st].r, 0, 7); ctx2.fill();
           }
-          bigEmoji(skyType === "night" ? "🌙" : "🌅", 872 - (camX * 0.05) % 60, 60, 46);
-        } else if (skyType === "snow") {
+          bigEmoji(skyType === "night" ? "🌙" : skyType === "xmas" ? "🌕" : "🌅", 872 - (camX * 0.05) % 60, 60, skyType === "xmas" ? 54 : 46);
+        }
+        if (skyType === "snow" || skyType === "xmas") {
           ctx2.fillStyle = "rgba(255,255,255,.9)";
           for (var sf = 0; sf < 36; sf++) {
             var sfx = (sf * 173 + tick * (0.6 + (sf % 3) * 0.3)) % 1000;
             var sfy = (sf * 97 + tick * (1.1 + (sf % 4) * 0.35)) % 560;
             ctx2.beginPath(); ctx2.arc(sfx, sfy - 10, 1.8 + (sf % 3) * 0.7, 0, 7); ctx2.fill();
           }
-          bigEmoji("☁️", 872 - (camX * 0.05) % 60, 60, 46);
-        } else {
+          if (skyType === "snow") bigEmoji("☁️", 872 - (camX * 0.05) % 60, 60, 46);
+        } else if (skyType === "day") {
           bigEmoji("☀️", 880 - (camX * 0.05) % 60, 62, 52);
         }
+        /* Santa's Run dressing: strings of warm twinkling lights across the top */
+        if (skyType === "xmas") {
+          var bulbCols = ["#ff5a4c", "#ffd964", "#7bf0a0", "#6ec6ff", "#ff9ff3"];
+          ctx2.lineWidth = 2;
+          for (var lrow = 0; lrow < 2; lrow++) {
+            var baseY = 14 + lrow * 36, sag = 24 + lrow * 6;
+            for (var seg = 0; seg < 3; seg++) {
+              var lx0 = seg * 340 - 20, lx1 = lx0 + 340, lxm = (lx0 + lx1) / 2;
+              ctx2.strokeStyle = "rgba(16,22,40,.85)";
+              ctx2.beginPath();
+              ctx2.moveTo(lx0, baseY);
+              ctx2.quadraticCurveTo(lxm, baseY + sag * 2, lx1, baseY);
+              ctx2.stroke();
+              for (var lb = 1; lb < 9; lb++) {
+                var lt = lb / 9, liu = 1 - lt;
+                var lbx = liu * liu * lx0 + 2 * liu * lt * lxm + lt * lt * lx1;
+                var lby = liu * liu * baseY + 2 * liu * lt * (baseY + sag * 2) + lt * lt * baseY;
+                ctx2.save();
+                ctx2.globalAlpha = 0.55 + 0.45 * Math.sin(tick / 9 + lb * 1.7 + lrow * 2.3 + seg * 0.9);
+                ctx2.fillStyle = bulbCols[(lb + seg + lrow) % bulbCols.length];
+                ctx2.shadowColor = ctx2.fillStyle; ctx2.shadowBlur = 10;
+                ctx2.beginPath(); ctx2.arc(lbx, lby + 5, 4.2, 0, 7); ctx2.fill();
+                ctx2.restore();
+              }
+            }
+          }
+        }
         ctx2.globalAlpha = (L && L.sky !== "day") ? 0.35 : 0.5;
-        bigEmoji("🎡", 2600 - camX * 0.35, 300, 150);
-        bigEmoji("🌴", 900 - camX * 0.35, 330, 110);
-        bigEmoji("🌴", 6300 - camX * 0.35, 320, 120);
+        if (skyType === "xmas") {
+          bigEmoji("🎄", 900 - camX * 0.35, 330, 110);
+          bigEmoji("⛄", 2600 - camX * 0.35, 320, 105);
+          bigEmoji("🎄", 6300 - camX * 0.35, 320, 120);
+        } else {
+          bigEmoji("🎡", 2600 - camX * 0.35, 300, 150);
+          bigEmoji("🌴", 900 - camX * 0.35, 330, 110);
+          bigEmoji("🌴", 6300 - camX * 0.35, 320, 120);
+        }
         ctx2.globalAlpha = 1;
         bigEmoji("🎨", 170 - camX, 408, 74);
         bigEmoji("🏠", 170 - camX, 452, 92);
@@ -834,7 +952,7 @@
           ctx2.fillStyle = "rgba(64,164,196,.55)";
           ctx2.fillRect(1600 - camX, 494, 1450, 60);
         }
-        ctx2.fillStyle = (L && L.sky === "night") ? "rgba(28,92,150,.72)" : (L && L.sky === "dusk") ? "rgba(88,64,140,.62)" : (L && L.sky === "snow") ? "rgba(110,170,205,.6)" : "rgba(46,140,190,.66)";
+        ctx2.fillStyle = (L && L.sky === "night") ? "rgba(28,92,150,.72)" : (L && L.sky === "xmas") ? "rgba(22,74,122,.72)" : (L && L.sky === "dusk") ? "rgba(88,64,140,.62)" : (L && L.sky === "snow") ? "rgba(110,170,205,.6)" : "rgba(46,140,190,.66)";
         ctx2.fillRect(WATER.x - camX, WATER.y, WATER.w, WATER.h + 20);
         ctx2.strokeStyle = "rgba(255,255,255,.75)"; ctx2.lineWidth = 2.5;
         ctx2.beginPath();
@@ -845,6 +963,25 @@
         ctx2.stroke();
 
         PLATFORMS.forEach(drawPlatform);
+
+        /* Santa's Run dressing: candy-cane lamp poles with warm glowing tops */
+        if (skyType === "xmas") {
+          var poleXs = [420, 1560, 2400, 4560, 6680, 7060];
+          for (var pi = 0; pi < poleXs.length; pi++) {
+            var poleX = poleXs[pi] - camX;
+            if (poleX < -40 || poleX > VIEW_W + 40) continue;
+            var poleTop = GROUND_Y - 96;
+            for (var py2 = poleTop; py2 < GROUND_Y; py2 += 16) {
+              ctx2.fillStyle = ((py2 - poleTop) / 16) % 2 === 0 ? "#e05252" : "#fdf6e3";
+              ctx2.fillRect(poleX - 5, py2, 10, 16);
+            }
+            ctx2.save();
+            ctx2.shadowColor = "#ffd964"; ctx2.shadowBlur = 22;
+            ctx2.fillStyle = "#ffe9a8";
+            ctx2.beginPath(); ctx2.arc(poleX, poleTop - 8, 9, 0, 7); ctx2.fill();
+            ctx2.restore();
+          }
+        }
 
         /* sea urchins on the rocks and decks */
         for (var uu = 0; uu < URCHINS.length; uu++) {
