@@ -1994,6 +1994,7 @@
           v: 1, name: farmName || "A Cove Farm", code: farmCode, updatedAt: now,
           shells: Math.floor(state.shells), villageLevel: villageLevel(), hourlyRate: hourlyRate(),
           plots: plots, buildings: buildings, decor: decor, animals: animals, noWither: animals.indexOf("goat") >= 0,
+          pet: (function () { try { var pp = JSON.parse(window.localStorage.getItem("cove-pet-v1") || "null"); return pp && pp.type ? { type: pp.type, name: pp.name || "A pet" } : null; } catch (e) { return null; } })(),
           wheel: !!(state.grand && state.grand.wheel), pier: !!(state.grand && state.grand.pier),
           harvested: state.stats.harvested, earned: state.stats.earned, mood: mood
         };
@@ -2223,6 +2224,11 @@
           }
           plotHtml += "<div style='background:#fff;border:2px solid #e7ddc4;border-radius:10px;padding:7px 2px;text-align:center'><div style='font-size:1.3rem'>" + cell + "</div><div style='font-size:.6rem;color:#7a6a4f'>" + label + "</div></div>";
         });
+        var petHtml = "";
+        if (snap.pet) {
+          var petEmojis = { kitten: "\uD83D\uDC31", puppy: "\uD83D\uDC36", bunny: "\uD83D\uDC30", chick: "\uD83D\uDC25", turtle: "\uD83D\uDC22", moose: "\uD83E\uDECE" };
+          petHtml = "<div class='note' style='margin:2px 0 8px'>\uD83D\uDC3E " + (petEmojis[snap.pet.type] || "\uD83D\uDC3E") + " <strong>" + escHtml(snap.pet.name || "A pet") + "</strong> the " + escHtml(snap.pet.type === "moose" ? "Christmas Moose" : snap.pet.type) + " says hi!</div>";
+        }
         var helpedToday = false;
         try { helpedToday = window.localStorage.getItem("cove-farm-helped-" + snap.code) === new Date().toDateString(); } catch (e) { /* ignore */ }
         view.innerHTML =
@@ -2231,6 +2237,7 @@
           "<div class='note'>" + escHtml(snap.code) + " · Village Lv " + snap.villageLevel + " · 🐚 " + snap.shells + " · earns 🐚 " + snap.hourlyRate + "/hr · last tended " + fmtAgo(snap.updatedAt || now) + "</div>" +
           "<div style='display:flex;flex-wrap:wrap;gap:6px;margin:10px 0'>" + bHtml + "</div>" +
           (animalHtml ? "<div style='display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px'>" + animalHtml + "</div>" : "") +
+          petHtml +
           (decorHtml ? "<div style='font-size:1.15rem;margin:2px 0 8px'>" + decorHtml + "</div>" : "") +
           "<div style='display:grid;grid-template-columns:repeat(6,1fr);gap:6px'>" + plotHtml + "</div>" +
           "<div class='note' style='margin-top:8px'>🌾 " + (snap.harvested || 0) + " harvests · 🐚 " + (snap.earned || 0) + " shells earned all-time</div>" +
@@ -2391,6 +2398,15 @@
       /* ================= Boot ================= */
       load();
       healSocial();
+      try {
+        var petShellsPending = parseInt(window.localStorage.getItem("cove-pet-shells") || "0", 10) || 0;
+        if (petShellsPending > 0) {
+          window.localStorage.removeItem("cove-pet-shells");
+          addShells(petShellsPending);
+          var petShellsMsg = petShellsPending;
+          setTimeout(function () { toast("\uD83D\uDC3E Your Cove pet fetched you \uD83D\uDC1A " + petShellsMsg + "!"); }, 1600);
+        }
+      } catch (e) { /* ignore */ }
       initMood();
       farmNetInit();
       initCrab();
