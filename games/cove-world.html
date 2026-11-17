@@ -2105,9 +2105,9 @@
             items.forEach(function (rawItem) { try { var g = JSON.parse(rawItem); if (g) entries.push(g); } catch (e) { /* skip */ } });
             if (!entries.length) { box.innerHTML = ""; return; }
             var fresh = entries.filter(function (g) { return g.ts > (state.guestSeen || 0); }).length;
-            var html = "<div style='background:#fdf6e3;border:2px solid #e3c878;border-radius:14px;padding:12px;margin-top:12px'><div style='font-size:1.05rem'>\uD83D\uDCD6 <strong>Your guestbook</strong>" + (fresh ? " \u00B7 \u2728 " + fresh + " new" : "") + "</div>";
+            var html = "<div style='background:#fdf6e3;border:2px solid #e3c878;border-radius:14px;padding:12px;margin-top:12px;color:#0b3d54'><div style='font-size:1.05rem'>\uD83D\uDCD6 <strong>Your guestbook</strong>" + (fresh ? " \u00B7 \u2728 " + fresh + " new" : "") + "</div>";
             entries.slice(0, 8).forEach(function (g) {
-              html += "<div style='margin-top:8px'><span style='font-size:1.15rem'>" + escHtml(g.sticker || "\uD83C\uDF0A") + "</span> <strong>" + escHtml(g.name || "A Cove neighbor") + "</strong> <span class='note'>" + fmtAgo(g.ts || Date.now()) + "</span>" + (g.text ? "<div style='margin-left:26px'>" + escHtml(g.text) + "</div>" : "") + "</div>";
+              html += "<div style='margin-top:8px'><span style='font-size:1.15rem'>" + escHtml(g.sticker || "\uD83C\uDF0A") + "</span> <strong>" + escHtml(g.name || "A Cove neighbor") + "</strong> <span style='color:#5f7a86;font-size:.85rem'>" + fmtAgo(g.ts || Date.now()) + "</span>" + (g.text ? "<div style='margin-left:26px;color:#173f52;font-weight:600;font-size:1rem'>" + escHtml(g.text) + "</div>" : "") + "</div>";
             });
             html += "</div>";
             box.innerHTML = html;
