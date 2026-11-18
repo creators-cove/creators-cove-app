@@ -159,6 +159,27 @@
   .pick.sel { border-color:#ffc93c; background:#fff6d8; }
   input[type="text"] { padding:11px; border-radius:10px; border:2px solid #bcd9e4; font:inherit; }
   .card2 { background:#fff; border-radius:16px; padding:16px; margin:14px 0; box-shadow:0 4px 14px rgba(4,40,56,.12); }
+  .pet-wrap { position:relative; display:inline-block; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .pet-wrap .acc { position:absolute; pointer-events:none; line-height:1; }
+  .acc-hat { top:-0.42em; left:50%; transform:translateX(-58%) rotate(-10deg); font-size:0.52em; }
+  .acc-side { bottom:0.02em; right:-0.52em; font-size:0.42em; }
+  .acc-sparkle { top:-0.3em; right:-0.42em; font-size:0.4em; }
+  .wiggle { animation: wiggle .5s ease; }
+  @keyframes wiggle { 0% { transform: rotate(0); } 30% { transform: rotate(-5deg) scale(1.06); } 65% { transform: rotate(5deg) scale(1.06); } 100% { transform: rotate(0); } }
+  .heart { position:absolute; pointer-events:none; line-height:1; animation: heartfloat 1.15s ease-out forwards; z-index:5; }
+  @keyframes heartfloat { 0% { transform: translateY(0) scale(.7); opacity:0; } 18% { opacity:1; } 100% { transform: translateY(-92px) scale(1.25); opacity:0; } }
+  .zzz { position:absolute; top:-0.5em; right:-0.7em; font-size:0.34em; pointer-events:none; animation: zzzfloat 2.6s ease-in-out infinite; }
+  @keyframes zzzfloat { 0%,100% { transform: translateY(0); opacity:.65; } 50% { transform: translateY(-10px); opacity:1; } }
+  .bubble { display:inline-block; position:relative; background:#fff; color:#17384a; font-weight:800; font-size:.98rem; line-height:1.35; border-radius:16px; padding:8px 14px; margin:0 auto 10px; max-width:88%; box-shadow:0 3px 10px rgba(4,40,56,.15); min-height:24px; }
+  .bubble:after { content:""; position:absolute; left:50%; bottom:-7px; transform:translateX(-50%); border:8px solid transparent; border-top-color:#fff; border-bottom:0; }
+  .shell-game { background:#fff; border:3px solid #ffc93c; border-radius:16px; padding:14px; margin:12px 0; box-shadow:0 4px 14px rgba(4,40,56,.12); }
+  .shell-row { display:flex; gap:12px; justify-content:center; margin:10px 0 4px; }
+  .shell-btn { font-size:3rem; background:#eafaf0; border:3px solid #bcd9e4; border-radius:16px; padding:8px 16px; cursor:pointer; line-height:1.15; }
+  .shell-btn:disabled { cursor:default; opacity:.92; }
+  .shell-btn.reveal { background:#fff6d8; border-color:#ffc93c; }
+  .shell-btn .under { display:block; font-size:1.5rem; min-height:1.8rem; }
+  .shuffle { animation: shuf .3s ease 3; }
+  @keyframes shuf { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-7px); } 75% { transform: translateX(7px); } }
 </style>
 </head>
 <body>
@@ -176,7 +197,15 @@
 
   <div id="petBox" style="display:none">
     <div class="pet-stage">
-      <div id="petFace" class="bob">🐱</div>
+      <div><span class="bubble" id="petBubble">…</span></div>
+      <div class="pet-wrap" id="petWrap" title="Tap your pet!">
+        <div id="petFace" class="bob">🐱</div>
+        <span class="acc acc-hat" id="accHat" style="display:none">🎅</span>
+        <span class="acc acc-side" id="accSide" style="display:none"></span>
+        <span class="acc acc-sparkle" id="accSparkle" style="display:none">✨</span>
+        <span class="zzz" id="petZzz" style="display:none">💤</span>
+      </div>
+      <p class="sub" style="margin:4px 0 0">Psst — tap your pet. They love it.</p>
       <h2 id="petTitle" style="margin:8px 0 2px"></h2>
       <p class="sub" id="petStage" style="margin:2px 0"></p>
       <div class="meter" style="max-width:340px;margin-left:auto;margin-right:auto"><div id="xpBar"></div></div>
@@ -189,8 +218,14 @@
       <button type="button" class="btn care-btn" id="petBtn">✋ Pet</button>
     </div>
     <p class="sub" id="careNote"></p>
+    <div class="shell-game" id="shellGame" style="display:none">
+      <h3 style="margin:0">🐚 The Shell Game</h3>
+      <p class="sub" id="shellText" style="margin:6px 0 0">A treat is hiding under one shell. Tap a shell to peek!</p>
+      <div class="shell-row" id="shellRow"></div>
+      <p class="sub" id="shellResult" style="margin:6px 0 0"></p>
+    </div>
     <div class="card2">
-      <p style="margin:0">A pet who gets all three — fed, played with, and petted — has a <strong>perfect day</strong>, and a happy pet fetches you <strong>🐚 10 shells</strong> for your farm. Love your pet every day and watch the bond grow.</p>
+      <p style="margin:0">A pet who gets all three — fed, played with, and petted — has a <strong>perfect day</strong>, and a happy pet fetches you shells for your farm: <strong>🐚 10</strong> while they're little, <strong>🐚 15</strong> once they're Grown, and <strong>🐚 20</strong> as your Best Friend. Growing up comes with gifts, too — watch for a painter's palette, a cozy scarf, and a little sparkle. Love your pet every day and watch the bond grow.</p>
     </div>
     <p><button type="button" class="btn ghost" id="resetBtn" style="font-size:.85rem">Start over with a new pet</button></p>
   </div>
@@ -218,7 +253,7 @@
     function load() {
       try { pet = JSON.parse(window.localStorage.getItem(KEY) || "null"); } catch (e) { pet = null; }
       if (!pet || !PETS[pet.type]) { pet = null; return; }
-      if (!pet.cared || pet.cared.date !== todayStr()) pet.cared = { date: todayStr(), fed: false, played: false, petted: false, shelled: false };
+      if (!pet.cared || pet.cared.date !== todayStr()) pet.cared = { date: todayStr(), fed: false, played: false, petted: false, shelled: false, fetchAmt: 0 };
     }
     function stage() { var st = STAGES[0]; STAGES.forEach(function (x) { if (pet.xp >= x.min) st = x; }); return st; }
     function nextStage() { for (var i = 0; i < STAGES.length; i++) if (pet.xp < STAGES[i].min) return STAGES[i]; return null; }
@@ -238,19 +273,20 @@
         });
       } catch (e) { /* quiet is fine */ }
     }
-    function grantShells() {
+    function fetchAmount() { var n = stage().name; return n === "Best Friend" ? 20 : n === "Grown" ? 15 : 10; }
+    function grantShells(n) {
       var done = false;
       try {
         var raw = window.localStorage.getItem("cove-farm-village-v1");
         if (raw) {
           var s = JSON.parse(raw);
-          if (s && typeof s.shells === "number") { s.shells += 10; window.localStorage.setItem("cove-farm-village-v1", JSON.stringify(s)); done = true; }
+          if (s && typeof s.shells === "number") { s.shells += n; window.localStorage.setItem("cove-farm-village-v1", JSON.stringify(s)); done = true; }
         }
       } catch (e) { /* ignore */ }
       if (!done) {
         try {
           var p = parseInt(window.localStorage.getItem("cove-pet-shells") || "0", 10) || 0;
-          window.localStorage.setItem("cove-pet-shells", String(p + 10));
+          window.localStorage.setItem("cove-pet-shells", String(p + n));
         } catch (e) { /* ignore */ }
       }
       return done;
@@ -263,6 +299,15 @@
       var face = document.getElementById("petFace");
       face.textContent = def.emoji;
       face.style.fontSize = st.size;
+      var wrap = document.getElementById("petWrap");
+      wrap.style.fontSize = st.size;
+      var hat = document.getElementById("accHat"), side = document.getElementById("accSide"), spark = document.getElementById("accSparkle");
+      hat.style.display = pet.type === "moose" ? "block" : "none";
+      var accEmoji = st.name === "Grown" || st.name === "Best Friend" ? "\uD83E\uDDE3" : st.name === "Young" ? "\uD83C\uDFA8" : "";
+      side.textContent = accEmoji;
+      side.style.display = accEmoji ? "block" : "none";
+      spark.style.display = st.name === "Best Friend" ? "block" : "none";
+      document.getElementById("petZzz").style.display = isNight() ? "block" : "none";
       document.getElementById("petTitle").textContent = pet.name + " the " + def.label;
       document.getElementById("petStage").textContent = st.name === "Best Friend" ? "⭐ Best Friend — as loved as a pet can be" : st.name + " — growing with love";
       var nx = nextStage();
@@ -277,16 +322,17 @@
       });
       var doneCount = (c.fed ? 1 : 0) + (c.played ? 1 : 0) + (c.petted ? 1 : 0);
       document.getElementById("careNote").textContent = c.shelled
-        ? "⭐ Perfect day! " + pet.name + " fetched you 🐚 10 shells. Come back tomorrow!"
+        ? "⭐ Perfect day! " + pet.name + " fetched you 🐚 " + (c.fetchAmt || 10) + " shells. Come back tomorrow!"
         : doneCount === 0 ? pet.name + " is waiting for some love today."
         : doneCount === 3 ? "⭐ Perfect day!"
         : pet.name + " is happier already — " + (3 - doneCount) + " more to a perfect day.";
     }
-    function care(kind) {
+    function care(kind, xpGain) {
       if (!pet || pet.cared[kind]) return;
+      if (typeof xpGain !== "number") xpGain = 5;
       var firstToday = !pet.cared.fed && !pet.cared.played && !pet.cared.petted;
       pet.cared[kind] = true;
-      pet.xp += 5;
+      pet.xp += xpGain;
       if (firstToday) {
         var gap = pet.lastDay ? dayDiff(todayStr(), pet.lastDay) : null;
         pet.streak = gap === 1 ? (pet.streak || 0) + 1 : 1;
@@ -296,10 +342,11 @@
       if (c.fed && c.played && c.petted && !c.shelled) {
         c.shelled = true;
         pet.xp += 10;
-        var direct = grantShells();
+        c.fetchAmt = fetchAmount();
+        var direct = grantShells(c.fetchAmt);
         document.getElementById("careNote").textContent = direct
-          ? "⭐ Perfect day! " + pet.name + " fetched 🐚 10 shells straight to your farm."
-          : "⭐ Perfect day! " + pet.name + " fetched 🐚 10 shells — they'll be waiting when you open your farm.";
+          ? "⭐ Perfect day! " + pet.name + " fetched 🐚 " + c.fetchAmt + " shells straight to your farm."
+          : "⭐ Perfect day! " + pet.name + " fetched 🐚 " + c.fetchAmt + " shells — they'll be waiting when you open your farm.";
       }
       save();
       chirp();
@@ -324,20 +371,108 @@
     document.getElementById("adoptBtn").addEventListener("click", function () {
       var name = document.getElementById("petName").value.replace(/^\s+|\s+$/g, "");
       if (!name) { document.getElementById("adoptNote").textContent = "Give your pet a name first!"; return; }
-      pet = { type: chosen, name: name.slice(0, 16), born: Date.now(), xp: 0, streak: 0, lastDay: "", cared: { date: todayStr(), fed: false, played: false, petted: false, shelled: false } };
+      pet = { type: chosen, name: name.slice(0, 16), born: Date.now(), xp: 0, streak: 0, lastDay: "", cared: { date: todayStr(), fed: false, played: false, petted: false, shelled: false, fetchAmt: 0 } };
       save(); chirp(); render();
     });
     document.getElementById("feedBtn").addEventListener("click", function () { care("fed"); });
-    document.getElementById("playBtn").addEventListener("click", function () { care("played"); });
+    document.getElementById("playBtn").addEventListener("click", function () { openShellGame(); });
     document.getElementById("petBtn").addEventListener("click", function () { care("petted"); });
     document.getElementById("resetBtn").addEventListener("click", function () {
       if (!window.confirm("Start over with a brand-new pet? " + (pet ? pet.name : "Your pet") + "'s love points and streak will reset.")) return;
       try { window.localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
       pet = null; render();
     });
+    /* ----- rub-the-pet hearts ----- */
+    function spawnHearts(n) {
+      var wrap = document.getElementById("petWrap");
+      for (var i = 0; i < n; i++) {
+        var h = document.createElement("span");
+        h.className = "heart";
+        h.textContent = ["\u2764\uFE0F", "\uD83D\uDC9B", "\uD83E\uDE75"][i % 3];
+        h.style.left = (18 + Math.random() * 58) + "%";
+        h.style.top = (6 + Math.random() * 26) + "%";
+        h.style.fontSize = (0.3 + Math.random() * 0.22) + "em";
+        h.style.animationDelay = (i * 0.09) + "s";
+        wrap.appendChild(h);
+        (function (el) { setTimeout(function () { el.remove(); }, 1600); })(h);
+      }
+    }
+    var tapCount = 0;
+    document.getElementById("petWrap").addEventListener("click", function () {
+      if (!pet) return;
+      tapCount++;
+      spawnHearts(3);
+      chirp();
+      var face = document.getElementById("petFace");
+      face.classList.remove("wiggle"); void face.offsetWidth; face.classList.add("wiggle");
+      if (tapCount % 6 === 0) sayLine(true);
+    });
+
+    /* ----- speech bubbles + night ----- */
+    function isNight() { var h = new Date().getHours(); return h >= 21 || h < 6; }
+    var LINES = [
+      "I love it here at the Cove.", "Did someone say snacks?", "Best day ever. Again.",
+      "I practiced my smile today.", "The farm smells amazing today.",
+      "Question of the day? I vote treats.", "I am a very good pet. Ask anyone.",
+      "New art in the Cove today — I can feel it.", "Pssst. The shells are my favorite toy."
+    ];
+    var NIGHT_LINES = ["Sleepy… but happy.", "Dreaming of treats…", "Just resting my eyes…", "Tomorrow we play again…"];
+    var HAPPY_LINES = ["Hee! That tickles!", "Again! Again!", "I love you too!", "Best. Rub. Ever."];
+    function sayLine(happy) {
+      if (!pet) return;
+      var pool = happy ? HAPPY_LINES : isNight() ? NIGHT_LINES : LINES;
+      document.getElementById("petBubble").textContent = pool[Math.floor(Math.random() * pool.length)];
+    }
+    setInterval(function () { if (pet && Math.random() < 0.75) sayLine(false); }, 8000);
+
+    /* ----- the shell game ----- */
+    var treatAt = -1, shellOpen = false;
+    function openShellGame() {
+      if (!pet || pet.cared.played) return;
+      var g = document.getElementById("shellGame");
+      g.style.display = "block";
+      document.getElementById("shellText").textContent = "A treat is hiding under one shell. " + pet.name + " is watching… tap a shell to peek!";
+      document.getElementById("shellResult").textContent = "";
+      treatAt = Math.floor(Math.random() * 3);
+      shellOpen = true;
+      var row = document.getElementById("shellRow");
+      row.innerHTML = "";
+      for (var i = 0; i < 3; i++) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "shell-btn shuffle";
+        b.innerHTML = "\uD83D\uDC1A<span class=\"under\"></span>";
+        b.setAttribute("aria-label", "Shell " + (i + 1));
+        (function (idx, btn) { btn.addEventListener("click", function () { pickShell(idx); }); })(i, b);
+        row.appendChild(b);
+      }
+      g.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    function pickShell(idx) {
+      if (!shellOpen || !pet) return;
+      shellOpen = false;
+      var btns = document.getElementById("shellRow").children;
+      for (var i = 0; i < 3; i++) {
+        btns[i].disabled = true;
+        btns[i].classList.remove("shuffle");
+        if (i === treatAt) { btns[i].classList.add("reveal"); btns[i].querySelector(".under").textContent = "\u2B50"; }
+      }
+      var res = document.getElementById("shellResult");
+      if (idx === treatAt) {
+        res.textContent = "🎉 Found it! " + pet.name + " gobbles the treat and does a happy spin. (+5 love)";
+        spawnHearts(4);
+        care("played", 5);
+      } else {
+        res.textContent = "So close — it was under shell " + (treatAt + 1) + "! " + pet.name + " still had a wonderful time. (+2 love)";
+        care("played", 2);
+      }
+      sayLine(true);
+    }
+
     load();
     renderPicks();
     render();
+    sayLine(false);
   </script>
 </body>
 </html>
