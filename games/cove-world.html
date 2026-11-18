@@ -2503,6 +2503,15 @@
           setTimeout(function () { toast("\uD83D\uDC3E Your Cove pet fetched you \uD83D\uDC1A " + petShellsMsg + "!"); }, 1600);
         }
       } catch (e) { /* ignore */ }
+      try {
+        var dailyShellBank = parseInt(window.localStorage.getItem("cove-daily-shell-bank") || "0", 10) || 0;
+        if (dailyShellBank > 0) {
+          window.localStorage.removeItem("cove-daily-shell-bank");
+          addShells(dailyShellBank);
+          var dailyShellMsg = dailyShellBank;
+          setTimeout(function () { toast("\uD83D\uDC1A Your Daily Shell shells washed in: +" + dailyShellMsg + " shells!"); }, 2100);
+        }
+      } catch (e) { /* ignore */ }
       initSaveCode();
       initMood();
       farmNetInit();

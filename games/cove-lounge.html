@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Cove Lounge — Creator's Cove</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gold: #ffc93c; --gold-deep: #e89b0c;
+    --panel: rgba(255, 248, 234, 0.97); --panel-ink: #17384a;
+    --shadow: 0 18px 40px rgba(4, 40, 56, 0.35);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Nunito", system-ui, sans-serif; color: var(--panel-ink);
+    background: radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.4), rgba(255,255,255,0) 60%),
+      linear-gradient(180deg, #8fe0f2 0%, #2a9db8 46%, #0d5a74 100%);
+    min-height: 100vh; padding: 14px 12px 44px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  main { max-width: 560px; margin: 0 auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; max-width: 560px; margin: 0 auto; }
+  .cove-back-btn { display: inline-block; min-height: 48px; line-height: 48px; padding: 0 18px; border-radius: 999px; background: #ffffff; color: #12303e; font-weight: 800; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  h1 { font-family: "Fredoka", sans-serif; font-size: 2rem; margin: 10px 0 2px; text-align: center; color: #fff; text-shadow: 0 2px 10px rgba(4,40,56,.45); }
+  .sub { text-align: center; color: #eaf7fa; font-weight: 700; margin: 0 0 6px; line-height: 1.45; }
+  .panel {
+    background: var(--panel); border-radius: 24px; box-shadow: var(--shadow);
+    padding: 18px 16px; margin-top: 14px; border: 3px solid var(--gold);
+  }
+  .panel h2 { font-family: "Fredoka", sans-serif; font-size: 1.2rem; margin: 0 0 8px; text-align: center; }
+  .panel p { line-height: 1.5; margin: 6px 0; }
+  .center { text-align: center; }
+  .btn {
+    font-family: "Fredoka", sans-serif; font-weight: 700; cursor: pointer;
+    border: 2px solid var(--gold-deep); border-radius: 999px; padding: 12px 24px; min-height: 52px;
+    background: linear-gradient(180deg, #ffe08a, var(--gold)); color: #4a2c00;
+    box-shadow: 0 3px 0 var(--gold-deep); font-size: 1.08rem; text-decoration: none; display: inline-block;
+  }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--gold-deep); }
+  .btn.secondary { background: #fff; border-color: #b9d2da; color: #0d5a74; box-shadow: 0 3px 0 #b9d2da; }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .conch {
+    font-size: 5.2rem; line-height: 1.1; display: inline-block; cursor: pointer;
+    background: none; border: none; padding: 6px 10px;
+    filter: drop-shadow(0 8px 14px rgba(4,40,56,.3));
+  }
+  .conch:active { transform: scale(.94); }
+  .conch.pop { animation: conchpop .5s ease; }
+  @keyframes conchpop { 0% { transform: scale(.7) rotate(-6deg); } 55% { transform: scale(1.15) rotate(4deg); } 100% { transform: scale(1) rotate(0); } }
+  .big-amt { font-family: "Fredoka", sans-serif; font-size: 1.6rem; color: #0d5a74; }
+  .invite-box {
+    background: #fff; border: 2px dashed #b9d2da; border-radius: 16px; padding: 12px 14px;
+    font-size: .98rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; text-align: left;
+  }
+  .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+  textarea {
+    width: 100%; min-height: 74px; border-radius: 14px; border: 2px solid #b9d2da; padding: 10px 12px;
+    font-family: "Nunito", sans-serif; font-size: 1rem; resize: vertical; background: #fff; color: var(--panel-ink);
+  }
+  .note { font-size: .92rem; color: #44626e; text-align: center; }
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
+    background: #12303e; color: #fff; font-weight: 800; padding: 12px 20px; border-radius: 999px;
+    opacity: 0; pointer-events: none; transition: all .3s ease; max-width: 92vw; text-align: center; z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .burst { position: relative; display: inline-block; }
+  .burst span { position: absolute; left: 50%; top: 30%; font-size: 1.3rem; animation: fly 0.9s ease-out forwards; pointer-events: none; }
+  @keyframes fly { to { transform: translate(var(--dx), var(--dy)) scale(1.2); opacity: 0; } }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+  </div>
+  <main>
+    <h1>🛋️ The Cove Lounge</h1>
+    <p class="sub">Pull up a chair. Everything social in the Cove,<br>in one comfy spot.</p>
+
+    <section class="panel center" aria-label="Daily Shell">
+      <h2>🐚 Daily Shell</h2>
+      <p>The conch washes up once a day with shells inside.<br>Tap it and they're yours — straight into your farm.</p>
+      <div class="burst" id="conchWrap"><button class="conch" id="conchBtn" aria-label="Tap the conch">🐚</button></div>
+      <div id="shellState"></div>
+    </section>
+
+    <section class="panel center" aria-label="Cove Pets">
+      <h2>🐾 Your Cove Pet</h2>
+      <div id="petBody"><p>Checking on your pet…</p></div>
+      <div class="row"><a class="btn" id="petBtn" href="cove-pets.html?v=2">Visit Your Pet</a></div>
+    </section>
+
+    <section class="panel center" aria-label="Cove Champions">
+      <h2>🏆 Cove Champions</h2>
+      <p>The Cove's leaderboards — coin champs, farm shells, gallery prints, bingo wins, and quest heroes. Opt in once and your name's on the board.</p>
+      <div class="row"><a class="btn" href="cove-champions.html?v=1">See the Boards</a></div>
+    </section>
+
+    <section class="panel" aria-label="Bring a Friend">
+      <h2 class="center">💌 Bring a Friend</h2>
+      <p class="center">Good company makes the Cove. Send this to a friend:</p>
+      <div class="invite-box" id="inviteBox"></div>
+      <div class="row">
+        <button class="btn" id="copyInviteBtn" type="button">Copy Invite</button>
+        <button class="btn secondary" id="shareInviteBtn" type="button" style="display:none">Share…</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Cove Post">
+      <h2 class="center">🍾 Cove Post</h2>
+      <p class="center">Write a kind little note, seal it in a bottle, and the tide carries it to another member's farm. One bottle a day.</p>
+      <textarea id="bottleInput" maxlength="120" placeholder="Something kind for whoever finds this…"></textarea>
+      <p class="note"><span id="bottleCount">0</span>/120 · <span id="bottleState"></span></p>
+      <div class="row"><button class="btn" id="bottleSendBtn" type="button">Send It on the Tide</button></div>
+    </section>
+
+    <p class="note" style="color:#eaf7fa; margin-top:16px;">The Lounge is part of the Creator's Cove app — made by the Cove, for the Cove.</p>
+  </main>
+  <div class="toast" id="toast"></div>
+
+<script>
+  var COVE_API_URL = "https://enabled-platypus-167183.upstash.io";
+  var COVE_API_KEY = "gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg";
+  function api(cmd) {
+    return fetch(COVE_API_URL, { method: "POST", headers: { "Authorization": "Bearer " + COVE_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(cmd) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { return j ? j.result : null; });
+  }
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    window.setTimeout(function () { t.classList.remove("show"); }, 3200);
+  }
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) { /* ignore */ } }
+  function lsDel(k) { try { window.localStorage.removeItem(k); } catch (e) { /* ignore */ } }
+  function todayStr() { return new Date().toDateString(); }
+
+  /* ---------------- Daily Shell ---------------- */
+  var SHELL_DAY_KEY = "cove-daily-shell", SHELL_AMT_KEY = "cove-daily-shell-amt", BANK_KEY = "cove-daily-shell-bank", FARM_KEY = "cove-farm-village-v1";
+  function creditShells(n) {
+    try {
+      var raw = lsGet(FARM_KEY);
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && typeof s.shells === "number") {
+          s.shells += n;
+          if (!s.stats) s.stats = { harvested: 0, earned: 0 };
+          if (typeof s.stats.earned !== "number") s.stats.earned = 0;
+          s.stats.earned += n;
+          lsSet(FARM_KEY, JSON.stringify(s));
+          return "farm";
+        }
+      }
+    } catch (e) { /* fall through to bank */ }
+    var bank = parseInt(lsGet(BANK_KEY) || "0", 10) || 0;
+    lsSet(BANK_KEY, String(bank + n));
+    return "bank";
+  }
+  function renderShell() {
+    var st = document.getElementById("shellState");
+    var btn = document.getElementById("conchBtn");
+    if (lsGet(SHELL_DAY_KEY) === todayStr()) {
+      var amt = lsGet(SHELL_AMT_KEY) || "?";
+      btn.disabled = true; btn.style.opacity = ".55"; btn.style.cursor = "default";
+      st.innerHTML = "<p class='big-amt'>You found 🐚 " + amt + " today!</p><p>They're in your farm. Come back tomorrow — the conch always brings more.</p>";
+    } else {
+      btn.disabled = false; btn.style.opacity = "1"; btn.style.cursor = "pointer";
+      st.innerHTML = "<p><strong>Today's conch is waiting…</strong></p>";
+    }
+  }
+  document.getElementById("conchBtn").addEventListener("click", function () {
+    if (lsGet(SHELL_DAY_KEY) === todayStr()) return;
+    var n = 5 + Math.floor(Math.random() * 21); /* 5–25 */
+    var where = creditShells(n);
+    lsSet(SHELL_DAY_KEY, todayStr()); lsSet(SHELL_AMT_KEY, String(n));
+    var btn = document.getElementById("conchBtn");
+    btn.classList.remove("pop"); void btn.offsetWidth; btn.classList.add("pop");
+    var wrap = document.getElementById("conchWrap");
+    for (var i = 0; i < 6; i++) {
+      var sp = document.createElement("span");
+      sp.textContent = "🐚";
+      sp.style.setProperty("--dx", (Math.random() * 160 - 80) + "px");
+      sp.style.setProperty("--dy", (-(40 + Math.random() * 70)) + "px");
+      wrap.appendChild(sp);
+      (function (el) { window.setTimeout(function () { el.remove(); }, 950); })(sp);
+    }
+    renderShell();
+    toast(where === "farm" ? "🐚 +" + n + " shells — they're in your farm!" : "🐚 +" + n + " shells — they'll be waiting in your farm!");
+  });
+  renderShell();
+
+  /* ---------------- Cove Pet ---------------- */
+  (function () {
+    var PETS = { kitten: { emoji: "🐱", label: "Kitten" }, puppy: { emoji: "🐶", label: "Puppy" }, bunny: { emoji: "🐰", label: "Bunny" }, chick: { emoji: "🐥", label: "Chick" }, turtle: { emoji: "🐢", label: "Turtle" }, moose: { emoji: "🫎", label: "Christmas Moose" } };
+    var STAGES = [{ min: 0, name: "Baby" }, { min: 15, name: "Young" }, { min: 45, name: "Grown" }, { min: 100, name: "Best Friend" }];
+    var body = document.getElementById("petBody"), btn = document.getElementById("petBtn");
+    var pet = null;
+    try { pet = JSON.parse(lsGet("cove-pet-v1") || "null"); } catch (e) { pet = null; }
+    if (!pet || !PETS[pet.type]) {
+      body.innerHTML = "<p>No pet yet — there's a kitten, a puppy, a bunny, a chick, a turtle, and a Christmas moose at the Cove all waiting for a person.</p>";
+      btn.textContent = "Adopt a Pet";
+      return;
+    }
+    var def = PETS[pet.type], st = STAGES[0];
+    STAGES.forEach(function (x) { if ((pet.xp || 0) >= x.min) st = x; });
+    var d = new Date(), pDay = d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+    var cared = pet.cared && pet.cared.date === pDay ? pet.cared : null;
+    var line;
+    if (cared && cared.fed && cared.played && cared.petted) line = pet.name + " had a perfect day today. ⭐";
+    else if (cared && (cared.fed || cared.played || cared.petted)) line = pet.name + " is happier already today — a little more love makes it a perfect day.";
+    else line = pet.name + " is waiting for some love today.";
+    body.innerHTML = "<div style='font-size:3.6rem; line-height:1.15'>" + def.emoji + "</div>" +
+      "<p class='big-amt' style='margin:2px 0'>" + pet.name + " the " + def.label + "</p>" +
+      "<p style='margin:2px 0'>Stage: <strong>" + st.name + "</strong></p><p style='margin:2px 0'>" + line + "</p>";
+  })();
+
+  /* ---------------- Bring a Friend ---------------- */
+  var farmCode = lsGet("cove-farm-code") || "";
+  var farmName = lsGet("cove-farm-name") || "";
+  var invite = "Come hang out in the Creator's Cove app! 🌊\n";
+  if (farmCode) invite += "Visit my farm" + (farmName ? " (" + farmName + ")" : "") + " with code " + farmCode + ", play the games, watch Cove TV with the crew, and pull up a chair in the Cove Lounge.\n";
+  else invite += "Play the Cove farm, try the games, watch Cove TV with the crew, and pull up a chair in the Cove Lounge.\n";
+  invite += "No sign-up, nothing to download — just open it:\nhttps://creators-cove.github.io/creators-cove-app/";
+  document.getElementById("inviteBox").textContent = invite;
+  document.getElementById("copyInviteBtn").addEventListener("click", function () {
+    function done() { toast("Invite copied — paste it anywhere!"); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(invite).then(done, function () { fallback(); });
+    else fallback();
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = invite; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) { toast("Copy didn't work here — long-press the invite to copy it."); }
+      ta.remove();
+    }
+  });
+  if (navigator.share) {
+    var sh = document.getElementById("shareInviteBtn");
+    sh.style.display = "inline-block";
+    sh.addEventListener("click", function () { navigator.share({ title: "Creator's Cove", text: invite }).catch(function () { /* ignore */ }); });
+  }
+
+  /* ---------------- Cove Post ---------------- */
+  var BOTTLE_BLOCK = ["damn", "hell", "crap", "stupid", "hate you", "shut up"];
+  var bInp = document.getElementById("bottleInput"), bBtn = document.getElementById("bottleSendBtn"), bState = document.getElementById("bottleState"), bCount = document.getElementById("bottleCount");
+  function bottleSentToday() { return lsGet("cove-bottle-sent") === todayStr(); }
+  function renderBottle() {
+    if (bottleSentToday()) { bState.textContent = "Your bottle is already out on the tide today — send another tomorrow."; bBtn.disabled = true; }
+    else { bState.textContent = ""; bBtn.disabled = false; }
+  }
+  bInp.addEventListener("input", function () { bCount.textContent = String(bInp.value.length); });
+  bBtn.addEventListener("click", function () {
+    var text = (bInp.value || "").replace(/^\s+|\s+$/g, "");
+    if (!text) { toast("Write a little note first!"); return; }
+    var low = " " + text.toLowerCase().replace(/[^a-z]+/g, " ") + " ";
+    for (var i = 0; i < BOTTLE_BLOCK.length; i++) if (low.indexOf(" " + BOTTLE_BLOCK[i] + " ") >= 0) { toast("Bottles carry kind notes only — try rewording it."); return; }
+    bBtn.disabled = true;
+    api(["LPUSH", "bottles:pool", JSON.stringify({ name: farmName || "A Cove friend", text: text.slice(0, 120), ts: Date.now() })])
+      .then(function () { return api(["LTRIM", "bottles:pool", 0, 49]); })
+      .then(function () {
+        lsSet("cove-bottle-sent", todayStr());
+        bInp.value = ""; bCount.textContent = "0";
+        renderBottle();
+        toast("🍾 Your note is on the tide — it'll wash up on someone's farm!");
+      }, function () { bBtn.disabled = false; toast("The bottle slipped away — try again in a moment."); });
+  });
+  renderBottle();
+</script>
+<script>
+  /* Cove traffic tally - counts page opens per day, never who */
+  (function () {
+    try {
+      var day = new Date().toISOString().slice(0, 10);
+      var H = { "Authorization": "Bearer gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg", "Content-Type": "application/json" };
+      fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "cove-lounge", 1]), keepalive: true }).catch(function () {});
+      fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "_total", 1]), keepalive: true }).catch(function () {});
+    } catch (e) { /* ignore */ }
+  })();
+</script>
+</body>
+</html>
