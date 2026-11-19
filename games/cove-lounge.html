@@ -68,6 +68,10 @@
     opacity: 0; pointer-events: none; transition: all .3s ease; max-width: 92vw; text-align: center; z-index: 50;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .shop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #fff; border: 2px solid #e7d9b8; border-radius: 16px; padding: 10px 12px; margin-top: 10px; text-align: left; }
+  .shop-row .shop-name { font-weight: 800; line-height: 1.35; }
+  .shop-row .shop-price { flex: 0 0 auto; font-family: "Fredoka", sans-serif; font-weight: 700; background: linear-gradient(180deg, #ffe08a, var(--gold)); border: 2px solid var(--gold-deep); color: #4a2c00; border-radius: 999px; padding: 8px 14px; text-decoration: none; box-shadow: 0 2px 0 var(--gold-deep); }
+  .shop-row .shop-price:active { transform: translateY(2px); box-shadow: none; }
   .burst { position: relative; display: inline-block; }
   .burst span { position: absolute; left: 50%; top: 30%; font-size: 1.3rem; animation: fly 0.9s ease-out forwards; pointer-events: none; }
   @keyframes fly { to { transform: translate(var(--dx), var(--dy)) scale(1.2); opacity: 0; } }
@@ -92,6 +96,17 @@
       <h2>🐾 Your Cove Pet</h2>
       <div id="petBody"><p>Checking on your pet…</p></div>
       <div class="row"><a class="btn" id="petBtn" href="cove-pets.html?v=2">Visit Your Pet</a></div>
+    </section>
+
+    <section class="panel" aria-label="Cove Shop">
+      <h2 class="center">🛍️ The Cove Shop</h2>
+      <p class="center">Printable packs and Cove goodies — every cent goes to the Cove prize fund.</p>
+      <div class="shop-row"><span class="shop-name">🎧 Otherwise Known as Sandy the Great — the audiobook</span><a class="shop-price" href="https://ko-fi.com/s/22f91b92fc" target="_blank" rel="noopener">$4.99</a></div>
+      <div class="shop-row"><span class="shop-name">🎨 Creator's Cove Coloring Book (digital)</span><a class="shop-price" href="https://ko-fi.com/s/f04c7bb503" target="_blank" rel="noopener">$4.99</a></div>
+      <div class="shop-row"><span class="shop-name">🫎 Winter Moose Clip Art Pack</span><a class="shop-price" href="https://ko-fi.com/s/712aaf911e" target="_blank" rel="noopener">$3.99</a></div>
+      <div class="shop-row"><span class="shop-name">🎅 North Pole Elf Journal Kit</span><a class="shop-price" href="https://ko-fi.com/s/89541e8686" target="_blank" rel="noopener">$2.99</a></div>
+      <div class="row"><a class="btn" href="https://ko-fi.com/creatorscove/shop" target="_blank" rel="noopener">Browse the Whole Shop</a></div>
+      <p class="note">Most packs are 99¢ — the whole shelf lives on our Ko-fi.</p>
     </section>
 
     <section class="panel center" aria-label="Cove Champions">
