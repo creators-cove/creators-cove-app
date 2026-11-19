@@ -187,8 +187,112 @@
         background: var(--cream); color: var(--ink); font-family: "Fredoka", sans-serif;
         font-weight: 600; font-size: 1.05rem;
       }
+
+      /* ---------- 3D candy tiles ---------- */
+      :root { --crush-cell: #005883; }
+      .tile { background: var(--crush-cell); overflow: hidden; }
+      .tile img.candy-img {
+        width: 100%; height: 100%; object-fit: cover; display: block;
+        border-radius: 12px; position: relative; z-index: 1; pointer-events: none;
+      }
+      .tile.blocked { background: transparent; box-shadow: none; cursor: default; }
+      .tile.blocked:active { transform: none; }
+      .tile .jelly {
+        position: absolute; inset: 5%; border-radius: 10px; z-index: 2; pointer-events: none;
+        background: linear-gradient(160deg, rgba(185,238,255,0.42), rgba(70,160,220,0.34));
+        box-shadow: inset 0 2px 3px rgba(255,255,255,0.85), inset 0 -4px 7px rgba(25,100,155,0.4);
+      }
+      .tile .jelly.j2 {
+        inset: 1%;
+        background: linear-gradient(160deg, rgba(150,220,255,0.62), rgba(40,135,205,0.55));
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.9), inset 0 -5px 9px rgba(15,85,140,0.5);
+      }
+      .tile.striped-row::after, .tile.striped-col::after {
+        content: ""; position: absolute; inset: 0; border-radius: 12px; z-index: 3; pointer-events: none;
+      }
+      .tile.striped-row::after { background: repeating-linear-gradient(0deg, rgba(255,255,255,0) 0 6px, rgba(255,255,255,0.8) 6px 10px); }
+      .tile.striped-col::after { background: repeating-linear-gradient(90deg, rgba(255,255,255,0) 0 6px, rgba(255,255,255,0.8) 6px 10px); }
+      .tile.wrapped::after {
+        content: ""; position: absolute; inset: 0; border-radius: 12px; z-index: 3; pointer-events: none;
+        background:
+          linear-gradient(90deg, rgba(255,215,90,0) 37%, rgba(255,215,90,0.92) 37%, rgba(255,215,90,0.92) 63%, rgba(255,215,90,0) 63%),
+          linear-gradient(0deg, rgba(255,215,90,0) 37%, rgba(255,215,90,0.92) 37%, rgba(255,215,90,0.92) 63%, rgba(255,215,90,0) 63%);
+      }
+      .tile.wrapped::before {
+        content: ""; position: absolute; left: 50%; top: 50%; width: 36%; height: 36%;
+        transform: translate(-50%, -50%); border-radius: 50%; z-index: 4; pointer-events: none;
+        background: radial-gradient(circle at 35% 32%, #ffefa8, #e89b0c);
+        box-shadow: 0 1px 5px rgba(0,0,0,0.45);
+      }
+      .tile.bomb img.candy-img { animation: bombPulse 0.85s ease-in-out infinite alternate; }
+      @keyframes bombPulse { from { filter: brightness(1); } to { filter: brightness(1.28); } }
+      .readouts.jelly-on { grid-template-columns: repeat(4, 1fr); }
+      .readouts.jelly-on .meter .val { font-size: 1.12rem; }
+      /* ---------- Praise, confetti, Shell Crush banner ---------- */
+      .praise { position: absolute; inset: 0; display: none; place-items: center; pointer-events: none; z-index: 6; }
+      .praise-inner { display: flex; align-items: center; gap: 10px; }
+      .praise.show .praise-inner { animation: praisePop 1.25s ease forwards; }
+      .praise img { width: 66px; height: 66px; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.45)); }
+      .praise .word {
+        font-family: "Fredoka", sans-serif; font-weight: 700;
+        font-size: clamp(2rem, 9vw, 3.1rem); color: var(--gold);
+        text-shadow: 0 3px 0 var(--gold-deep), 0 6px 18px rgba(0,0,0,0.55);
+      }
+      @keyframes praisePop {
+        0% { transform: scale(0.4) rotate(-6deg); opacity: 0; }
+        18% { transform: scale(1.16) rotate(2deg); opacity: 1; }
+        30% { transform: scale(1); }
+        78% { opacity: 1; }
+        100% { transform: scale(1.05) translateY(-10px); opacity: 0; }
+      }
+      .confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 7; }
+      .confetti i { position: absolute; top: -14px; width: 9px; height: 14px; border-radius: 2px; animation-name: confettiFall; animation-timing-function: linear; animation-fill-mode: forwards; }
+      @keyframes confettiFall { to { transform: translateY(580px) rotate(560deg); opacity: 0.9; } }
+      .crush-banner { position: absolute; inset: 0; display: none; place-items: center; z-index: 8; pointer-events: none; }
+      .crush-banner span {
+        font-family: "Fredoka", sans-serif; font-weight: 700; font-size: clamp(1.5rem, 7.5vw, 2.3rem);
+        color: var(--gold); background: rgba(4, 28, 40, 0.62); border: 3px solid var(--gold);
+        border-radius: 999px; padding: 10px 24px; text-shadow: 0 2px 0 var(--gold-deep);
+        animation: bannerPulse 0.45s ease-in-out infinite alternate;
+      }
+      @keyframes bannerPulse { from { transform: scale(1); } to { transform: scale(1.07); } }
+      /* ---------- Boardwalk path map ---------- */
+      .map-wrap {
+        margin-top: 16px; border-radius: 20px; padding: 16px 12px 10px;
+        background: linear-gradient(180deg, #ffedb8 0%, #ffd98f 42%, #a8e2f2 43%, #2a9db8 100%);
+        box-shadow: 0 10px 26px rgba(4, 40, 56, 0.22); border: 3px solid var(--cabinet-edge);
+      }
+      .map-wrap h2 { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.45rem; margin: 0 0 2px; color: #4a2c00; text-align: center; text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+      .map-wrap .map-sub { text-align: center; font-weight: 800; color: #17384a; margin: 0 0 6px; font-size: 0.92rem; }
+      .map-area { position: relative; }
+      .map-path { position: absolute; left: 0; top: 0; z-index: 1; }
+      .map-node {
+        position: absolute; width: 52px; height: 52px; margin: -26px 0 0 -26px; z-index: 2;
+        border-radius: 50%; border: 3px solid #ffffff; cursor: pointer; padding: 0;
+        background: radial-gradient(circle at 32% 28%, #7fe3ff, #2a9db8 58%, #0d5a74);
+        color: #ffffff; font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.05rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.35), inset 0 -4px 8px rgba(0,0,0,0.28), inset 0 3px 5px rgba(255,255,255,0.5);
+      }
+      .map-node.done { background: radial-gradient(circle at 32% 28%, #ffe98a, #ffc93c 58%, #e89b0c); color: #4a2c00; }
+      .map-node.locked { background: radial-gradient(circle at 32% 28%, #c3d2d9, #7d939e 58%, #546e7a); cursor: default; font-size: 0.95rem; }
+      .map-node.current { border-color: var(--gold); animation: nodePulse 0.9s ease-in-out infinite alternate; }
+      @keyframes nodePulse { from { transform: scale(1); } to { transform: scale(1.15); } }
+      .map-node .stars {
+        position: absolute; left: 50%; transform: translateX(-50%); bottom: -14px;
+        font-size: 0.6rem; letter-spacing: 1px; color: #ffb300; white-space: nowrap;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.65);
+      }
+      .map-mascot { position: absolute; width: 56px; height: 56px; object-fit: contain; z-index: 3; pointer-events: none; transform: translate(-38%, -92%); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+      .map-crab { position: absolute; width: 48px; height: 36px; object-fit: cover; border-radius: 50%; border: 2px solid #ffffff; z-index: 3; pointer-events: none; transform: translate(-62%, -118%); box-shadow: 0 3px 8px rgba(0,0,0,0.35); }
+      /* ---------- Winner card extras ---------- */
+      .wc-mascot { width: 96px; height: 96px; object-fit: contain; display: block; margin: 0 auto; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
+      .wc-stars { font-size: 2rem; letter-spacing: 8px; margin-top: 4px; min-height: 2.4rem; }
+      .wc-stars .star { display: inline-block; opacity: 0.15; filter: grayscale(1); }
+      .wc-stars .star.lit { opacity: 1; filter: none; animation: starPop 0.35s ease; }
+      @keyframes starPop { 0% { transform: scale(0.3) rotate(-30deg); } 60% { transform: scale(1.4) rotate(8deg); } 100% { transform: scale(1); } }
+      .winner-card .wc-host { font-weight: 800; opacity: 0.95; margin: 10px 0 0; }
       @media (prefers-reduced-motion: reduce) {
-        .tile.pop, .tile.shake, .tile.drop-in { animation: none; }
+        .tile.pop, .tile.shake, .tile.drop-in, .tile.bomb img.candy-img, .map-node.current, .crush-banner span { animation: none; }
       }
     </style>
   </head>
@@ -198,7 +302,7 @@
         <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
         <button class="sound-btn" id="soundBtn" type="button" aria-pressed="false" aria-label="Toggle sound">🔊 Sound on</button>
       </div>
-      <section class="machine" aria-label="Cove Crush game">
+      <section class="machine" id="gameSection" aria-label="Cove Crush game">
         <div class="marquee">
           <h1>COVE CRUSH</h1>
           <p>Creator's Cove · Match 3</p>
@@ -206,7 +310,7 @@
 
         <div class="display" id="display" role="status" aria-live="polite">Swap tiles to match 3 or more!</div>
 
-        <div class="readouts">
+        <div class="readouts" id="readouts">
           <div class="meter">
             <div class="lbl">Level</div>
             <div class="val" id="levelVal">1</div>
@@ -219,18 +323,32 @@
             <div class="lbl">Moves</div>
             <div class="val" id="movesVal">20</div>
           </div>
+          <div class="meter" id="jellyMeter" style="display:none">
+            <div class="lbl">Jelly</div>
+            <div class="val"><span id="jellyVal">0</span> <small>left</small></div>
+          </div>
         </div>
         <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
 
-        <div class="board-frame">
+        <div class="board-frame" id="boardFrame">
           <div class="board" id="board" role="grid" aria-label="Cove Crush board, 8 by 8"></div>
+          <div class="praise" id="praise"><div class="praise-inner"><img src="crush3d/sprocket.png" alt="Sprocket" /><span class="word" id="praiseWord">Sweet!</span></div></div>
+          <div class="confetti" id="confetti"></div>
+          <div class="crush-banner" id="crushBanner"><span>🐚 SHELL CRUSH!</span></div>
         </div>
 
         <div class="controls">
           <button class="side-btn" id="shuffleBtn" type="button">🔀 Shuffle</button>
           <button class="side-btn" id="hintBtn" type="button">💡 Hint</button>
+          <button class="side-btn" id="mapBtn" type="button">🗺️ Map</button>
           <button class="side-btn gold" id="newGameBtn" type="button">↻ New Game</button>
         </div>
+      </section>
+
+      <section class="map-wrap" id="mapSection" style="display:none" aria-label="Level map">
+        <h2>🗺️ The Boardwalk Path</h2>
+        <p class="map-sub">Sprocket walks the path with you — tap a level to play it!</p>
+        <div class="map-area" id="mapArea"></div>
       </section>
 
       <section class="panel" aria-label="Your session">
@@ -241,8 +359,9 @@
       <section class="panel" aria-label="How to play">
         <h2>How to play</h2>
         <p>Tap a tile, then tap a tile next to it to swap them. If the swap makes a match of <strong>3 or more of the same tile in a row</strong>, they pop, the tiles above fall down, and new tiles drop in — chains can keep matching all on their own!</p>
-        <p><strong>Match 4</strong> in a row and you get a striped tile — match it and it clears its whole row or column. <strong>Match 5</strong> and you get a rainbow Cove Wave tile — swap it with any tile and it clears every tile of that type at once.</p>
-        <p>Reach the target score before you run out of moves to clear the level. If there are no moves left, tap <strong>Shuffle</strong> to mix the board up.</p>
+        <p><strong>Match 4</strong> in a row and you get a striped tile — match it and it clears its whole row or column. Make an <strong>L or T shape</strong> and you get a <strong>wrapped candy</strong> — match it and it blows up the 3×3 around it, then blows up again! <strong>Match 5</strong> and you get a <strong>Sprinkle Bomb</strong> — swap it with any tile and it zaps every tile of that type at once.</p>
+        <p>Some levels ask you to <strong>clear the jelly</strong> instead of chasing points — match candies sitting on the blue jelly squares to melt it away before your moves run out. Win with moves to spare and Sprocket spends them on a <strong>Shell Crush</strong> bonus round of free blasts!</p>
+        <p>Reach the target before you run out of moves to clear the level. Follow the <strong>Boardwalk Path</strong> on the map to replay any level you have unlocked. If there are no moves left, tap <strong>Shuffle</strong> to mix the board up.</p>
         <div class="legend">
           <div><span class="emoji">🐚</span> Shell</div>
           <div><span class="emoji">⭐</span> Starfish</div>
@@ -258,7 +377,7 @@
     <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Level result">
       <div class="overlay-wrap">
         <div class="winner-card" id="winnerCard"></div>
-        <div class="close-row"><button class="close-btn" id="overlayBtn" type="button">Next level</button></div>
+        <div class="close-row" style="display:flex; gap:10px;"><button class="close-btn" id="overlayBtn" type="button">Next level</button><button class="close-btn" id="overlayMapBtn" type="button" style="flex:0 0 38%;">🗺️ Map</button></div>
       </div>
     </div>
 
@@ -282,14 +401,28 @@
       var RAINBOW_EMOJI = "🌈";
 
       /* ---- Pure board logic (no DOM) ---- */
+      var CANDY_IMG = ["crush3d/candy-shell.jpg", "crush3d/candy-starfish.jpg", "crush3d/candy-pearl.jpg", "crush3d/candy-palette.jpg", "crush3d/candy-anchor.jpg", "crush3d/candy-wave.jpg"];
+      var BOMB_IMG = "crush3d/candy-bomb.jpg";
+      var RAINBOW_IMG = "crush3d/candy-rainbow.jpg";
+
       function newTile(type) { return { type: type, special: null }; }
+      function blockedTile() { return { type: -1, special: null, blocked: true }; }
       function randType() { return Math.floor(Math.random() * TYPES.length); }
 
-      function makeBoard() {
+      /* Shaped-level board masks: sets of "r,c" cells that hold no candy. */
+      function maskSet(list) { var s = {}; for (var i = 0; i < list.length; i++) s[list[i]] = true; return s; }
+      var MASKS = {
+        cross: maskSet(["0,0","0,1","0,6","0,7","1,0","1,1","1,6","1,7","6,0","6,1","6,6","6,7","7,0","7,1","7,6","7,7"]),
+        diamond: maskSet(["0,0","0,1","0,2","0,5","0,6","0,7","1,0","1,1","1,6","1,7","2,0","2,7","5,0","5,7","6,0","6,1","6,6","6,7","7,0","7,1","7,2","7,5","7,6","7,7"]),
+        heart: maskSet(["0,0","0,7","4,0","4,7","5,0","5,1","5,6","5,7","6,0","6,1","6,2","6,5","6,6","6,7","7,0","7,1","7,2","7,5","7,6","7,7"])
+      };
+
+      function makeBoard(mask) {
         var b = [];
         for (var r = 0; r < ROWS; r++) {
           b.push([]);
           for (var c = 0; c < COLS; c++) {
+            if (mask && mask[key(r, c)]) { b[r].push(blockedTile()); continue; }
             var t;
             do {
               t = randType();
@@ -315,9 +448,9 @@
           c = 0;
           while (c < COLS) {
             type = b[r][c] ? b[r][c].type : -1;
-            if (type < 0 || b[r][c].special === "rainbow") { c++; continue; }
+            if (type < 0 || b[r][c].special === "rainbow" || b[r][c].special === "bomb") { c++; continue; }
             start = c; len = 0;
-            while (c < COLS && b[r][c] && b[r][c].type === type && b[r][c].special !== "rainbow") { c++; len++; }
+            while (c < COLS && b[r][c] && b[r][c].type === type && b[r][c].special !== "rainbow" && b[r][c].special !== "bomb") { c++; len++; }
             if (len >= 3) {
               var run = { cells: [], dir: "h", type: type };
               for (var i = start; i < start + len; i++) { run.cells.push({ r: r, c: i }); cells[key(r, i)] = true; }
@@ -329,9 +462,9 @@
           r = 0;
           while (r < ROWS) {
             type = b[r][c] ? b[r][c].type : -1;
-            if (type < 0 || b[r][c].special === "rainbow") { r++; continue; }
+            if (type < 0 || b[r][c].special === "rainbow" || b[r][c].special === "bomb") { r++; continue; }
             start = r; len = 0;
-            while (r < ROWS && b[r][c] && b[r][c].type === type && b[r][c].special !== "rainbow") { r++; len++; }
+            while (r < ROWS && b[r][c] && b[r][c].type === type && b[r][c].special !== "rainbow" && b[r][c].special !== "bomb") { r++; len++; }
             if (len >= 3) {
               var run2 = { cells: [], dir: "v", type: type };
               for (var j = start; j < start + len; j++) { run2.cells.push({ r: j, c: c }); cells[key(j, c)] = true; }
@@ -345,8 +478,8 @@
       function hasMatch(b) { return findMatches(b).runs.length > 0; }
 
       /* Expand a matched set with special-tile effects.
-         Striped tiles in the set clear their whole row/column.
-         A rainbow in the set clears all tiles of a random type. */
+         Striped tiles clear their whole row/column; wrapped tiles blow
+         up the 3x3 around them (blocked cells are never added). */
       function expandWithSpecials(b, cells) {
         var out = {};
         var k;
@@ -362,6 +495,15 @@
                 for (var cc = 0; cc < COLS; cc++) { if (!out[key(r, cc)]) { out[key(r, cc)] = true; changed = true; } }
               } else if (sp === "col") {
                 for (var rr = 0; rr < ROWS; rr++) { if (!out[key(rr, c)]) { out[key(rr, c)] = true; changed = true; } }
+              } else if (sp === "wrapped") {
+                for (var dr = -1; dr <= 1; dr++) {
+                  for (var dc = -1; dc <= 1; dc++) {
+                    var wr = r + dr, wc = c + dc;
+                    if (wr >= 0 && wr < ROWS && wc >= 0 && wc < COLS && b[wr][wc] && !b[wr][wc].blocked && !out[key(wr, wc)]) {
+                      out[key(wr, wc)] = true; changed = true;
+                    }
+                  }
+                }
               }
             }
           }
@@ -377,9 +519,11 @@
         return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
       }
 
-      /* Does swapping (r1,c1) with (r2,c2) create a match, or use a rainbow? */
+      /* Does swapping (r1,c1) with (r2,c2) create a match, or use a bomb/rainbow? */
       function swapCreatesMatch(b, r1, c1, r2, c2) {
+        if (!b[r1][c1] || !b[r2][c2] || b[r1][c1].blocked || b[r2][c2].blocked) return false;
         if (b[r1][c1].special === "rainbow" || b[r2][c2].special === "rainbow") return true;
+        if (b[r1][c1].special === "bomb" || b[r2][c2].special === "bomb") return true;
         swapCells(b, r1, c1, r2, c2);
         var ok = hasMatch(b);
         swapCells(b, r1, c1, r2, c2);
@@ -406,13 +550,23 @@
         return null;
       }
 
+      /* Gravity that respects shaped boards: each column is compacted
+         within the segments between blocked cells. */
       function applyGravity(b) {
         for (var c = 0; c < COLS; c++) {
-          var write = ROWS - 1;
-          for (var r = ROWS - 1; r >= 0; r--) {
-            if (b[r][c]) { b[write][c] = b[r][c]; if (write !== r) b[r][c] = null; write--; }
+          var r = ROWS - 1;
+          while (r >= 0) {
+            if (b[r][c] && b[r][c].blocked) { r--; continue; }
+            var segBottom = r;
+            var seg = [];
+            while (r >= 0 && !(b[r][c] && b[r][c].blocked)) {
+              if (b[r][c]) seg.push(b[r][c]);
+              r--;
+            }
+            var w = segBottom;
+            for (var i = 0; i < seg.length; i++) { b[w][c] = seg[i]; w--; }
+            while (w > r) { b[w][c] = null; w--; }
           }
-          for (var rr = write; rr >= 0; rr--) b[rr][c] = null;
         }
       }
 
@@ -428,24 +582,18 @@
 
       function shuffleBoard(b) {
         var flat = [];
-        for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) flat.push(b[r][c]);
-        for (var i = flat.length - 1; i > 0; i--) {
-          var j = Math.floor(Math.random() * (i + 1));
-          var tmp = flat[i]; flat[i] = flat[j]; flat[j] = tmp;
+        for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) if (b[r][c] && !b[r][c].blocked) flat.push(b[r][c]);
+        function deal() {
+          var k = 0;
+          for (var rr = 0; rr < ROWS; rr++) for (var cc = 0; cc < COLS; cc++) if (!b[rr][cc].blocked) b[rr][cc] = flat[k++];
         }
-        var k = 0;
-        for (var rr = 0; rr < ROWS; rr++) for (var cc = 0; cc < COLS; cc++) b[rr][cc] = flat[k++];
-        if (hasMatch(b) || !hasPossibleMove(b)) {
-          // Reshuffle until the board is clean and playable (bounded tries).
-          for (var tries = 0; tries < 50; tries++) {
-            for (var i2 = flat.length - 1; i2 > 0; i2--) {
-              var j2 = Math.floor(Math.random() * (i2 + 1));
-              var tmp2 = flat[i2]; flat[i2] = flat[j2]; flat[j2] = tmp2;
-            }
-            k = 0;
-            for (var r2 = 0; r2 < ROWS; r2++) for (var c2 = 0; c2 < COLS; c2++) b[r2][c2] = flat[k++];
-            if (!hasMatch(b) && hasPossibleMove(b)) break;
+        for (var tries = 0; tries < 60; tries++) {
+          for (var i = flat.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var tmp = flat[i]; flat[i] = flat[j]; flat[j] = tmp;
           }
+          deal();
+          if (!hasMatch(b) && hasPossibleMove(b)) break;
         }
       }
 
@@ -524,6 +672,53 @@
         for (var i = 0; i < n.length; i++) playTone(n[i], 0.3, "sine", 0.18, i * 0.16);
       }
 
+      /* ---- Juicy sound pass: bigger plays sound bigger ---- */
+      function sfxArpeggio() {
+        var n = [659.25, 783.99, 987.77, 1318.5];
+        for (var i = 0; i < n.length; i++) playTone(n[i], 0.2, "triangle", 0.16, i * 0.05);
+      }
+      function sfxPowerUp() {
+        var n = [440, 554.37, 659.25, 880];
+        for (var i = 0; i < n.length; i++) playTone(n[i], 0.16, "square", 0.06, i * 0.055);
+        playTone(1318.5, 0.3, "sine", 0.13, 0.24);
+      }
+      function sfxBoom() {
+        playTone(95, 0.4, "sine", 0.3);
+        playTone(58, 0.48, "triangle", 0.26, 0.02);
+        playTone(220, 0.1, "square", 0.07);
+      }
+      function sfxBombZap() {
+        if (!soundOn) return;
+        var ctx = ac();
+        if (!ctx) return;
+        var t0 = ctx.currentTime;
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sawtooth";
+        o.frequency.setValueAtTime(1500, t0);
+        o.frequency.exponentialRampToValueAtTime(110, t0 + 0.32);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
+        o.connect(g); g.connect(sfxGain); o.start(t0); o.stop(t0 + 0.36);
+        playTone(1567.98, 0.25, "sine", 0.12, 0.06);
+        playTone(2093, 0.3, "sine", 0.1, 0.14);
+      }
+      var PRAISE_WORDS = ["Sweet!", "Splashy!", "Golden!", "Legendary!"];
+      var PRAISE_CHORDS = [
+        [523.25, 659.25],
+        [523.25, 659.25, 783.99],
+        [523.25, 659.25, 783.99, 1046.5],
+        [523.25, 659.25, 783.99, 1046.5, 1318.5]
+      ];
+      function sfxPraise(tier) {
+        var notes = PRAISE_CHORDS[Math.max(0, Math.min(3, tier))];
+        for (var i = 0; i < notes.length; i++) playTone(notes[i], 0.3, "triangle", 0.15, i * 0.045);
+      }
+      function sfxStar(i) {
+        playTone(880 + i * 220, 0.28, "sine", 0.2);
+        playTone(1320 + i * 220, 0.2, "triangle", 0.1, 0.05);
+      }
+
       /* ---- Background music: a cheerful C-major loop, quiet and bouncy ----
          16 eighth-note steps (~130 BPM), chords C – Am – F – G, with a soft
          bass note at the start of each bar. A lookahead scheduler keeps the
@@ -594,17 +789,101 @@
         if (soundOn) startMusic();
       }
 
+      /* ---- Levels & saved progress ----
+         Progress (unlocked levels + best stars) lives in localStorage
+         under its own key. Older versions of Cove Crush kept no saved
+         progress at all, so there is nothing to migrate: the shape is
+         { unlocked: number, stars: { level: 0-3 } } and any missing or
+         unreadable value falls back to a fresh start at level 1. */
+      var LEVELS = [
+        { target: 500, moves: 20 },
+        { target: 900, moves: 22 },
+        { objective: "jelly", jelly: 10, moves: 22, target: 1200 },
+        { target: 1300, moves: 20 },
+        { target: 1700, moves: 24, mask: "cross" },
+        { objective: "jelly", jelly: 14, moves: 24, target: 1800 },
+        { target: 2100, moves: 22 },
+        { target: 2500, moves: 24, mask: "diamond" },
+        { objective: "jelly", jelly: 18, moves: 26, target: 2400 },
+        { target: 2900, moves: 22 },
+        { target: 3300, moves: 26, mask: "heart" },
+        { objective: "jelly", jelly: 22, moves: 26, target: 3000 },
+        { target: 3700, moves: 24 },
+        { objective: "jelly", jelly: 16, moves: 24, target: 3400, mask: "cross" },
+        { target: 4100, moves: 26 },
+        { target: 4500, moves: 28, mask: "diamond" },
+        { objective: "jelly", jelly: 26, moves: 28, target: 4200 },
+        { target: 5200, moves: 28, mask: "heart" }
+      ];
+      var SAVE_KEY = "cove-crush-progress-v1";
+      var progress = { unlocked: 1, stars: {} };
+      function loadProgress() {
+        try {
+          var raw = window.localStorage.getItem(SAVE_KEY);
+          if (!raw) return;
+          var p = JSON.parse(raw);
+          if (p && typeof p.unlocked === "number" && isFinite(p.unlocked)) {
+            progress.unlocked = Math.max(1, Math.min(LEVELS.length + 1, Math.floor(p.unlocked)));
+            if (p.stars && typeof p.stars === "object") {
+              for (var k in p.stars) {
+                var v = parseInt(p.stars[k], 10);
+                if (v >= 1 && v <= 3) progress.stars[k] = v;
+              }
+            }
+          }
+        } catch (e) { /* storage unavailable — progress just won't persist */ }
+      }
+      function saveProgress() {
+        try { window.localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); } catch (e) { /* ignore */ }
+      }
+      function levelConfig(l) {
+        if (l >= 1 && l <= LEVELS.length) return LEVELS[l - 1];
+        var n = Math.max(1, l - LEVELS.length);
+        return { target: 5200 + n * 600, moves: 28 };
+      }
+
       /* ---- Game state ---- */
       var board = null;
       var level = 1, score = 0, moves = 20, target = 500;
+      var objective = "score", jelly = null, jellyLeft = 0, jellyTotal = 0, curMask = null;
       var bestScore = 0, levelsCleared = 0, bestChain = 0;
       var selected = null, busy = false, over = false;
-
-      function levelConfig(l) {
-        return { target: 500 + (l - 1) * 400, moves: 20 + ((l - 1) % 3) * 2 };
-      }
+      var lastSwap = null, crushing = false, crushSkip = false, finalLevel = false;
 
       function sleep(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+
+      /* Jelly layout for a level: a seeded shuffle of the playable cells,
+         so every visit to a level gets the same jelly. Every 4th jelly
+         cell carries a second, thicker layer. */
+      function makeJelly(l, cfg, mask) {
+        var grid = [], r, c;
+        for (r = 0; r < ROWS; r++) { grid.push([]); for (c = 0; c < COLS; c++) grid[r].push(0); }
+        if (!cfg || cfg.objective !== "jelly") return grid;
+        var cells = [];
+        for (r = 0; r < ROWS; r++) for (c = 0; c < COLS; c++) if (!(mask && mask[key(r, c)])) cells.push({ r: r, c: c });
+        var seed = l * 987654 + 12345;
+        function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+        for (var i = cells.length - 1; i > 0; i--) {
+          var j = Math.floor(rnd() * (i + 1));
+          var t = cells[i]; cells[i] = cells[j]; cells[j] = t;
+        }
+        var n = Math.min(cfg.jelly || 10, cells.length);
+        for (var k = 0; k < n; k++) grid[cells[k].r][cells[k].c] = (k % 4 === 3) ? 2 : 1;
+        return grid;
+      }
+      function jellySum(grid) {
+        var s = 0;
+        for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) s += grid[r][c];
+        return s;
+      }
+      function hitJelly(cells) {
+        if (!jelly) return;
+        for (var k in cells) {
+          var p = k.split(",");
+          var r = parseInt(p[0], 10), c = parseInt(p[1], 10);
+          if (jelly[r] && jelly[r][c] > 0) { jelly[r][c]--; jellyLeft--; }
+        }
+      }
 
       /* ---- DOM layer (guarded so the logic can be tested without a DOM) ---- */
       var el = {};
@@ -618,6 +897,11 @@
         el.levelsVal = $("levelsVal"); el.chainVal = $("chainVal");
         el.overlay = $("overlay"); el.winnerCard = $("winnerCard");
         el.overlayBtn = $("overlayBtn");
+        el.readouts = $("readouts"); el.jellyMeter = $("jellyMeter"); el.jellyVal = $("jellyVal");
+        el.gameSection = $("gameSection"); el.mapSection = $("mapSection"); el.mapArea = $("mapArea");
+        el.praise = $("praise"); el.praiseWord = $("praiseWord");
+        el.confetti = $("confetti"); el.crushBanner = $("crushBanner");
+        el.boardFrame = $("boardFrame");
         if (el.board) {
           el.board.addEventListener("click", function (e) {
             var t = e.target.closest ? e.target.closest(".tile") : null;
@@ -625,9 +909,18 @@
             onTileClick(parseInt(t.dataset.r, 10), parseInt(t.dataset.c, 10));
           });
         }
+        if (el.boardFrame) {
+          el.boardFrame.addEventListener("pointerdown", function () { if (crushing) crushSkip = true; });
+        }
         var sh = $("shuffleBtn"); if (sh) sh.addEventListener("click", onShuffle);
         var hi = $("hintBtn"); if (hi) hi.addEventListener("click", onHint);
         var ng = $("newGameBtn"); if (ng) ng.addEventListener("click", function () { sfxClick(); startLevel(1); });
+        var mb = $("mapBtn"); if (mb) mb.addEventListener("click", function () { if (busy) return; sfxClick(); showScreen("map"); });
+        var omb = $("overlayMapBtn"); if (omb) omb.addEventListener("click", function () {
+          sfxClick();
+          if (el.overlay) el.overlay.classList.remove("open");
+          showScreen("map");
+        });
         var snd = $("soundBtn"); if (snd) snd.addEventListener("click", function () { toggleSound(); sfxClick(); });
         if (el.overlayBtn) el.overlayBtn.addEventListener("click", onOverlayButton);
         /* First tap anywhere unlocks audio (browsers block it before interaction). */
@@ -636,13 +929,13 @@
         }
       }
 
-      var tileEls = null;
+      var tileEls = null, tileImg = null, tileJelly = null;
       function buildBoardDom() {
         if (!el.board) return;
         while (el.board.firstChild) el.board.removeChild(el.board.firstChild);
-        tileEls = [];
+        tileEls = []; tileImg = []; tileJelly = [];
         for (var r = 0; r < ROWS; r++) {
-          tileEls.push([]);
+          tileEls.push([]); tileImg.push([]); tileJelly.push([]);
           for (var c = 0; c < COLS; c++) {
             var btn = document.createElement("button");
             btn.type = "button";
@@ -650,9 +943,19 @@
             btn.className = "tile";
             btn.dataset.r = r;
             btn.dataset.c = c;
-            btn.appendChild(document.createElement("span"));
+            var jd = document.createElement("div");
+            jd.className = "jelly";
+            jd.style.display = "none";
+            var im = document.createElement("img");
+            im.className = "candy-img";
+            im.alt = "";
+            im.draggable = false;
+            btn.appendChild(jd);
+            btn.appendChild(im);
             el.board.appendChild(btn);
             tileEls[r].push(btn);
+            tileImg[r].push(im);
+            tileJelly[r].push(jd);
           }
         }
       }
@@ -663,34 +966,51 @@
         for (var r = 0; r < ROWS; r++) {
           for (var c = 0; c < COLS; c++) {
             var t = board[r][c];
-            /* Defensive: a cell must never render blank. If gravity/refill
-               ever leaves a hole, fill it here so the board is always full. */
+            /* Defensive: a playable cell must never render blank. */
             if (!t) { t = board[r][c] = newTile(randType()); }
-            var cls = "tile";
-            var emoji = t ? TYPES[t.type].emoji : "❓";
-            var label = t ? TYPES[t.type].name : "";
-            if (t && t.special === "row") { cls += " striped-row"; emoji = "➖"; }
-            if (t && t.special === "col") { cls += " striped-col"; emoji = "➖"; }
-            if (t && t.special === "rainbow") { cls += " rainbow"; emoji = RAINBOW_EMOJI; label = "Rainbow Cove Wave"; }
+            var btn = tileEls[r][c], im = tileImg[r][c], jd = tileJelly[r][c];
+            if (t.blocked) {
+              btn.className = "tile blocked";
+              im.removeAttribute("src");
+              im.style.display = "none";
+              jd.style.display = "none";
+              btn.setAttribute("aria-label", "Blocked cell");
+              continue;
+            }
+            im.style.display = "";
+            var cls = "tile", src = CANDY_IMG[t.type], label = TYPES[t.type].name;
+            if (t.special === "row") cls += " striped-row";
+            else if (t.special === "col") cls += " striped-col";
+            else if (t.special === "wrapped") { cls += " wrapped"; label = "Wrapped " + label; }
+            else if (t.special === "bomb") { cls += " bomb"; src = BOMB_IMG; label = "Sprinkle Bomb"; }
+            else if (t.special === "rainbow") { cls += " rainbow"; src = RAINBOW_IMG; label = "Rainbow Cove Wave"; }
             if (selected && selected.r === r && selected.c === c) cls += " selected";
-            var btn = tileEls[r][c];
-            var sig = cls + "|" + emoji + "|" + label;
-            /* Always reset the class, even when the tile looks the same:
-               transient animation classes (pop ends at opacity 0, drop-in,
-               shake) are added outside this signature, so a refilled tile
-               with the same emoji would otherwise keep its faded-out class
-               and leave a blank cell. */
             btn.className = cls;
+            if (im.getAttribute("src") !== src) im.setAttribute("src", src);
+            im.alt = label;
             btn.setAttribute("aria-label", label + " tile, row " + (r + 1) + " column " + (c + 1));
-            btn.firstChild.textContent = emoji;
-            btn._sig = sig;
+            var jl = jelly ? jelly[r][c] : 0;
+            if (jl > 0) { jd.style.display = "block"; jd.className = "jelly" + (jl >= 2 ? " j2" : ""); }
+            else jd.style.display = "none";
           }
         }
         el.scoreVal.textContent = score;
         el.targetVal.textContent = target;
         el.movesVal.textContent = moves;
         el.levelVal.textContent = level;
-        el.progressBar.style.width = Math.min(100, Math.round(score / target * 100)) + "%";
+        el.progressBar.style.width = (objective === "jelly" && jellyTotal > 0)
+          ? Math.round((jellyTotal - jellyLeft) / jellyTotal * 100) + "%"
+          : Math.min(100, Math.round(score / target * 100)) + "%";
+        if (el.jellyMeter) {
+          if (objective === "jelly") {
+            el.jellyMeter.style.display = "";
+            el.jellyVal.textContent = jellyLeft;
+            if (el.readouts) el.readouts.classList.add("jelly-on");
+          } else {
+            el.jellyMeter.style.display = "none";
+            if (el.readouts) el.readouts.classList.remove("jelly-on");
+          }
+        }
         el.bestVal.textContent = bestScore;
         el.levelsVal.textContent = levelsCleared;
         el.chainVal.textContent = bestChain;
@@ -711,21 +1031,137 @@
         }
       }
 
+      /* ---- Screens: the Boardwalk Path map and the game itself ---- */
+      function showScreen(which) {
+        if (el.gameSection) el.gameSection.style.display = which === "game" ? "" : "none";
+        if (el.mapSection) el.mapSection.style.display = which === "map" ? "" : "none";
+        if (which === "map") buildMap();
+      }
+
+      function buildMap() {
+        if (!el.mapArea) return;
+        var area = el.mapArea;
+        area.innerHTML = "";
+        var N = LEVELS.length;
+        var perRow = 4, rows = Math.ceil(N / perRow), rowH = 98;
+        var H = rows * rowH + 26;
+        area.style.height = H + "px";
+        var W = area.clientWidth || 340;
+        function nodePos(i) {
+          var row = Math.floor(i / perRow), idx = i % perRow;
+          var xs = (row % 2 === 0) ? [0.14, 0.38, 0.62, 0.86] : [0.86, 0.62, 0.38, 0.14];
+          return { x: xs[idx] * W, y: H - (row * rowH + 62) };
+        }
+        var pts = [];
+        for (var i = 0; i < N; i++) pts.push(nodePos(i));
+        var d = "M " + pts.map(function (p) { return p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" L ");
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "map-path");
+        svg.setAttribute("width", String(W));
+        svg.setAttribute("height", String(H));
+        svg.innerHTML = '<path d="' + d + '" fill="none" stroke="rgba(90,60,20,0.35)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><path d="' + d + '" fill="none" stroke="#ffedb8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>';
+        area.appendChild(svg);
+        var current = Math.min(progress.unlocked, N);
+        for (var n = 0; n < N; n++) {
+          (function (n) {
+            var lv = n + 1, p = pts[n];
+            var b = document.createElement("button");
+            b.type = "button";
+            var unlocked = lv <= progress.unlocked;
+            var stars = progress.stars[lv] || 0;
+            b.className = "map-node" + (stars > 0 ? " done" : "") + (!unlocked ? " locked" : "") + (lv === current ? " current" : "");
+            b.style.left = p.x + "px";
+            b.style.top = p.y + "px";
+            b.innerHTML = (unlocked ? String(lv) : "🔒") + '<span class="stars">' + (stars > 0 ? "★★★".slice(0, stars) : "") + "</span>";
+            b.setAttribute("aria-label", "Level " + lv + (unlocked ? (stars ? ", " + stars + " of 3 stars earned" : "") : ", locked"));
+            if (unlocked) b.addEventListener("click", function () { sfxClick(); startLevel(lv); });
+            area.appendChild(b);
+          })(n);
+        }
+        /* Sprocket stands beside the level you're on. */
+        var sp = document.createElement("img");
+        sp.src = "crush3d/sprocket.png";
+        sp.alt = "Sprocket";
+        sp.className = "map-mascot";
+        sp.style.left = pts[current - 1].x + "px";
+        sp.style.top = pts[current - 1].y + "px";
+        area.appendChild(sp);
+        /* The Cove crab sits on the next locked level, keeping it safe. */
+        if (current < N) {
+          var crab = document.createElement("img");
+          crab.src = "crush3d/crab.jpg";
+          crab.alt = "Cove crab";
+          crab.className = "map-crab";
+          crab.style.left = pts[current].x + "px";
+          crab.style.top = pts[current].y + "px";
+          area.appendChild(crab);
+        }
+      }
+
+      /* ---- Praise callouts & confetti ---- */
+      var praiseTimer = null, lastPraiseAt = 0;
+      function showPraise(tier) {
+        tier = Math.max(0, Math.min(3, tier));
+        sfxPraise(tier);
+        if (!el.praise) return;
+        var now = Date.now();
+        if (now - lastPraiseAt < 500) return;
+        lastPraiseAt = now;
+        el.praiseWord.textContent = PRAISE_WORDS[tier];
+        el.praise.style.display = "grid";
+        el.praise.classList.remove("show");
+        void el.praise.offsetWidth;
+        el.praise.classList.add("show");
+        if (praiseTimer) clearTimeout(praiseTimer);
+        praiseTimer = setTimeout(function () {
+          el.praise.style.display = "none";
+          el.praise.classList.remove("show");
+        }, 1250);
+      }
+
+      var CONFETTI_COLORS = ["#ff6f61", "#ffc93c", "#3d9970", "#2a9db8", "#ff9ff3", "#ffe9a8"];
+      function burstConfetti(n) {
+        if (!el.confetti) return;
+        for (var i = 0; i < n; i++) {
+          var piece = document.createElement("i");
+          piece.style.left = (Math.random() * 100) + "%";
+          piece.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+          piece.style.animationDuration = (0.9 + Math.random() * 0.8) + "s";
+          piece.style.animationDelay = (Math.random() * 0.25) + "s";
+          el.confetti.appendChild(piece);
+          (function (p) {
+            setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 2300);
+          })(piece);
+        }
+      }
+
       function startLevel(l) {
+        if (busy) return;
         level = l;
         var cfg = levelConfig(l);
         target = cfg.target; moves = cfg.moves; score = 0;
-        board = makeBoard();
-        selected = null; busy = false; over = false;
+        objective = cfg.objective || "score";
+        curMask = cfg.mask ? (MASKS[cfg.mask] || null) : null;
+        var tries = 0;
+        do {
+          board = makeBoard(curMask);
+          tries++;
+        } while ((hasMatch(board) || !hasPossibleMove(board)) && tries < 40);
+        jelly = makeJelly(l, cfg, curMask);
+        jellyTotal = jellySum(jelly);
+        jellyLeft = jellyTotal;
+        selected = null; busy = false; over = false; lastSwap = null; finalLevel = false;
         if (el.overlay) el.overlay.classList.remove("open");
-        setDisplay("Level " + l + " — " + target + " pts in " + moves + " moves!");
+        showScreen("game");
+        if (objective === "jelly") setDisplay("Level " + l + " — clear all the jelly in " + moves + " moves!");
+        else setDisplay("Level " + l + " — " + target + " pts in " + moves + " moves!");
         render();
       }
 
       function newGame() { level = 1; levelsCleared = 0; bestChain = 0; startLevel(1); }
 
       async function onTileClick(r, c) {
-        if (busy || over || !board[r][c]) return;
+        if (busy || over || !board[r][c] || board[r][c].blocked) return;
         if (!selected) { selected = { r: r, c: c }; sfxClick(); render(); return; }
         if (selected.r === r && selected.c === c) { selected = null; sfxClick(); render(); return; }
         if (!isAdjacent(selected.r, selected.c, r, c)) { selected = { r: r, c: c }; sfxClick(); render(); return; }
@@ -737,8 +1173,11 @@
       async function attemptSwap(r1, c1, r2, c2) {
         if (busy || over) return false;
         var a = board[r1][c1], b = board[r2][c2];
-        var usesRainbow = (a.special === "rainbow" || b.special === "rainbow");
-        if (!usesRainbow && !swapCreatesMatch(board, r1, c1, r2, c2)) {
+        if (!a || !b || a.blocked || b.blocked) return false;
+        var spA = a.special === "rainbow" || a.special === "bomb";
+        var spB = b.special === "rainbow" || b.special === "bomb";
+        var usesSpecial = spA || spB;
+        if (!usesSpecial && !swapCreatesMatch(board, r1, c1, r2, c2)) {
           sfxInvalid();
           render();
           markTiles((function () { var o = {}; o[key(r1, c1)] = true; o[key(r2, c2)] = true; return o; })(), "shake");
@@ -747,29 +1186,47 @@
         }
         busy = true;
         moves--;
+        lastSwap = { r1: r1, c1: c1, r2: r2, c2: c2 };
         swapCells(board, r1, c1, r2, c2);
         sfxSwap();
         render();
         await sleep(180);
-        if (usesRainbow) {
-          var rainbowCell = (a.special === "rainbow") ? { r: r2, c: c2 } : { r: r1, c: c1 };
-          var other = (a.special === "rainbow") ? b : a;
-          var clearType = (other.special === "rainbow") ? randType() : other.type;
-          var cleared = {};
-          for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
-            if (board[r][c] && board[r][c].type === clearType) cleared[key(r, c)] = true;
+        if (usesSpecial) {
+          var bombInvolved = a.special === "bomb" || b.special === "bomb";
+          var other = spA ? b : a;
+          var typesToClear = {};
+          if (other.special === "rainbow" || other.special === "bomb") {
+            typesToClear[randType()] = true;
+            typesToClear[randType()] = true;
+          } else {
+            typesToClear[other.type] = true;
           }
-          cleared[key(rainbowCell.r, rainbowCell.c)] = true;
-          var gained = Object.keys(cleared).length * 20;
+          var cleared = {};
+          for (var r = 0; r < ROWS; r++) {
+            for (var c = 0; c < COLS; c++) {
+              var cell = board[r][c];
+              if (cell && !cell.blocked && typesToClear[cell.type]) cleared[key(r, c)] = true;
+            }
+          }
+          cleared[key(r1, c1)] = true;
+          cleared[key(r2, c2)] = true;
+          var gained = Object.keys(cleared).length * (bombInvolved ? 30 : 20);
           score += gained;
           if (score > bestScore) bestScore = score;
-          setDisplay("🌈 Cleared all " + TYPES[clearType].name + "! +" + gained, true);
-          sfxPop(6);
+          if (bombInvolved) {
+            sfxBombZap();
+            setDisplay("💣 Sprinkle Bomb! +" + gained, true);
+            showPraise(2);
+          } else {
+            sfxPop(6);
+            setDisplay("🌈 Rainbow wave! +" + gained, true);
+          }
           await clearCells(cleared);
           await cascade(1);
         } else {
           await cascade(1);
         }
+        lastSwap = null;
         busy = false;
         render();
         endTurnCheck();
@@ -783,37 +1240,124 @@
           var found = findMatches(board);
           if (found.runs.length === 0) break;
           chains++;
-          if (chain + chains - 1 > bestChain) bestChain = chain + chains - 1;
-          var cells = expandWithSpecials(board, found.cells);
-          // Special-tile creation: first run of 4+ makes a striped tile, 5+ a rainbow.
+          var chainNow = chain + chains - 1;
+          if (chainNow > bestChain) bestChain = chainNow;
+          var i, j;
+          var maxRun = 0;
+          for (i = 0; i < found.runs.length; i++) maxRun = Math.max(maxRun, found.runs[i].cells.length);
+          /* Special creation: a 5+ run makes a Sprinkle Bomb; a cell shared
+             by a horizontal and a vertical run (an L or T) makes a wrapped
+             candy; a plain 4-run makes a striped tile. The new special is
+             anchored on the tile the player just swapped when possible. */
+          function anchorFor(run) {
+            if (lastSwap) {
+              for (var q = 0; q < run.cells.length; q++) {
+                var cell = run.cells[q];
+                if ((cell.r === lastSwap.r1 && cell.c === lastSwap.c1) || (cell.r === lastSwap.r2 && cell.c === lastSwap.c2)) return cell;
+              }
+            }
+            return run.cells[Math.floor(run.cells.length / 2)];
+          }
           var create = null;
-          for (var i = 0; i < found.runs.length; i++) {
-            var run = found.runs[i];
-            if (run.cells.length >= 5) { create = { cell: run.cells[0], special: "rainbow", type: run.type }; break; }
-            if (run.cells.length === 4 && !create) {
-              create = { cell: run.cells[0], special: run.dir === "h" ? "row" : "col", type: run.type };
+          for (i = 0; i < found.runs.length; i++) {
+            if (found.runs[i].cells.length >= 5) {
+              create = { cell: anchorFor(found.runs[i]), special: "bomb", type: found.runs[i].type };
+              break;
             }
           }
-          var gained = Object.keys(cells).length * 20 * (chain + chains - 1);
-          if (found.runs.some(function (rn) { return rn.cells.length >= 4; })) gained += 100;
+          if (!create) {
+            var crossCount = {};
+            for (i = 0; i < found.runs.length; i++) {
+              for (j = 0; j < found.runs[i].cells.length; j++) {
+                var kk = key(found.runs[i].cells[j].r, found.runs[i].cells[j].c);
+                crossCount[kk] = (crossCount[kk] || 0) + 1;
+              }
+            }
+            for (var kx in crossCount) {
+              if (crossCount[kx] >= 2) {
+                var kp = kx.split(",");
+                var kr = parseInt(kp[0], 10), kc = parseInt(kp[1], 10);
+                create = { cell: { r: kr, c: kc }, special: "wrapped", type: board[kr][kc].type };
+                break;
+              }
+            }
+          }
+          if (!create) {
+            for (i = 0; i < found.runs.length; i++) {
+              if (found.runs[i].cells.length === 4) {
+                create = { cell: anchorFor(found.runs[i]), special: found.runs[i].dir === "h" ? "row" : "col", type: found.runs[i].type };
+                break;
+              }
+            }
+          }
+          var cells = expandWithSpecials(board, found.cells);
+          var wrappedPops = [];
+          for (var k3 in cells) {
+            var p3 = k3.split(",");
+            var r3 = parseInt(p3[0], 10), c3 = parseInt(p3[1], 10);
+            if (board[r3][c3] && board[r3][c3].special === "wrapped" && !(create && create.cell.r === r3 && create.cell.c === c3)) {
+              wrappedPops.push({ r: r3, c: c3 });
+            }
+          }
+          var gained = Object.keys(cells).length * 20 * chainNow;
+          if (maxRun >= 4) gained += 100;
           score += gained;
           if (score > bestScore) bestScore = score;
-          setDisplay("Match! +" + gained + (chains > 1 ? " — chain ×" + (chain + chains - 1) + "!" : ""), chains > 1);
-          sfxPop(chain + chains - 1);
+          setDisplay("Match! +" + gained + (chains > 1 ? " — chain ×" + chainNow + "!" : ""), chains > 1);
+          sfxPop(chainNow);
+          if (maxRun === 4) sfxArpeggio();
+          if (maxRun >= 5 || (create && create.special === "wrapped")) sfxPowerUp();
+          if (wrappedPops.length) sfxBoom();
+          if (maxRun >= 4 || chainNow >= 3) {
+            var tier = (maxRun >= 5 ? 2 : 0) + (chainNow >= 3 ? 1 : 0) + (chainNow >= 5 ? 1 : 0);
+            showPraise(tier);
+          }
           markTiles(cells, "pop");
           await sleep(180);
+          hitJelly(cells);
           for (var k in cells) {
             var parts = k.split(",");
-            board[parseInt(parts[0], 10)][parseInt(parts[1], 10)] = null;
+            var br = parseInt(parts[0], 10), bc = parseInt(parts[1], 10);
+            if (board[br][bc] && !board[br][bc].blocked) board[br][bc] = null;
           }
-          if (create) {
-            board[create.cell.r][create.cell.c] = { type: create.type, special: create.special };
-          }
+          if (create) board[create.cell.r][create.cell.c] = { type: create.type, special: create.special };
           applyGravity(board);
           var fresh = refillBoard(board);
           render();
           markTiles(fresh, "drop-in");
           await sleep(200);
+          /* A wrapped candy blows twice: the same 3x3 goes off again on
+             whatever has fallen into it. */
+          if (wrappedPops.length) {
+            var again = {};
+            for (i = 0; i < wrappedPops.length; i++) {
+              for (var dr = -1; dr <= 1; dr++) {
+                for (var dc = -1; dc <= 1; dc++) {
+                  var ar = wrappedPops[i].r + dr, ac = wrappedPops[i].c + dc;
+                  if (ar >= 0 && ar < ROWS && ac >= 0 && ac < COLS && board[ar][ac] && !board[ar][ac].blocked) again[key(ar, ac)] = true;
+                }
+              }
+            }
+            again = expandWithSpecials(board, again);
+            var gained2 = Object.keys(again).length * 20 * chainNow;
+            score += gained2;
+            if (score > bestScore) bestScore = score;
+            setDisplay("💥 Wrapped blast — again! +" + gained2, true);
+            sfxBoom();
+            markTiles(again, "pop");
+            await sleep(200);
+            hitJelly(again);
+            for (var k4 in again) {
+              var p4 = k4.split(",");
+              var xr = parseInt(p4[0], 10), xc = parseInt(p4[1], 10);
+              if (board[xr][xc] && !board[xr][xc].blocked) board[xr][xc] = null;
+            }
+            applyGravity(board);
+            var fresh2 = refillBoard(board);
+            render();
+            markTiles(fresh2, "drop-in");
+            await sleep(200);
+          }
         }
         return chains;
       }
@@ -821,9 +1365,11 @@
       async function clearCells(cells) {
         markTiles(cells, "pop");
         await sleep(180);
+        hitJelly(cells);
         for (var k in cells) {
           var parts = k.split(",");
-          board[parseInt(parts[0], 10)][parseInt(parts[1], 10)] = null;
+          var rr = parseInt(parts[0], 10), cc = parseInt(parts[1], 10);
+          if (board[rr][cc] && !board[rr][cc].blocked) board[rr][cc] = null;
         }
         applyGravity(board);
         var fresh = refillBoard(board);
@@ -832,44 +1378,169 @@
         await sleep(200);
       }
 
+      /* ---- Shell Crush: spare moves become bonus blasts ---- */
+      async function shellCrush() {
+        crushing = true;
+        crushSkip = false;
+        busy = true;
+        if (el.crushBanner) el.crushBanner.style.display = "grid";
+        setDisplay("🐚 SHELL CRUSH! Sprocket is spending your spare moves — tap the board to skip!", true);
+        sfxWin();
+        burstConfetti(36);
+        var blasts = 0;
+        while (moves > 0 && !crushSkip && blasts < 5) {
+          moves--;
+          blasts++;
+          var spots = [];
+          for (var r = 0; r < ROWS; r++) {
+            for (var c = 0; c < COLS; c++) {
+              var t = board[r][c];
+              if (t && !t.blocked && !t.special) spots.push({ r: r, c: c });
+            }
+          }
+          if (!spots.length) break;
+          var pick = spots[Math.floor(Math.random() * spots.length)];
+          board[pick.r][pick.c] = { type: board[pick.r][pick.c].type, special: Math.random() < 0.5 ? "row" : "col" };
+          render();
+          sfxPowerUp();
+          await sleep(170);
+          if (crushSkip) break;
+          var cells = {};
+          cells[key(pick.r, pick.c)] = true;
+          cells = expandWithSpecials(board, cells);
+          var gained = Object.keys(cells).length * 30;
+          score += gained;
+          if (score > bestScore) bestScore = score;
+          setDisplay("🐚 Shell Crush blast! +" + gained, true);
+          sfxPop(3 + blasts);
+          burstConfetti(10);
+          await clearCells(cells);
+          await cascade(1);
+          render();
+          await sleep(120);
+        }
+        if (moves > 0) {
+          var bonus = moves * 25;
+          score += bonus;
+          if (score > bestScore) bestScore = score;
+          moves = 0;
+          render();
+          setDisplay("🐚 Shell Crush bonus: +" + bonus + " for the spare moves!", true);
+          await sleep(450);
+        }
+        if (el.crushBanner) el.crushBanner.style.display = "none";
+        crushing = false;
+        busy = false;
+      }
+
+      function starsForLevel() {
+        if (objective === "jelly") {
+          if (score >= Math.round(target * 1.3)) return 3;
+          if (score >= Math.round(target * 0.7)) return 2;
+          return 1;
+        }
+        if (score >= Math.round(target * 1.9)) return 3;
+        if (score >= Math.round(target * 1.45)) return 2;
+        return 1;
+      }
+
+      var WIN_LINES = [
+        "Wrapped it up nicely.",
+        "Every shell in its place. Good work.",
+        "The board did not stand a chance.",
+        "I counted every point. Twice."
+      ];
+      var LOSE_LINES = [
+        "One more try. The jelly is nervous.",
+        "So close. Rematch?",
+        "That board is tricky. Go again.",
+        "I will hold your place right here."
+      ];
+
       function endTurnCheck() {
-        if (score >= target) {
+        var won = objective === "jelly" ? jellyLeft <= 0 : score >= target;
+        if (won) {
           over = true;
           levelsCleared++;
-          sfxWin();
-          if (el.winnerCard) {
-            el.winnerCard.innerHTML = '<p class="sub">Cove Crush</p><h2>🎉 Level ' + level + ' cleared!</h2><div class="wc-amount">' + score + ' points</div><p class="wc-detail">Target was ' + target + ' — with ' + moves + ' moves to spare!</p><p class="wc-detail">Screenshot it and post it in the Creator\'s Cove Facebook group!</p>';
+          var stars = starsForLevel();
+          if (stars > (progress.stars[level] || 0)) progress.stars[level] = stars;
+          if (level + 1 > progress.unlocked) progress.unlocked = Math.min(LEVELS.length + 1, level + 1);
+          saveProgress();
+          finalLevel = level >= LEVELS.length;
+          if (moves > 0) {
+            var spareMoves = moves;
+            shellCrush().then(function () { showWinPanel(stars, spareMoves); });
+          } else {
+            showWinPanel(stars, 0);
           }
-          if (el.overlayBtn) el.overlayBtn.textContent = "Next level";
-          if (el.overlay) el.overlay.classList.add("open");
-          setDisplay("🎉 Level " + level + " cleared!", true);
           return;
         }
         if (moves <= 0) {
           over = true;
-          sfxFail();
-          if (el.winnerCard) {
-            el.winnerCard.innerHTML = '<p class="sub">Cove Crush</p><h2>Out of moves!</h2><div class="wc-amount">' + score + ' / ' + target + '</div><p class="wc-detail">So close — give Level ' + level + ' another go!</p>';
-          }
-          if (el.overlayBtn) el.overlayBtn.textContent = "Try again";
-          if (el.overlay) el.overlay.classList.add("open");
-          setDisplay("Out of moves — try again!", true);
+          showLosePanel();
           return;
         }
         if (!hasPossibleMove(board)) {
           shuffleBoard(board);
           render();
           setDisplay("No moves left — board shuffled!");
+        } else if (objective === "jelly") {
+          setDisplay("Keep crushing! " + jellyLeft + " jelly left, " + moves + " moves.");
         } else {
           setDisplay("Keep crushing! " + moves + " moves left.");
         }
+      }
+
+      function showWinPanel(stars, spareMoves) {
+        sfxWin();
+        burstConfetti(30);
+        if (el.winnerCard) {
+          var starHtml = "";
+          for (var i = 0; i < 3; i++) starHtml += '<span class="star">⭐</span>';
+          el.winnerCard.innerHTML =
+            '<img class="wc-mascot" src="crush3d/sprocket.png" alt="Sprocket" />' +
+            '<p class="sub">Cove Crush</p><h2>🎉 Level ' + level + ' cleared!</h2>' +
+            '<div class="wc-stars">' + starHtml + '</div>' +
+            '<div class="wc-amount">' + score + ' points</div>' +
+            '<p class="wc-detail">' + (objective === "jelly" ? "All the jelly is gone" : "Target was " + target) + (spareMoves > 0 ? ' — Shell Crush turned your ' + spareMoves + ' spare moves into bonus blasts!' : ' — cleared right down to the last move!') + '</p>' +
+            '<p class="wc-host">Sprocket: &ldquo;' + WIN_LINES[level % WIN_LINES.length] + '&rdquo;</p>' +
+            '<p class="wc-detail">Screenshot it and post it in the Creator\'s Cove Facebook group!</p>';
+          var starEls = el.winnerCard.querySelectorAll(".star");
+          for (var s = 0; s < stars; s++) {
+            (function (idx) {
+              setTimeout(function () {
+                if (starEls[idx]) { starEls[idx].classList.add("lit"); sfxStar(idx); }
+              }, 350 + idx * 380);
+            })(s);
+          }
+        }
+        if (el.overlayBtn) el.overlayBtn.textContent = finalLevel ? "🗺️ Back to map" : "Next level";
+        if (el.overlay) el.overlay.classList.add("open");
+        setDisplay("🎉 Level " + level + " cleared!", true);
+      }
+
+      function showLosePanel() {
+        sfxFail();
+        if (el.winnerCard) {
+          el.winnerCard.innerHTML =
+            '<img class="wc-mascot" src="crush3d/sprocket.png" alt="Sprocket" />' +
+            '<p class="sub">Cove Crush</p><h2>Out of moves!</h2>' +
+            '<div class="wc-amount">' + (objective === "jelly" ? jellyLeft + ' jelly left' : score + ' / ' + target) + '</div>' +
+            '<p class="wc-detail">' + (objective === "jelly" ? "The jelly held on this time — give Level " + level + " another go!" : "So close — give Level " + level + " another go!") + '</p>' +
+            '<p class="wc-host">Sprocket: &ldquo;' + LOSE_LINES[level % LOSE_LINES.length] + '&rdquo;</p>';
+        }
+        if (el.overlayBtn) el.overlayBtn.textContent = "Try again";
+        if (el.overlay) el.overlay.classList.add("open");
+        setDisplay("Out of moves — try again!", true);
       }
 
       function onOverlayButton() {
         if (!el.overlay) return;
         sfxClick();
         el.overlay.classList.remove("open");
-        if (score >= target) startLevel(level + 1);
+        var won = objective === "jelly" ? jellyLeft <= 0 : score >= target;
+        if (won && !finalLevel) startLevel(level + 1);
+        else if (won) showScreen("map");
         else startLevel(level);
       }
 
@@ -896,25 +1567,35 @@
       /* ---- Boot ---- */
       if (typeof document !== "undefined") {
         initDom();
-        newGame();
+        loadProgress();
+        startLevel(Math.min(progress.unlocked, LEVELS.length));
+        showScreen("map");
       }
       if (typeof window !== "undefined") {
         window.CoveCrush = {
-          TYPES: TYPES, ROWS: ROWS, COLS: COLS,
+          TYPES: TYPES, ROWS: ROWS, COLS: COLS, LEVELS: LEVELS, MASKS: MASKS,
           makeBoard: makeBoard, findMatches: findMatches, hasMatch: hasMatch,
           swapCreatesMatch: swapCreatesMatch, hasPossibleMove: hasPossibleMove,
           findHint: findHint, applyGravity: applyGravity, refillBoard: refillBoard,
           shuffleBoard: shuffleBoard, levelConfig: levelConfig,
           getBoard: function () { return board; },
+          getJelly: function () { return jelly; },
+          getJellyLeft: function () { return jellyLeft; },
+          getProgress: function () { return progress; },
+          showMap: function () { showScreen("map"); },
+          showPraise: showPraise,
           startLevel: startLevel, attemptSwap: attemptSwap,
           isSoundOn: function () { return soundOn; },
           toggleSound: toggleSound, ensureAudio: ac,
           sfxPop: sfxPop, sfxSwap: sfxSwap, sfxInvalid: sfxInvalid,
           sfxWin: sfxWin, sfxFail: sfxFail, sfxClick: sfxClick,
+          sfxArpeggio: sfxArpeggio, sfxPowerUp: sfxPowerUp, sfxBoom: sfxBoom,
+          sfxBombZap: sfxBombZap, sfxPraise: sfxPraise,
           startMusic: startMusic, stopMusic: stopMusic,
-          getState: function () { return { level: level, score: score, moves: moves, target: target, over: over }; }
+          getState: function () { return { level: level, score: score, moves: moves, target: target, over: over, objective: objective, jellyLeft: jellyLeft }; }
         };
       }
+
     </script>
   
 <script>
