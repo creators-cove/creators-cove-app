@@ -506,7 +506,7 @@
 
       <section class="panel" aria-label="Cove gallery">
         <h2>🖼️ The Cove Gallery</h2>
-        <p class="note">Art prints wash ashore in the Cove's surprises — tap one when it bobs up! Collect all 30 for your board. Finishing a set pays a shell bonus, and a complete board earns a full-size download of any one print you choose.</p>
+        <p class="note">Art prints wash ashore in the Cove's surprises — tap one when it bobs up! Collect all 30 for your board — finishing Board 1 unlocks the Encore Board, with 20 more prints waiting under the waves. Finishing a set pays a shell bonus, and a complete board earns a full-size download of any one print you choose.</p>
         <div id="galleryBox"></div>
       </section>
 
@@ -516,7 +516,7 @@
         <div class="buildings" id="shop"></div>
       </section>
 
-      <p class="howto"><strong>How it works:</strong> crops grow in real time, even while the app is closed. Buildings fill their baskets while you are away (up to 8 hours). Your farm is saved on this phone, just like the game coins — if you switch phones or clear the browser, it starts over. The <strong>Orders Board</strong> pays bonus shells for harvesting what the girls ask for, a <strong>daily hello bonus</strong> waits every morning, and if you spot a crab scuttling across the screen — tap him, he drops shells! Every so often the Cove sends a little surprise, too — a golden crab, a bottle with a note from one of the girls, even a washed-up treasure chest. Some surprises are <strong>art prints</strong> for your Cove Gallery board — collect all 30 and a full-size print of your choice is yours to download. The <strong>Pasture</strong> animals each bring a perk of their own — eggs with your harvests, faster crops, double crab shells, truffles, and more.</p>
+      <p class="howto"><strong>How it works:</strong> crops grow in real time, even while the app is closed. Buildings fill their baskets while you are away (up to 8 hours). Your farm is saved on this phone, just like the game coins — if you switch phones or clear the browser, it starts over. The <strong>Orders Board</strong> pays bonus shells for harvesting what the girls ask for, a <strong>daily hello bonus</strong> waits every morning, and if you spot a crab scuttling across the screen — tap him, he drops shells! Every so often the Cove sends a little surprise, too — a golden crab, a bottle with a note from one of the girls, even a washed-up treasure chest. Some surprises are <strong>art prints</strong> for your Cove Gallery board — collect all 30 and a full-size print of your choice is yours to download — and a finished board unlocks the Encore Board, with 20 more prints after that. The <strong>Pasture</strong> animals each bring a perk of their own — eggs with your harvests, faster crops, double crab shells, truffles, and more.</p>
       <button class="reset-link" id="resetBtn" type="button">Start my farm over</button>
     </div>
     <div class="toast" id="toast" role="status"></div>
@@ -712,7 +712,7 @@
         var buildings = BUILDINGS.map(function (b) {
           return { id: b.id, owned: b.id === "canvas", level: 1, banked: 0, lastBankedAt: Date.now() };
         });
-        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false }, grand: { wheel: false, pier: false }, stats: { harvested: 0, earned: 0 }, milestones: {}, decor: {}, animals: {}, prints: [], setsDone: {}, boardPrize: "" };
+        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false }, grand: { wheel: false, pier: false }, stats: { harvested: 0, earned: 0 }, milestones: {}, decor: {}, animals: {}, prints: [], setsDone: {}, boardPrize: "", boardPrize2: "" };
       }
       var state = defaultState();
       function save() {
@@ -767,6 +767,7 @@
           if (!Array.isArray(state.prints)) state.prints = [];
           if (!state.setsDone) state.setsDone = {};
           if (typeof state.boardPrize !== "string") state.boardPrize = "";
+          if (typeof state.boardPrize2 !== "string") state.boardPrize2 = "";
         } catch (e) { /* ignore */ }
       }
 
@@ -1473,39 +1474,89 @@
         { id: "p29", name: "Pomeranian", set: "pets", img: "gallery/p29.jpg", dl: "../downloads/print-cf52117d.jpg" },
         { id: "p30", name: "Siamese Cat", set: "pets", img: "gallery/p30.jpg", dl: "../downloads/print-0a7703b5.jpg" }
       ];
-      function printById(id) { for (var i = 0; i < PRINTS.length; i++) if (PRINTS[i].id === id) return PRINTS[i]; return null; }
+      /* ---------- Board 2: The Encore Board (unlocks when Board 1 is complete) ---------- */
+      var PRINT_SETS2 = {
+        bedrock: { label: "\uD83E\uDEA8 Bedrock", bonus: 180 },
+        retro: { label: "\uD83C\uDF08 Retro Girls", bonus: 180 },
+        nicktoons: { label: "\uD83D\uDCFA Nicktoons", bonus: 90 },
+        barney: { label: "\uD83E\uDD95 Barney & Friends", bonus: 60 },
+        spooky: { label: "\uD83C\uDF83 Wonderland & Spooky", bonus: 60 },
+        pokemon: { label: "\u26A1 Pok\u00E9mon", bonus: 30 }
+      };
+      var PRINT_SET_ORDER2 = ["bedrock", "retro", "nicktoons", "barney", "spooky", "pokemon"];
+      var PRINTS2 = [
+        { id: "q1", name: "Rainbow Brite", set: "retro", img: "gallery/q1.jpg", dl: "../downloads/print-cea680cd.jpg" },
+        { id: "q2", name: "Wilma", set: "bedrock", img: "gallery/q2.jpg", dl: "../downloads/print-99ccacbd.jpg" },
+        { id: "q3", name: "Pok\u00E9mon", set: "pokemon", img: "gallery/q3.jpg", dl: "../downloads/print-f5118a3e.jpg" },
+        { id: "q4", name: "BJ", set: "barney", img: "gallery/q4.jpg", dl: "../downloads/print-2876d943.jpg" },
+        { id: "q5", name: "Pebbles", set: "bedrock", img: "gallery/q5.jpg", dl: "../downloads/print-47d0cf7a.jpg" },
+        { id: "q6", name: "Cheshire Cat", set: "spooky", img: "gallery/q6.jpg", dl: "../downloads/print-c0c016e9.jpg" },
+        { id: "q7", name: "Rugrats", set: "nicktoons", img: "gallery/q7.jpg", dl: "../downloads/print-4ad7f273.jpg" },
+        { id: "q8", name: "Fred Flintstone", set: "bedrock", img: "gallery/q8.jpg", dl: "../downloads/print-f892a5fd.jpg" },
+        { id: "q9", name: "Dino", set: "bedrock", img: "gallery/q9.jpg", dl: "../downloads/print-2615f573.jpg" },
+        { id: "q10", name: "Precious Moments", set: "retro", img: "gallery/q10.jpg", dl: "../downloads/print-f033bb0e.jpg" },
+        { id: "q11", name: "Betty Boop", set: "retro", img: "gallery/q11.jpg", dl: "../downloads/print-c9187b70.jpg" },
+        { id: "q12", name: "Strawberry Shortcake", set: "retro", img: "gallery/q12.jpg", dl: "../downloads/print-21c2827c.jpg" },
+        { id: "q13", name: "Baby Bop", set: "barney", img: "gallery/q13.jpg", dl: "../downloads/print-e95d2bfe.jpg" },
+        { id: "q14", name: "Five Nights at Freddy's", set: "spooky", img: "gallery/q14.jpg", dl: "../downloads/print-460c3c8c.jpg" },
+        { id: "q15", name: "Flintstones Family", set: "bedrock", img: "gallery/q15.jpg", dl: "../downloads/print-b35fadbc.jpg" },
+        { id: "q16", name: "Powerpuff Girls", set: "retro", img: "gallery/q16.jpg", dl: "../downloads/print-d35729cd.jpg" },
+        { id: "q17", name: "Wilma in Bedrock", set: "bedrock", img: "gallery/q17.jpg", dl: "../downloads/print-230640b6.jpg" },
+        { id: "q18", name: "She-Ra", set: "retro", img: "gallery/q18.jpg", dl: "../downloads/print-c287f476.jpg" },
+        { id: "q19", name: "Ren & Stimpy", set: "nicktoons", img: "gallery/q19.jpg", dl: "../downloads/print-af2c3a8b.jpg" },
+        { id: "q20", name: "SpongeBob", set: "nicktoons", img: "gallery/q20.jpg", dl: "../downloads/print-b2378625.jpg" }
+      ];
+      var ALL_PRINTS = PRINTS.concat(PRINTS2);
+      function printById(id) { for (var i = 0; i < ALL_PRINTS.length; i++) if (ALL_PRINTS[i].id === id) return ALL_PRINTS[i]; return null; }
+      function printSetDef(p) { return PRINT_SETS[p.set] || PRINT_SETS2[p.set]; }
+      function printBoardOf(p) { return p.id.charAt(0) === "q" ? 2 : 1; }
+      function boardList(b) { return b === 2 ? PRINTS2 : PRINTS; }
+      function boardSets(b) { return b === 2 ? PRINT_SETS2 : PRINT_SETS; }
+      function boardOwned(b) { return boardList(b).filter(function (p) { return state.prints.indexOf(p.id) >= 0; }); }
+      function boardComplete(b) { return boardOwned(b).length >= boardList(b).length; }
+      function boardPrizeVal(b) { return b === 2 ? state.boardPrize2 : state.boardPrize; }
       function collectPrint() {
-        if (state.prints.length >= PRINTS.length) {
-          addShells(60); Sfx.coin();
-          toast("\uD83D\uDDBC\uFE0F Another print washes up — your board is complete, so the Cove shop trades it for \uD83D\uDC1A 60!");
-          return;
-        }
-        var missing = PRINTS.filter(function (p) { return state.prints.indexOf(p.id) < 0; });
-        if (missing.length && (state.prints.length === 0 || Math.random() < 0.78)) {
+        if (!boardComplete(1)) { dealPrint(1); return; }
+        if (!boardComplete(2)) { dealPrint(2); return; }
+        /* both boards complete \u2014 a find becomes a giftable spare, like any repeat */
+        var ownedAll = ALL_PRINTS.filter(function (p) { return state.prints.indexOf(p.id) >= 0; });
+        var any = ownedAll[Math.floor(Math.random() * ownedAll.length)];
+        if (!state.spares) state.spares = {};
+        state.spares[any.id] = (state.spares[any.id] || 0) + 1;
+        Sfx.coin();
+        toast("\uD83D\uDDBC\uFE0F A print washes up \u2014 " + any.name + ", one already on your board! Both boards are complete, so it goes into your giftable spares in the Gallery below \u2014 gift it to a friend, or trade it in for \uD83D\uDC1A 45.");
+      }
+      function dealPrint(b) {
+        var list = boardList(b), setsMap = boardSets(b);
+        var owned = boardOwned(b);
+        var missing = list.filter(function (p) { return state.prints.indexOf(p.id) < 0; });
+        if (missing.length && (owned.length === 0 || Math.random() < 0.78)) {
           var p = missing[Math.floor(Math.random() * missing.length)];
           state.prints.push(p.id);
           Sfx.coin();
-          var msg = "\uD83D\uDDBC\uFE0F A print washed ashore: " + p.name + "! (" + state.prints.length + " of " + PRINTS.length + ")";
-          var setPrints = PRINTS.filter(function (x) { return x.set === p.set; });
+          var msg = "\uD83D\uDDBC\uFE0F A print washed ashore: " + p.name + "! (" + (owned.length + 1) + " of " + list.length + (b === 2 ? " on the Encore Board" : "") + ")";
+          var setPrints = list.filter(function (x) { return x.set === p.set; });
           var have = setPrints.filter(function (x) { return state.prints.indexOf(x.id) >= 0; }).length;
           if (have === setPrints.length && !state.setsDone[p.set]) {
             state.setsDone[p.set] = true;
-            addShells(PRINT_SETS[p.set].bonus);
-            msg += "  \uD83C\uDF89 Set complete: " + PRINT_SETS[p.set].label + " — bonus \uD83D\uDC1A " + PRINT_SETS[p.set].bonus + "!";
+            addShells(setsMap[p.set].bonus);
+            msg += "  \uD83C\uDF89 Set complete: " + setsMap[p.set].label + " \u2014 bonus \uD83D\uDC1A " + setsMap[p.set].bonus + "!";
           }
-          if (state.prints.length >= PRINTS.length) {
-            msg += "  \uD83C\uDFC6 BOARD COMPLETE! Open the Cove Gallery below and pick your full-size download!";
+          if (boardComplete(b)) {
+            msg += b === 2
+              ? "  \uD83C\uDFC6 ENCORE BOARD COMPLETE! Open the Cove Gallery below and pick your full-size download!"
+              : "  \uD83C\uDFC6 BOARD COMPLETE! Open the Cove Gallery below and pick your full-size download!";
           }
           longToast(msg);
         } else {
-          var ownedPrints = PRINTS.filter(function (p) { return state.prints.indexOf(p.id) >= 0; });
-          var any = ownedPrints[Math.floor(Math.random() * ownedPrints.length)];
+          var any = owned[Math.floor(Math.random() * owned.length)];
           if (!state.spares) state.spares = {};
           state.spares[any.id] = (state.spares[any.id] || 0) + 1;
           Sfx.coin();
           toast("\uD83D\uDDBC\uFE0F A print washes up \u2014 " + any.name + ", one already on your board! It goes into your giftable spares in the Gallery below \u2014 gift it to a friend, or trade it in for \uD83D\uDC1A 45.");
         }
       }
+
       function giftSpare(pid) {
         var p = printById(pid);
         if (!p || !state.spares || !state.spares[pid]) return;
@@ -1539,11 +1590,11 @@
               if (state.prints.indexOf(g.pid) < 0) {
                 state.prints.push(g.pid);
                 got.push(pr.name);
-                var setPrints = PRINTS.filter(function (x) { return x.set === pr.set; });
+                var setPrints = boardList(printBoardOf(pr)).filter(function (x) { return x.set === pr.set; });
                 var have = setPrints.filter(function (x) { return state.prints.indexOf(x.id) >= 0; }).length;
                 if (have === setPrints.length && !state.setsDone[pr.set]) {
                   state.setsDone[pr.set] = true;
-                  addShells(PRINT_SETS[pr.set].bonus);
+                  addShells(printSetDef(pr).bonus);
                 }
               } else {
                 addShells(45);
@@ -1560,16 +1611,36 @@
           }, function () { /* offline \u2014 gifts wait */ });
       }
       var galSig = "";
+      function renderPrintSets(html, b) {
+        var list = boardList(b), setsMap = boardSets(b), order = b === 2 ? PRINT_SET_ORDER2 : PRINT_SET_ORDER;
+        order.forEach(function (key) {
+          var set = setsMap[key];
+          var items = list.filter(function (p) { return p.set === key; });
+          var have = items.filter(function (p) { return state.prints.indexOf(p.id) >= 0; }).length;
+          html += '<div class="gal-set">' + set.label + " \u00B7 " + have + "/" + items.length + (have === items.length ? " \u2713 (+" + set.bonus + " \uD83D\uDC1A)" : "") + "</div>";
+          html += '<div class="gal-grid">';
+          items.forEach(function (p) {
+            var owned = state.prints.indexOf(p.id) >= 0;
+            html += '<div class="gal-tile' + (owned ? "" : " missing") + '" data-print="' + p.id + '">' +
+              '<img src="' + (owned ? p.img : ("gallery/sil-" + p.id + ".png")) + '" alt="' + (owned ? p.name : "A print you have not found yet") + '" loading="lazy">' +
+              '<div class="gname">' + (owned ? p.name : "Not found yet") + "</div></div>";
+          });
+          html += "</div>";
+        });
+        return html;
+      }
       function renderGallery() {
         var box = document.getElementById("galleryBox");
         if (!box) return;
-        var sig = state.prints.join(",") + "|" + Object.keys(state.setsDone).sort().join(",") + "|" + state.boardPrize + "|" + JSON.stringify(state.spares || {});
+        var sig = state.prints.join(",") + "|" + Object.keys(state.setsDone).sort().join(",") + "|" + state.boardPrize + "|" + state.boardPrize2 + "|" + JSON.stringify(state.spares || {});
         if (sig === galSig && box.innerHTML) return;
         galSig = sig;
-        var html = '<p class="note" style="margin-top:0">Your board: <strong>' + state.prints.length + " of " + PRINTS.length + "</strong> prints found." +
-          (state.prints.length >= PRINTS.length
-            ? (state.boardPrize ? " \uD83C\uDFC6 Board complete — your prize print is downloaded and yours to keep!" : " \uD83C\uDFC6 Board complete! Tap any print to choose your full-size download.")
+        var n1 = boardOwned(1).length, n2 = boardOwned(2).length;
+        var html = '<p class="note" style="margin-top:0">Board 1: <strong>' + n1 + " of " + PRINTS.length + "</strong> prints found." +
+          (boardComplete(1)
+            ? (state.boardPrize ? " \uD83C\uDFC6 Board complete \u2014 your prize print is downloaded and yours to keep!" : " \uD83C\uDFC6 Board complete! Tap any print to choose your full-size download.")
             : "") + "</p>";
+
         var spareIds = Object.keys(state.spares || {}).filter(function (id) { return state.spares[id] > 0 && printById(id); });
         if (spareIds.length) {
           html += '<div class="gal-set">\uD83C\uDF81 Giftable spares \u2014 prints you found twice</div><div class="gal-grid">';
@@ -1582,20 +1653,23 @@
           html += "</div>";
           html += '<p class="note">Gifting sends the print to a friend\u2019s farm \u2014 if their board is missing it, it lands right on their board. Trading gives you \uD83D\uDC1A 45, like before.</p>';
         }
-        PRINT_SET_ORDER.forEach(function (key) {
-          var set = PRINT_SETS[key];
-          var items = PRINTS.filter(function (p) { return p.set === key; });
-          var have = items.filter(function (p) { return state.prints.indexOf(p.id) >= 0; }).length;
-          html += '<div class="gal-set">' + set.label + " · " + have + "/" + items.length + (have === items.length ? " ✓ (+" + set.bonus + " \uD83D\uDC1A)" : "") + "</div>";
+        html = renderPrintSets(html, 1);
+        if (!boardComplete(1)) {
+          html += '<div class="gal-set">\uD83D\uDDBC\uFE0F Board 2 \u2014 The Encore Board \uD83D\uDD12</div>';
+          html += '<p class="note">Collect all 30 prints on Board 1 to unlock the Encore Board \u2014 you\u2019re at <strong>' + n1 + "/30</strong> so far. Here\u2019s what\u2019s waiting under the waves:</p>";
           html += '<div class="gal-grid">';
-          items.forEach(function (p) {
-            var owned = state.prints.indexOf(p.id) >= 0;
-            html += '<div class="gal-tile' + (owned ? "" : " missing") + '" data-print="' + p.id + '">' +
-              '<img src="' + (owned ? p.img : ("gallery/sil-" + p.id + ".png")) + '" alt="' + (owned ? p.name : "A print you have not found yet") + '" loading="lazy">' +
-              '<div class="gname">' + (owned ? p.name : "Not found yet") + "</div></div>";
+          PRINTS2.forEach(function (p) {
+            html += '<div class="gal-tile missing"><img src="gallery/sil-' + p.id + '.png" alt="A locked Encore Board print" loading="lazy"><div class="gname">Locked</div></div>';
           });
           html += "</div>";
-        });
+        } else {
+          html += '<p class="note" style="margin-top:16px">Board 2 \u2014 The Encore Board: <strong>' + n2 + " of " + PRINTS2.length + "</strong> prints found." +
+            (boardComplete(2)
+              ? (state.boardPrize2 ? " \uD83C\uDFC6 Encore Board complete \u2014 your prize print is downloaded and yours to keep!" : " \uD83C\uDFC6 Encore Board complete! Tap any print to choose your full-size download.")
+              : "") + "</p>";
+          html = renderPrintSets(html, 2);
+        }
+
         box.innerHTML = html;
         var tiles = box.querySelectorAll(".gal-tile[data-print]");
         for (var i = 0; i < tiles.length; i++) {
@@ -1620,23 +1694,26 @@
       function openPrintViewer(id) {
         var p = printById(id); if (!p) return;
         pvConfirmId = null;
+        var b = printBoardOf(p);
+        var prize = boardPrizeVal(b);
         document.getElementById("pvImg").src = p.img;
         document.getElementById("pvName").textContent = p.name;
-        document.getElementById("pvSet").textContent = PRINT_SETS[p.set].label + " set";
+        document.getElementById("pvSet").textContent = printSetDef(p).label + " set" + (b === 2 ? " \u00B7 Encore Board" : "");
         var act = document.getElementById("pvActions");
-        if (state.prints.length >= PRINTS.length && !state.boardPrize) {
-          act.innerHTML = '<button type="button" class="btn" id="pvClaim">\u2B07\uFE0F Download this print — my board prize</button>' +
+        if (boardComplete(b) && !prize) {
+          act.innerHTML = '<button type="button" class="btn" id="pvClaim">\u2B07\uFE0F Download this print \u2014 my board prize</button>' +
             '<p class="note" style="margin:8px 0 0">This is your one board prize, full size and print-ready. Choose carefully!</p>';
           document.getElementById("pvClaim").addEventListener("click", function () { claimPrint(id); });
-        } else if (state.boardPrize === id) {
-          act.innerHTML = '<p class="note" style="margin:0">\uD83C\uDFC6 This was your board prize — downloaded and yours to keep.</p>';
-        } else if (state.boardPrize) {
+        } else if (prize === id) {
+          act.innerHTML = '<p class="note" style="margin:0">\uD83C\uDFC6 This was your board prize \u2014 downloaded and yours to keep.</p>';
+        } else if (prize) {
           act.innerHTML = '<p class="note" style="margin:0">Your board prize is already claimed.</p>';
         } else {
           act.innerHTML = "";
         }
         document.getElementById("printViewer").classList.add("open");
       }
+
       function claimPrint(id) {
         var p = printById(id); if (!p) return;
         if (pvConfirmId !== id) {
@@ -1645,7 +1722,7 @@
           if (b) b.textContent = "Tap again to confirm — " + p.name + " is your pick";
           return;
         }
-        state.boardPrize = id; save();
+        if (printBoardOf(p) === 2) state.boardPrize2 = id; else state.boardPrize = id; save();
         var a = document.createElement("a");
         a.href = p.dl; a.download = "";
         document.body.appendChild(a); a.click(); a.remove();
