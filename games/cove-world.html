@@ -506,7 +506,7 @@
 
       <section class="panel" aria-label="Cove gallery">
         <h2>🖼️ The Cove Gallery</h2>
-        <p class="note">Art prints wash ashore in the Cove's surprises — tap one when it bobs up! Collect all 30 for your board — finishing Board 1 unlocks the Encore Board, with 20 more prints waiting under the waves. Finishing a set pays a shell bonus, and a complete board earns a full-size download of any one print you choose.</p>
+        <p class="note">Art prints wash ashore in the Cove's surprises — tap one when it bobs up! Collect all 30 for your board — finishing Board 1 unlocks the Encore Board, with 20 more prints waiting under the waves. Finishing a set pays a shell bonus, and a complete board earns a full-size download of any one print you choose. Dog lover? Finish the 🐾 Pets set on Board 1 and you will unlock Best in Show — a whole third board of good dogs.</p>
         <div id="galleryBox"></div>
       </section>
 
@@ -712,7 +712,7 @@
         var buildings = BUILDINGS.map(function (b) {
           return { id: b.id, owned: b.id === "canvas", level: 1, banked: 0, lastBankedAt: Date.now() };
         });
-        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false }, grand: { wheel: false, pier: false }, stats: { harvested: 0, earned: 0 }, milestones: {}, decor: {}, animals: {}, prints: [], setsDone: {}, boardPrize: "", boardPrize2: "" };
+        return { shells: 50, plots: plots, buildings: buildings, createdAt: Date.now(), orders: [], lastDaily: "", supplies: { sprinkler: 0, miracle: 0 }, upgrades: { baskets: false, bees: false, hoe: false }, grand: { wheel: false, pier: false }, stats: { harvested: 0, earned: 0 }, milestones: {}, decor: {}, animals: {}, prints: [], setsDone: {}, boardPrize: "", boardPrize2: "", boardPrize3: "" };
       }
       var state = defaultState();
       function save() {
@@ -768,6 +768,7 @@
           if (!state.setsDone) state.setsDone = {};
           if (typeof state.boardPrize !== "string") state.boardPrize = "";
           if (typeof state.boardPrize2 !== "string") state.boardPrize2 = "";
+          if (typeof state.boardPrize3 !== "string") state.boardPrize3 = "";
         } catch (e) { /* ignore */ }
       }
 
@@ -1506,25 +1507,56 @@
         { id: "q19", name: "Ren & Stimpy", set: "nicktoons", img: "gallery/q19.jpg", dl: "../downloads/print-af2c3a8b.jpg" },
         { id: "q20", name: "SpongeBob", set: "nicktoons", img: "gallery/q20.jpg", dl: "../downloads/print-b2378625.jpg" }
       ];
-      var ALL_PRINTS = PRINTS.concat(PRINTS2);
+      /* ---------- Board 3: Best in Show (the dog board — unlocks when the Board 1 Pets set is complete) ---------- */
+      var PRINT_SETS3 = {
+        little: { label: "\uD83D\uDC36 Little Dogs", bonus: 150 },
+        sporting: { label: "\uD83C\uDFBE Sporting & Herding", bonus: 120 },
+        big: { label: "\uD83D\uDC15 Big & Wrinkly", bonus: 90 },
+        doodles: { label: "\uD83C\uDF00 Doodles", bonus: 60 }
+      };
+      var PRINT_SET_ORDER3 = ["little", "sporting", "big", "doodles"];
+      var PRINTS3 = [
+        { id: "r1", name: "French Bulldog", set: "little", img: "gallery/r1.jpg", dl: "../downloads/print-cf855e29.jpg" },
+        { id: "r2", name: "Goldendoodle", set: "doodles", img: "gallery/r2.jpg", dl: "../downloads/print-89cc40ca.jpg" },
+        { id: "r3", name: "Beagle", set: "sporting", img: "gallery/r3.jpg", dl: "../downloads/print-a2c8c851.jpg" },
+        { id: "r4", name: "Labrador", set: "sporting", img: "gallery/r4.jpg", dl: "../downloads/print-5c661a3c.jpg" },
+        { id: "r5", name: "Corgi", set: "little", img: "gallery/r5.jpg", dl: "../downloads/print-be5cc6bd.jpg" },
+        { id: "r6", name: "Cavalier King Charles", set: "little", img: "gallery/r6.jpg", dl: "../downloads/print-e6049777.jpg" },
+        { id: "r7", name: "Rottweiler", set: "big", img: "gallery/r7.jpg", dl: "../downloads/print-1903a21b.jpg" },
+        { id: "r8", name: "Australian Shepherd", set: "sporting", img: "gallery/r8.jpg", dl: "../downloads/print-04c2b8aa.jpg" },
+        { id: "r9", name: "Chihuahua", set: "little", img: "gallery/r9.jpg", dl: "../downloads/print-be062042.jpg" },
+        { id: "r10", name: "Yorkie", set: "little", img: "gallery/r10.jpg", dl: "../downloads/print-28214269.jpg" },
+        { id: "r11", name: "Doodle with Bows", set: "doodles", img: "gallery/r11.jpg", dl: "../downloads/print-05390397.jpg" },
+        { id: "r12", name: "Cane Corso", set: "big", img: "gallery/r12.jpg", dl: "../downloads/print-12751e5d.jpg" },
+        { id: "r13", name: "German Shorthaired Pointer", set: "sporting", img: "gallery/r13.jpg", dl: "../downloads/print-13f0e5a7.jpg" },
+        { id: "r14", name: "English Bulldog", set: "big", img: "gallery/r14.jpg", dl: "../downloads/print-fa0cb025.jpg" }
+      ];
+      var ALL_PRINTS = PRINTS.concat(PRINTS2).concat(PRINTS3);
       function printById(id) { for (var i = 0; i < ALL_PRINTS.length; i++) if (ALL_PRINTS[i].id === id) return ALL_PRINTS[i]; return null; }
-      function printSetDef(p) { return PRINT_SETS[p.set] || PRINT_SETS2[p.set]; }
-      function printBoardOf(p) { return p.id.charAt(0) === "q" ? 2 : 1; }
-      function boardList(b) { return b === 2 ? PRINTS2 : PRINTS; }
-      function boardSets(b) { return b === 2 ? PRINT_SETS2 : PRINT_SETS; }
+      function printSetDef(p) { return PRINT_SETS[p.set] || PRINT_SETS2[p.set] || PRINT_SETS3[p.set]; }
+      function printBoardOf(p) { var c = p.id.charAt(0); return c === "q" ? 2 : (c === "r" ? 3 : 1); }
+      function boardList(b) { return b === 2 ? PRINTS2 : (b === 3 ? PRINTS3 : PRINTS); }
+      function boardSets(b) { return b === 2 ? PRINT_SETS2 : (b === 3 ? PRINT_SETS3 : PRINT_SETS); }
       function boardOwned(b) { return boardList(b).filter(function (p) { return state.prints.indexOf(p.id) >= 0; }); }
       function boardComplete(b) { return boardOwned(b).length >= boardList(b).length; }
-      function boardPrizeVal(b) { return b === 2 ? state.boardPrize2 : state.boardPrize; }
+      function boardPrizeVal(b) { return b === 2 ? state.boardPrize2 : (b === 3 ? state.boardPrize3 : state.boardPrize); }
+      function petsSetOwned() { return PRINTS.filter(function (p) { return p.set === "pets" && state.prints.indexOf(p.id) >= 0; }).length; }
+      function boardUnlocked(b) {
+        if (b === 1) return true;
+        if (b === 2) return boardComplete(1);
+        return petsSetOwned() >= 7; /* Board 3 (Best in Show) opens when the Board 1 Pets set is finished */
+      }
       function collectPrint() {
-        if (!boardComplete(1)) { dealPrint(1); return; }
-        if (!boardComplete(2)) { dealPrint(2); return; }
-        /* both boards complete \u2014 a find becomes a giftable spare, like any repeat */
+        /* deal to a random board that is unlocked and still incomplete, equal weight each */
+        var active = [1, 2, 3].filter(function (b) { return boardUnlocked(b) && !boardComplete(b); });
+        if (active.length) { dealPrint(active[Math.floor(Math.random() * active.length)]); return; }
+        /* every unlocked board is complete \u2014 a find becomes a giftable spare, like any repeat */
         var ownedAll = ALL_PRINTS.filter(function (p) { return state.prints.indexOf(p.id) >= 0; });
         var any = ownedAll[Math.floor(Math.random() * ownedAll.length)];
         if (!state.spares) state.spares = {};
         state.spares[any.id] = (state.spares[any.id] || 0) + 1;
         Sfx.coin();
-        toast("\uD83D\uDDBC\uFE0F A print washes up \u2014 " + any.name + ", one already on your board! Both boards are complete, so it goes into your giftable spares in the Gallery below \u2014 gift it to a friend, or trade it in for \uD83D\uDC1A 45.");
+        toast("\uD83D\uDDBC\uFE0F A print washes up \u2014 " + any.name + ", one already on your board! Your gallery boards are complete, so it goes into your giftable spares in the Gallery below \u2014 gift it to a friend, or trade it in for \uD83D\uDC1A 45.");
       }
       function dealPrint(b) {
         var list = boardList(b), setsMap = boardSets(b);
@@ -1534,7 +1566,7 @@
           var p = missing[Math.floor(Math.random() * missing.length)];
           state.prints.push(p.id);
           Sfx.coin();
-          var msg = "\uD83D\uDDBC\uFE0F A print washed ashore: " + p.name + "! (" + (owned.length + 1) + " of " + list.length + (b === 2 ? " on the Encore Board" : "") + ")";
+          var msg = "\uD83D\uDDBC\uFE0F A print washed ashore: " + p.name + "! (" + (owned.length + 1) + " of " + list.length + (b === 2 ? " on the Encore Board" : (b === 3 ? " on the Best in Show board" : "")) + ")";
           var setPrints = list.filter(function (x) { return x.set === p.set; });
           var have = setPrints.filter(function (x) { return state.prints.indexOf(x.id) >= 0; }).length;
           if (have === setPrints.length && !state.setsDone[p.set]) {
@@ -1545,7 +1577,9 @@
           if (boardComplete(b)) {
             msg += b === 2
               ? "  \uD83C\uDFC6 ENCORE BOARD COMPLETE! Open the Cove Gallery below and pick your full-size download!"
-              : "  \uD83C\uDFC6 BOARD COMPLETE! Open the Cove Gallery below and pick your full-size download!";
+              : (b === 3
+                ? "  \uD83C\uDFC6 BEST IN SHOW BOARD COMPLETE! Open the Cove Gallery below and pick your full-size download!"
+                : "  \uD83C\uDFC6 BOARD COMPLETE! Open the Cove Gallery below and pick your full-size download!");
           }
           longToast(msg);
         } else {
@@ -1612,7 +1646,7 @@
       }
       var galSig = "";
       function renderPrintSets(html, b) {
-        var list = boardList(b), setsMap = boardSets(b), order = b === 2 ? PRINT_SET_ORDER2 : PRINT_SET_ORDER;
+        var list = boardList(b), setsMap = boardSets(b), order = b === 2 ? PRINT_SET_ORDER2 : (b === 3 ? PRINT_SET_ORDER3 : PRINT_SET_ORDER);
         order.forEach(function (key) {
           var set = setsMap[key];
           var items = list.filter(function (p) { return p.set === key; });
@@ -1632,10 +1666,10 @@
       function renderGallery() {
         var box = document.getElementById("galleryBox");
         if (!box) return;
-        var sig = state.prints.join(",") + "|" + Object.keys(state.setsDone).sort().join(",") + "|" + state.boardPrize + "|" + state.boardPrize2 + "|" + JSON.stringify(state.spares || {});
+        var sig = state.prints.join(",") + "|" + Object.keys(state.setsDone).sort().join(",") + "|" + state.boardPrize + "|" + state.boardPrize2 + "|" + state.boardPrize3 + "|" + JSON.stringify(state.spares || {});
         if (sig === galSig && box.innerHTML) return;
         galSig = sig;
-        var n1 = boardOwned(1).length, n2 = boardOwned(2).length;
+        var n1 = boardOwned(1).length, n2 = boardOwned(2).length, n3 = boardOwned(3).length;
         var html = '<p class="note" style="margin-top:0">Board 1: <strong>' + n1 + " of " + PRINTS.length + "</strong> prints found." +
           (boardComplete(1)
             ? (state.boardPrize ? " \uD83C\uDFC6 Board complete \u2014 your prize print is downloaded and yours to keep!" : " \uD83C\uDFC6 Board complete! Tap any print to choose your full-size download.")
@@ -1669,6 +1703,21 @@
               : "") + "</p>";
           html = renderPrintSets(html, 2);
         }
+        if (!boardUnlocked(3)) {
+          html += '<div class="gal-set">\uD83D\uDDBC\uFE0F Board 3 \u2014 Best in Show \uD83D\uDD12</div>';
+          html += '<p class="note">Finish the <strong>\uD83D\uDC3E Pets</strong> set on Board 1 to unlock Best in Show, the dog board \u2014 Pets: <strong>' + petsSetOwned() + "/7</strong> so far. Here are the good dogs waiting for you:</p>";
+          html += '<div class="gal-grid">';
+          PRINTS3.forEach(function (p) {
+            html += '<div class="gal-tile missing"><img src="gallery/sil-' + p.id + '.png" alt="A locked Best in Show print" loading="lazy"><div class="gname">Locked</div></div>';
+          });
+          html += "</div>";
+        } else {
+          html += '<p class="note" style="margin-top:16px">Board 3 \u2014 Best in Show: <strong>' + n3 + " of " + PRINTS3.length + "</strong> prints found." +
+            (boardComplete(3)
+              ? (state.boardPrize3 ? " \uD83C\uDFC6 Best in Show complete \u2014 your prize print is downloaded and yours to keep!" : " \uD83C\uDFC6 Best in Show complete! Tap any print to choose your full-size download.")
+              : "") + "</p>";
+          html = renderPrintSets(html, 3);
+        }
 
         box.innerHTML = html;
         var tiles = box.querySelectorAll(".gal-tile[data-print]");
@@ -1698,7 +1747,7 @@
         var prize = boardPrizeVal(b);
         document.getElementById("pvImg").src = p.img;
         document.getElementById("pvName").textContent = p.name;
-        document.getElementById("pvSet").textContent = printSetDef(p).label + " set" + (b === 2 ? " \u00B7 Encore Board" : "");
+        document.getElementById("pvSet").textContent = printSetDef(p).label + " set" + (b === 2 ? " \u00B7 Encore Board" : (b === 3 ? " \u00B7 Best in Show" : ""));
         var act = document.getElementById("pvActions");
         if (boardComplete(b) && !prize) {
           act.innerHTML = '<button type="button" class="btn" id="pvClaim">\u2B07\uFE0F Download this print \u2014 my board prize</button>' +
@@ -1722,7 +1771,8 @@
           if (b) b.textContent = "Tap again to confirm — " + p.name + " is your pick";
           return;
         }
-        if (printBoardOf(p) === 2) state.boardPrize2 = id; else state.boardPrize = id; save();
+        var claimBoard = printBoardOf(p);
+        if (claimBoard === 2) state.boardPrize2 = id; else if (claimBoard === 3) state.boardPrize3 = id; else state.boardPrize = id; save();
         var a = document.createElement("a");
         a.href = p.dl; a.download = "";
         document.body.appendChild(a); a.click(); a.remove();
