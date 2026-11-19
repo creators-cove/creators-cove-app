@@ -349,6 +349,23 @@
       .decor-img { width: 54px; height: 54px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
       .lot .house-img { position: static; width: 78px; height: 78px; object-fit: cover; border-radius: 14px; border: 2px solid var(--panel-edge); box-shadow: 0 3px 8px rgba(0,0,0,.25); background: none; }
       .o-ic { height: 1.15em; width: 1.15em; object-fit: cover; border-radius: 4px; vertical-align: -0.22em; }
+      /* ---------- Busy Bee ---------- */
+      .bee-zone { position: relative; }
+      .bee-fly { position: absolute; z-index: 5; pointer-events: none; transition: left 2.8s ease-in-out, top 2.8s ease-in-out; }
+      .bee-flip { display: block; transition: transform .3s; }
+      .bee-in { display: block; font-size: 1.7rem; line-height: 1; filter: drop-shadow(0 3px 3px rgba(0,0,0,.3)); animation: beeBob .45s ease-in-out infinite alternate; }
+      @keyframes beeBob { from { transform: translateY(-3px) rotate(-7deg); } to { transform: translateY(4px) rotate(7deg); } }
+      /* ---------- Golden Hoe + Collecting Basket ---------- */
+      .hoe-fly { position: absolute; z-index: 5; pointer-events: none; transition: left 1.8s ease-in-out, top 1.8s ease-in-out; }
+      .hoe-in { display: block; font-size: 1.6rem; line-height: 1; transform-origin: 20% 90%; filter: drop-shadow(0 0 6px rgba(255,190,40,.95)) sepia(.55) saturate(3.2); }
+      .hoe-in.digging { animation: hoeDig .36s ease-in-out 4 alternate; }
+      @keyframes hoeDig { from { transform: rotate(-16deg) translateY(0); } to { transform: rotate(26deg) translateY(7px); } }
+      .basket-fly { position: absolute; z-index: 5; pointer-events: none; transition: left 1.6s ease-in-out, top 1.6s cubic-bezier(.34,1.4,.64,1); }
+      .basket-in { display: block; position: relative; font-size: 1.6rem; line-height: 1; filter: drop-shadow(0 3px 3px rgba(0,0,0,.3)); }
+      .basket-in.collecting { animation: basketBounce .5s ease-in-out 3; }
+      .basket-in.collecting::after { content: "\u2728"; position: absolute; left: 55%; top: -14px; font-size: 1rem; animation: sparkleUp 1.3s ease-out forwards; }
+      @keyframes basketBounce { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-12px) rotate(-6deg); } 70% { transform: translateY(0) rotate(4deg); } }
+      @keyframes sparkleUp { from { opacity: 0; transform: translateY(4px) scale(.6); } 30% { opacity: 1; } to { opacity: 0; transform: translateY(-16px) scale(1.15); } }
     </style>
   </head>
   <body>
@@ -955,6 +972,7 @@
         document.getElementById("villageLevel").textContent = villageLevel();
         document.getElementById("hourlyRate").textContent = hourlyRate();
         renderScene();
+        if (basketEl) { var scn = document.getElementById("villageScene"); if (scn && basketEl.parentNode !== scn) scn.appendChild(basketEl); }
         renderGallery();
 
         /* ---- plots ---- */
@@ -2532,6 +2550,124 @@
       checkDaily();
       render();
       setInterval(function () { checkDaily(); render(); }, 1000);
+      /* ---- Busy Bees: a bee that actually flies around the crops ---- */
+      var beeEl = null;
+      function beeStep() {
+        if (document.hidden) return;
+        if (!state.upgrades || !state.upgrades.bees) return;
+        var plotsEl = document.getElementById("plots");
+        if (!plotsEl) return;
+        var zone = plotsEl.parentNode;
+        zone.classList.add("bee-zone");
+        var cells = plotsEl.querySelectorAll(".plot:not(.locked)");
+        if (!cells.length) return;
+        var cell = cells[Math.floor(Math.random() * cells.length)];
+        var sRect = zone.getBoundingClientRect();
+        var cRect = cell.getBoundingClientRect();
+        var x = cRect.left - sRect.left + cRect.width * (0.3 + Math.random() * 0.4) - 15;
+        var y = cRect.top - sRect.top - 12;
+        if (!beeEl) {
+          beeEl = document.createElement("div");
+          beeEl.className = "bee-fly";
+          beeEl.setAttribute("aria-hidden", "true");
+          beeEl.innerHTML = '<span class="bee-flip"><span class="bee-in">\uD83D\uDC1D</span></span>';
+          beeEl.style.left = x + "px";
+          beeEl.style.top = y + "px";
+          zone.appendChild(beeEl);
+          return;
+        }
+        if (beeEl.parentNode !== zone) zone.appendChild(beeEl);
+        var curX = parseFloat(beeEl.style.left) || 0;
+        beeEl.querySelector(".bee-flip").style.transform = x < curX ? "scaleX(-1)" : "scaleX(1)";
+        beeEl.style.left = x + "px";
+        beeEl.style.top = y + "px";
+      }
+      setInterval(beeStep, 2900);
+      setTimeout(beeStep, 1200);
+      /* ---- Golden Hoe: glides to a plot and digs ---- */
+      var hoeEl = null, hoeBusy = false;
+      function hoeStep() {
+        if (document.hidden || hoeBusy) return;
+        if (!state.upgrades || !state.upgrades.hoe) return;
+        var plotsEl = document.getElementById("plots");
+        if (!plotsEl) return;
+        var zone = plotsEl.parentNode;
+        zone.classList.add("bee-zone");
+        var cells = plotsEl.querySelectorAll(".plot:not(.locked)");
+        if (!cells.length) return;
+        var cell = cells[Math.floor(Math.random() * cells.length)];
+        var sRect = zone.getBoundingClientRect();
+        var cRect = cell.getBoundingClientRect();
+        var x = cRect.left - sRect.left + cRect.width * (0.25 + Math.random() * 0.5) - 13;
+        var y = cRect.bottom - sRect.top - 40;
+        if (!hoeEl) {
+          hoeEl = document.createElement("div");
+          hoeEl.className = "hoe-fly";
+          hoeEl.setAttribute("aria-hidden", "true");
+          hoeEl.innerHTML = '<span class="hoe-in">\u26CF\uFE0F</span>';
+          hoeEl.style.left = x + "px";
+          hoeEl.style.top = y + "px";
+          zone.appendChild(hoeEl);
+          return;
+        }
+        if (hoeEl.parentNode !== zone) zone.appendChild(hoeEl);
+        hoeBusy = true;
+        hoeEl.style.left = x + "px";
+        hoeEl.style.top = y + "px";
+        setTimeout(function () {
+          var inn = hoeEl.querySelector(".hoe-in");
+          inn.classList.add("digging");
+          setTimeout(function () { inn.classList.remove("digging"); hoeBusy = false; }, 1550);
+        }, 1850);
+      }
+      setInterval(hoeStep, 4300);
+      setTimeout(hoeStep, 2400);
+      /* ---- Bigger Baskets: a basket that hops to whichever building is ready to collect ---- */
+      var basketEl = null, basketBusy = false;
+      function basketStep() {
+        if (document.hidden || basketBusy) return;
+        if (!state.upgrades || !state.upgrades.baskets) return;
+        var scene = document.getElementById("villageScene");
+        if (!scene || !scene.children.length) return;
+        scene.classList.add("bee-zone");
+        var now = Date.now();
+        var ready = [];
+        state.buildings.forEach(function (b, i) { if (b.owned && bankedNow(b, now) > 0) ready.push(i); });
+        var sRect = scene.getBoundingClientRect();
+        var lot, x, y;
+        if (ready.length) {
+          lot = scene.children[ready[Math.floor(Math.random() * ready.length)]];
+        } else {
+          lot = scene.children[0];
+        }
+        if (!lot) return;
+        var lRect = lot.getBoundingClientRect();
+        x = lRect.left - sRect.left + lRect.width / 2 - 14;
+        y = lRect.top - sRect.top + 2;
+        if (!basketEl) {
+          basketEl = document.createElement("div");
+          basketEl.className = "basket-fly";
+          basketEl.setAttribute("aria-hidden", "true");
+          basketEl.innerHTML = '<span class="basket-in">\uD83E\uDDFA</span>';
+          basketEl.style.left = x + "px";
+          basketEl.style.top = y + "px";
+          scene.appendChild(basketEl);
+          return;
+        }
+        if (basketEl.parentNode !== scene) scene.appendChild(basketEl);
+        basketBusy = true;
+        basketEl.style.left = x + "px";
+        basketEl.style.top = y + "px";
+        setTimeout(function () {
+          var inn = basketEl.querySelector(".basket-in");
+          if (ready.length) {
+            inn.classList.add("collecting");
+            setTimeout(function () { inn.classList.remove("collecting"); basketBusy = false; }, 1600);
+          } else { basketBusy = false; }
+        }, 1650);
+      }
+      setInterval(basketStep, 4700);
+      setTimeout(basketStep, 3000);
       setInterval(save, 10000);
       document.addEventListener("visibilitychange", function () { if (document.hidden) save(); });
       window.addEventListener("pagehide", save);
