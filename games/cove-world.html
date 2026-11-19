@@ -339,6 +339,16 @@
         color: var(--ink-soft); font-size: .8rem; font-weight: 700;
         text-decoration: underline; cursor: pointer; font-family: inherit;
       }
+
+      /* ---------- 3D art tiles ---------- */
+      .plot-art { width: 74px; height: 74px; object-fit: cover; border-radius: 12px; display: block; margin: 0 auto 2px; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+      .b-img { width: 64px; height: 64px; object-fit: cover; border-radius: 12px; display: block; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+      .seed-img { width: 46px; height: 46px; object-fit: cover; border-radius: 10px; display: block; margin: 0 auto; }
+      .pal-img { width: 46px; height: 46px; object-fit: cover; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); vertical-align: middle; }
+      .decor-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+      .decor-img { width: 54px; height: 54px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+      .lot .house-img { position: static; width: 78px; height: 78px; object-fit: cover; border-radius: 14px; border: 2px solid var(--panel-edge); box-shadow: 0 3px 8px rgba(0,0,0,.25); background: none; }
+      .o-ic { height: 1.15em; width: 1.15em; object-fit: cover; border-radius: 4px; vertical-align: -0.22em; }
     </style>
   </head>
   <body>
@@ -629,28 +639,28 @@
       var BANK_CAP_HOURS = 8;
 
       var CROPS = {
-        carrot:    { emoji: "🥕", name: "Carrot",    seed: 3,  sell: 7,   growMs: 2 * 60 * 1000 },
-        pumpkin:   { emoji: "🎃", name: "Pumpkin",   seed: 5,  sell: 12,  growMs: 5 * 60 * 1000 },
-        sunflower: { emoji: "🌻", name: "Sunflower", seed: 8,  sell: 20,  growMs: 15 * 60 * 1000 },
-        peppermint:{ emoji: "🍬", name: "Peppermint",seed: 15, sell: 42,  growMs: 25 * 60 * 1000 },
-        corn:      { emoji: "🌽", name: "Corn",      seed: 12, sell: 30,  growMs: 30 * 60 * 1000 },
-        strawberry:{ emoji: "🍓", name: "Strawberry",seed: 20, sell: 55,  growMs: 60 * 60 * 1000 },
-        starfruit: { emoji: "⭐", name: "Starfruit", seed: 35, sell: 95,  growMs: 2 * 60 * 60 * 1000 },
-        poinsettia:{ emoji: "🌺", name: "Poinsettia",seed: 45, sell: 135, growMs: 3 * 60 * 60 * 1000 },
-        moonmelon: { emoji: "🍈", name: "Moon Melon",seed: 60, sell: 200, growMs: 8 * 60 * 60 * 1000 }
+        carrot:    { emoji: "🥕", img: "farm3d/crop-carrot.jpg", name: "Carrot",    seed: 3,  sell: 7,   growMs: 2 * 60 * 1000 },
+        pumpkin:   { emoji: "🎃", img: "farm3d/crop-pumpkin.jpg", name: "Pumpkin",   seed: 5,  sell: 12,  growMs: 5 * 60 * 1000 },
+        sunflower: { emoji: "🌻", img: "farm3d/crop-sunflower.jpg", name: "Sunflower", seed: 8,  sell: 20,  growMs: 15 * 60 * 1000 },
+        peppermint:{ emoji: "🍬", img: "farm3d/crop-peppermint.jpg", name: "Peppermint",seed: 15, sell: 42,  growMs: 25 * 60 * 1000 },
+        corn:      { emoji: "🌽", img: "farm3d/crop-corn.jpg", name: "Corn",      seed: 12, sell: 30,  growMs: 30 * 60 * 1000 },
+        strawberry:{ emoji: "🍓", img: "farm3d/crop-strawberry.jpg", name: "Strawberry",seed: 20, sell: 55,  growMs: 60 * 60 * 1000 },
+        starfruit: { emoji: "⭐", img: "farm3d/crop-starfruit.jpg", name: "Starfruit", seed: 35, sell: 95,  growMs: 2 * 60 * 60 * 1000 },
+        poinsettia:{ emoji: "🌺", img: "farm3d/crop-poinsettia.jpg", name: "Poinsettia",seed: 45, sell: 135, growMs: 3 * 60 * 60 * 1000 },
+        moonmelon: { emoji: "🍈", img: "farm3d/crop-moonmelon.jpg", name: "Moon Melon",seed: 60, sell: 200, growMs: 8 * 60 * 60 * 1000 }
       };
       var CROP_ORDER = ["carrot", "pumpkin", "sunflower", "peppermint", "corn", "strawberry", "starfruit", "poinsettia", "moonmelon"];
 
       var BUILDINGS = [
-        { id: "canvas",   emoji: "🎨", name: "The Salty Canvas",   desc: "Kim's art studio — the heart of the Cove.", cost: 0,   rate: 4 },
-        { id: "cottage",  emoji: "🧙", name: "Trish's Cottage",    desc: "Trish brews lucky potions by the sea.",   cost: 60,  rate: 6 },
-        { id: "shack",    emoji: "⭐", name: "Sandy's Beach Shack",desc: "Sandy sells starfish by the shore.",      cost: 120, rate: 10 },
-        { id: "workshop", emoji: "👓", name: "Gladys's Workshop",  desc: "Gladys fixes gadgets (and Sprocket).",    cost: 200, rate: 16 },
-        { id: "shed",     emoji: "🤖", name: "Sprocket's Shed",    desc: "Sprocket wraps presents, day and night.",  cost: 350, rate: 25 },
-        { id: "icecream", emoji: "🍦", name: "The Ice Cream Cart", desc: "Brain-freeze central — the line never ends.", cost: 280, rate: 20 },
-        { id: "lighthouse", emoji: "🗼", name: "Cove Lighthouse",  desc: "It keeps the whole Cove glowing, day and night.", cost: 600, rate: 45 },
-        { id: "bakery",   emoji: "🧁", name: "Boardwalk Bakery",  desc: "Smells like cinnamon, all day long.", cost: 450, rate: 32 },
-        { id: "giftshop", emoji: "🎁", name: "The Gift Shop",      desc: "Sprocket wraps, the visitors buy.",   cost: 800, rate: 60 }
+        { id: "canvas",   emoji: "🎨", img: "farm3d/bld-canvas.jpg", name: "The Salty Canvas",   desc: "Kim's art studio — the heart of the Cove.", cost: 0,   rate: 4 },
+        { id: "cottage",  emoji: "🧙", img: "farm3d/bld-cottage.jpg", name: "Trish's Cottage",    desc: "Trish brews lucky potions by the sea.",   cost: 60,  rate: 6 },
+        { id: "shack",    emoji: "⭐", img: "farm3d/bld-shack.jpg", name: "Sandy's Beach Shack",desc: "Sandy sells starfish by the shore.",      cost: 120, rate: 10 },
+        { id: "workshop", emoji: "👓", img: "farm3d/bld-workshop.jpg", name: "Gladys's Workshop",  desc: "Gladys fixes gadgets (and Sprocket).",    cost: 200, rate: 16 },
+        { id: "shed",     emoji: "🤖", img: "farm3d/bld-shed.jpg", name: "Sprocket's Shed",    desc: "Sprocket wraps presents, day and night.",  cost: 350, rate: 25 },
+        { id: "icecream", emoji: "🍦", img: "farm3d/bld-icecream.jpg", name: "The Ice Cream Cart", desc: "Brain-freeze central — the line never ends.", cost: 280, rate: 20 },
+        { id: "lighthouse", emoji: "🗼", img: "farm3d/bld-lighthouse.jpg", name: "Cove Lighthouse",  desc: "It keeps the whole Cove glowing, day and night.", cost: 600, rate: 45 },
+        { id: "bakery",   emoji: "🧁", img: "farm3d/bld-bakery.jpg", name: "Boardwalk Bakery",  desc: "Smells like cinnamon, all day long.", cost: 450, rate: 32 },
+        { id: "giftshop", emoji: "🎁", img: "farm3d/bld-giftshop.jpg", name: "The Gift Shop",      desc: "Sprocket wraps, the visitors buy.",   cost: 800, rate: 60 }
       ];
 
       function plotCost(n) { /* cost of the (n+1)th plot, n = current count */
@@ -862,9 +872,9 @@
           var d = document.createElement("div");
           if (!b.owned) {
             d.className = "lot locked";
-            d.innerHTML = '<span class="house">🚧</span>' +
+            d.innerHTML = '<img class="house-img" style="opacity:.55" src="' + bDef.img + '" alt="" />' +
               '<div class="l-name">Empty lot</div>' +
-              '<div class="l-sub">' + bDef.emoji + " " + bDef.name + '</div>' +
+              '<div class="l-sub">' + bDef.name + '</div>' +
               '<div class="l-bank">🐚 ' + bDef.cost + ' to build</div>';
             d.addEventListener("click", function () {
               if (state.shells < bDef.cost) { Sfx.thud(); toast(bDef.name + " costs 🐚 " + bDef.cost + " — keep harvesting! 🏠"); return; }
@@ -879,7 +889,7 @@
               ? '<img src="' + g.img + '" alt="' + g.who + '" />'
               : '<div class="robot-face">' + (bDef.id === "shed" ? "🤖" : bDef.emoji) + '</div>';
             d.innerHTML = face + '<span class="theme">' + bDef.emoji + '</span>' +
-              '<span class="house">' + HOUSE_FOR_BUILDING[bDef.id] + '</span>' +
+              '<img class="house-img" src="' + bDef.img + '" alt="" />' +
               '<div class="l-name">' + bDef.name + '</div>' +
               '<div class="stars">' + stars + '</div>' +
               (banked > 0
@@ -933,7 +943,7 @@
           var strip = document.createElement("div");
           strip.className = "lot decor-strip";
           strip.style.cursor = "default";
-          strip.innerHTML = '<div class="decor-row">' + ownedDecor.map(function (dc) { return dc.emoji; }).join(" ") + '</div><div class="l-name">Village Decorations</div>';
+          strip.innerHTML = '<div class="decor-row">' + ownedDecor.map(function (dc) { return '<img class="decor-img" src="' + dc.img + '" alt="" />'; }).join("") + '</div><div class="l-name">Village Decorations</div>';
           scene.appendChild(strip);
         }
       }
@@ -956,20 +966,20 @@
           var crop = plot.crop ? CROPS[plot.crop] : null;
           if (stage === "empty") {
             d.className = "plot empty";
-            d.innerHTML = '<span class="emoji">🟫</span><span class="lbl">Empty plot</span><div class="time">Tap to plant</div>';
+            d.innerHTML = '<img class="plot-art" src="farm3d/stage-empty.jpg" alt="" /><span class="lbl">Empty plot</span><div class="time">Tap to plant</div>';
           } else if (stage === "withered") {
             d.className = "plot withered";
-            d.innerHTML = '<span class="emoji">🥀</span><span class="lbl">' + crop.name + '</span><div class="time">Withered — tap to clear</div>';
+            d.innerHTML = '<img class="plot-art" src="farm3d/stage-withered.jpg" alt="" /><span class="lbl">' + crop.name + '</span><div class="time">Withered — tap to clear</div>';
           } else if (stage === "ready") {
             d.className = "plot ready";
-            d.innerHTML = '<span class="emoji">' + crop.emoji + '</span><span class="lbl">' + crop.name + '</span><div class="time">✨ Ready! Tap to harvest</div>';
+            d.innerHTML = '<img class="plot-art" src="' + crop.img + '" alt="" /><span class="lbl">' + crop.name + '</span><div class="time">✨ Ready! Tap to harvest</div>';
           } else {
             d.className = "plot";
             var total = plot.watered ? effGrowMs(plot.crop) / 2 : effGrowMs(plot.crop);
             var pct = Math.max(0, Math.min(100, Math.round((now - plot.plantedAt) / total * 100)));
-            var emoji = stage === "seed" ? "🌱" : "🌿";
+            var stageImg = stage === "seed" ? "farm3d/stage-seed.jpg" : "farm3d/stage-grow.jpg";
             d.innerHTML = (plot.watered ? '<span class="watered-tag">💧</span>' : "") +
-              '<span class="emoji">' + emoji + '</span><span class="lbl">' + crop.name + '</span>' +
+              '<img class="plot-art" src="' + stageImg + '" alt="" /><span class="lbl">' + crop.name + '</span>' +
               '<div class="time">' + (plot.watered ? "Watered · " : "Tap to water · ") + fmtLeft(readyAt(plot) - now) + '</div>' +
               '<div class="bar"><div style="width:' + pct + '%"></div></div>';
           }
@@ -1001,7 +1011,7 @@
           var b = state.buildings[i];
           var d = document.createElement("div");
           d.className = "building" + (b.owned ? " owned" : "");
-          var info = '<div class="b-info"><div class="b-name">' + bDef.emoji + " " + bDef.name + (b.owned ? " · Lv " + b.level : "") + '</div>' +
+          var info = '<div class="b-info"><div class="b-name">' + bDef.name + (b.owned ? " · Lv " + b.level : "") + '</div>' +
             '<div class="b-desc">' + bDef.desc + '</div>';
           var btn = "";
           if (!b.owned) {
@@ -1014,7 +1024,7 @@
             btn = '<button class="btn" type="button" data-act="collect" data-i="' + i + '"' + (banked <= 0 ? " disabled" : "") + '>Collect 🐚 ' + banked + '</button>' +
               '<button class="btn ghost" type="button" data-act="upgrade" data-i="' + i + '"' + (state.shells < upgradeCost(b) ? " disabled" : "") + '>Upgrade · 🐚 ' + upgradeCost(b) + '</button>';
           }
-          d.innerHTML = '<div class="b-emoji">' + bDef.emoji + '</div>' + info + '<div style="display:flex;flex-direction:column;gap:6px">' + btn + '</div>';
+          d.innerHTML = '<div class="b-emoji"><img class="b-img" src="' + bDef.img + '" alt="" /></div>' + info + '<div style="display:flex;flex-direction:column;gap:6px">' + btn + '</div>';
           bEl.appendChild(d);
         });
         bEl.querySelectorAll("button[data-act]").forEach(function (btn) {
@@ -1085,7 +1095,7 @@
           d.className = "order";
           var face = g.img ? '<img src="' + g.img + '" alt="' + g.who + '" />' : '<div class="o-face">' + (o.girl === "sprocket" ? "🤖" : "🌊") + "</div>";
           d.innerHTML = face +
-            '<div class="o-info"><div class="o-name">' + g.who + " needs " + o.need + " × " + c.emoji + " " + c.name + "</div>" +
+            '<div class="o-info"><div class="o-name">' + g.who + " needs " + o.need + " × " + '<img class="o-ic" src="' + c.img + '" alt="" /> ' + c.name + "</div>" +
             '<div class="o-flavor">' + ORDER_FLAVOR[o.girl] + "</div>" +
             '<div class="o-prog">Harvested ' + o.have + "/" + o.need + " · ⏳ " + fmtLeft(o.expires - now) + " left</div></div>" +
             '<div class="o-reward">Bonus<br/>🐚 ' + o.reward + "</div>";
@@ -1096,13 +1106,13 @@
       /* ================= Supply store ================= */
       /* ================= The Pasture — cute animals, each with a perk ================= */
       var ANIMALS = [
-        { id: "chick",  emoji: "🐥", name: "Nugget the Chick",   pal: "Nugget",  cost: 150,   desc: "Sells her eggs with every harvest — crops pay 15% more shells." },
-        { id: "bunny",  emoji: "🐰", name: "Clover the Bunny",   pal: "Clover",  cost: 500,   desc: "Keeps the weeds nibbled down — crops grow 10% faster." },
-        { id: "cat",    emoji: "🐱", name: "Biscuit the Cat",    pal: "Biscuit", cost: 1000,  desc: "The wandering crab adores her — crab catches pay double shells." },
-        { id: "puppy",  emoji: "🐶", name: "Waffles the Puppy",  pal: "Waffles", cost: 2000,  desc: "Charms every visitor — Lend a Hand gifts are worth 20 shells instead of 10." },
-        { id: "piglet", emoji: "🐷", name: "Pudding the Piglet", pal: "Pudding", cost: 4500,  desc: "Snuffles up truffles — a 1-in-4 chance of a bonus 40\u2013120 shells whenever you collect from a building." },
-        { id: "goat",   emoji: "🐐", name: "Nibbles the Goat",   pal: "Nibbles", cost: 8000,  desc: "Eats everything except your crops — ready crops never wither." },
-        { id: "owl",    emoji: "🦉", name: "Hoot the Owl",       pal: "Hoot",    cost: 12000, desc: "Keeps watch over the Cove — little surprises wash up much more often." }
+        { id: "chick",  emoji: "🐥", img: "farm3d/pet-chick.jpg", name: "Nugget the Chick",   pal: "Nugget",  cost: 150,   desc: "Sells her eggs with every harvest — crops pay 15% more shells." },
+        { id: "bunny",  emoji: "🐰", img: "farm3d/pet-bunny.jpg", name: "Clover the Bunny",   pal: "Clover",  cost: 500,   desc: "Keeps the weeds nibbled down — crops grow 10% faster." },
+        { id: "cat",    emoji: "🐱", img: "farm3d/pet-cat.jpg", name: "Biscuit the Cat",    pal: "Biscuit", cost: 1000,  desc: "The wandering crab adores her — crab catches pay double shells." },
+        { id: "puppy",  emoji: "🐶", img: "farm3d/pet-puppy.jpg", name: "Waffles the Puppy",  pal: "Waffles", cost: 2000,  desc: "Charms every visitor — Lend a Hand gifts are worth 20 shells instead of 10." },
+        { id: "piglet", emoji: "🐷", img: "farm3d/pet-piglet.jpg", name: "Pudding the Piglet", pal: "Pudding", cost: 4500,  desc: "Snuffles up truffles — a 1-in-4 chance of a bonus 40\u2013120 shells whenever you collect from a building." },
+        { id: "goat",   emoji: "🐐", img: "farm3d/pet-goat.jpg", name: "Nibbles the Goat",   pal: "Nibbles", cost: 8000,  desc: "Eats everything except your crops — ready crops never wither." },
+        { id: "owl",    emoji: "🦉", img: "farm3d/pet-owl.jpg", name: "Hoot the Owl",       pal: "Hoot",    cost: 12000, desc: "Keeps watch over the Cove — little surprises wash up much more often." }
       ];
       function hasAnimal(id) { return !!(state.animals && state.animals[id]); }
       function animalCount() { var c = 0; ANIMALS.forEach(function (a) { if (state.animals && state.animals[a.id]) c++; }); return c; }
@@ -1158,7 +1168,7 @@
         if (strip && sig !== pastureSig) {
           pastureSig = sig;
           if (owned.length) {
-            strip.innerHTML = '<div class="pals">' + owned.map(function (a, i) { return '<span style="animation-delay:' + (i * 0.35) + 's">' + a.emoji + '</span>'; }).join(" ") + '</div><div class="p-name">' + owned.map(function (a) { return a.pal; }).join(" \u2022 ") + '</div>';
+            strip.innerHTML = '<div class="pals">' + owned.map(function (a, i) { return '<span style="animation-delay:' + (i * 0.35) + 's"><img class="pal-img" src="' + a.img + '" alt="" /></span>'; }).join(" ") + '</div><div class="p-name">' + owned.map(function (a) { return a.pal; }).join(" \u2022 ") + '</div>';
           } else {
             strip.innerHTML = '<div class="p-name" style="font-weight:400">No animals yet — the pasture is quiet. Adopt a friend below!</div>';
           }
@@ -1170,11 +1180,11 @@
           var d = document.createElement("div");
           d.className = "building owned";
           var has = !!(state.animals && state.animals[a.id]);
-          var info = '<div class="b-info"><div class="b-name">' + a.emoji + " " + a.name + '</div><div class="b-desc">' + a.desc + '</div></div>';
+          var info = '<div class="b-info"><div class="b-name">' + a.name + '</div><div class="b-desc">' + a.desc + '</div></div>';
           var btn = has
             ? '<button class="btn ghost" type="button" disabled>Lives here \u2713</button>'
             : '<button class="btn gold" type="button" data-animal="' + a.id + '"' + (state.shells < a.cost ? " disabled" : "") + ">Adopt \u00b7 \ud83d\udc1a " + a.cost + "</button>";
-          d.innerHTML = '<div class="b-emoji">' + a.emoji + "</div>" + info + '<div style="display:flex;flex-direction:column;gap:6px">' + btn + "</div>";
+          d.innerHTML = '<div class="b-emoji"><img class="b-img" src="' + a.img + '" alt="" /></div>' + info + '<div style="display:flex;flex-direction:column;gap:6px">' + btn + "</div>";
           el.appendChild(d);
         });
         el.querySelectorAll("button[data-animal]").forEach(function (btn) {
@@ -1787,12 +1797,12 @@
 
       /* ================= Village decorations ================= */
       var DECORATIONS = [
-        { id: "planters", emoji: "🌷", name: "Flower Planters", cost: 150 },
-        { id: "snowman", emoji: "⛄", name: "Village Snowman", cost: 180 },
-        { id: "benches", emoji: "🪑", name: "Boardwalk Benches", cost: 200 },
-        { id: "flamingos", emoji: "🦩", name: "Flamingo Family", cost: 220 },
-        { id: "lamps", emoji: "🏮", name: "Lamp Posts", cost: 250 },
-        { id: "fountain", emoji: "⛲", name: "The Cove Fountain", cost: 300 }
+        { id: "planters", emoji: "🌷", img: "farm3d/decor-planters.jpg", name: "Flower Planters", cost: 150 },
+        { id: "snowman", emoji: "⛄", img: "farm3d/decor-snowman.jpg", name: "Village Snowman", cost: 180 },
+        { id: "benches", emoji: "🪑", img: "farm3d/decor-benches.jpg", name: "Boardwalk Benches", cost: 200 },
+        { id: "flamingos", emoji: "🦩", img: "farm3d/decor-flamingos.jpg", name: "Flamingo Family", cost: 220 },
+        { id: "lamps", emoji: "🏮", img: "farm3d/decor-lamps.jpg", name: "Lamp Posts", cost: 250 },
+        { id: "fountain", emoji: "⛲", img: "farm3d/decor-fountain.jpg", name: "The Cove Fountain", cost: 300 }
       ];
       function buyDecor(id) {
         var item = null;
@@ -1813,8 +1823,8 @@
           var owned = !!state.decor[dc.id];
           var d = document.createElement("div");
           d.className = "building owned";
-          d.innerHTML = '<div class="b-emoji">' + dc.emoji + "</div>" +
-            '<div class="b-info"><div class="b-name">' + dc.emoji + " " + dc.name + "</div>" +
+          d.innerHTML = '<div class="b-emoji"><img class="b-img" src="' + dc.img + '" alt="" /></div>' +
+            '<div class="b-info"><div class="b-name">' + dc.name + "</div>" +
             '<div class="b-desc">' + (owned ? "On display in the village." : "Pure pretty — shows off in the village scene.") + "</div></div>" +
             (owned ? '<button class="btn ghost" type="button" disabled>On display ✓</button>'
                    : '<button class="btn gold" type="button" data-decor="' + dc.id + '"' + (state.shells < dc.cost ? " disabled" : "") + ">Buy · 🐚 " + dc.cost + "</button>");
@@ -1836,7 +1846,7 @@
           var b = document.createElement("button");
           b.className = "seed";
           b.type = "button";
-          b.innerHTML = '<span class="emoji">' + c.emoji + '</span><span class="nm">' + c.name + '</span><div class="pr">🐚 ' + c.seed + ' seed · sells 🐚 ' + c.sell + '<br/>⏱ ' + fmtLeft(effGrowMs(key)) + '</div>';
+          b.innerHTML = '<img class="seed-img" src="' + c.img + '" alt="" /><span class="nm">' + c.name + '</span><div class="pr">🐚 ' + c.seed + ' seed · sells 🐚 ' + c.sell + '<br/>⏱ ' + fmtLeft(effGrowMs(key)) + '</div>';
           if (state.shells < c.seed) b.disabled = true;
           b.addEventListener("click", function () { plantSeed(key); });
           seedsEl.appendChild(b);
@@ -2290,31 +2300,31 @@
         (snap.buildings || []).forEach(function (b) {
           var def = buildingDef(b.id);
           if (!def) return;
-          bHtml += "<div style='text-align:center;min-width:54px'><div style='font-size:1.9rem'>" + def.emoji + "</div><div style='font-size:.62rem;color:#5b6b73'>" + escHtml(def.name) + "<br/>Lv " + b.level + " · 🐚 " + b.rate + "/hr</div></div>";
+          bHtml += "<div style='text-align:center;min-width:54px'><img src='" + def.img + "' style='width:56px;height:56px;border-radius:12px;object-fit:cover' /><div style='font-size:.62rem;color:#5b6b73'>" + escHtml(def.name) + "<br/>Lv " + b.level + " · 🐚 " + b.rate + "/hr</div></div>";
         });
         if (snap.wheel) bHtml += "<div style='text-align:center;min-width:54px'><div style='font-size:1.9rem'>🎡</div><div style='font-size:.62rem;color:#5b6b73'>Ferris Wheel</div></div>";
         if (snap.pier) bHtml += "<div style='text-align:center;min-width:54px'><div style='font-size:1.9rem'>🌉</div><div style='font-size:.62rem;color:#5b6b73'>Cove Pier</div></div>";
         var animalHtml = "";
         (snap.animals || []).forEach(function (id) {
-          for (var i = 0; i < ANIMALS.length; i++) if (ANIMALS[i].id === id) animalHtml += "<div style='text-align:center;min-width:54px'><div style='font-size:1.9rem'>" + ANIMALS[i].emoji + "</div><div style='font-size:.62rem;color:#5b6b73'>" + ANIMALS[i].pal + "</div></div>";
+          for (var i = 0; i < ANIMALS.length; i++) if (ANIMALS[i].id === id) animalHtml += "<div style='text-align:center;min-width:54px'><img src='" + ANIMALS[i].img + "' style='width:56px;height:56px;border-radius:12px;object-fit:cover' /><div style='font-size:.62rem;color:#5b6b73'>" + ANIMALS[i].pal + "</div></div>";
         });
         var decorHtml = "";
         (snap.decor || []).forEach(function (id) {
-          for (var i = 0; i < DECORATIONS.length; i++) if (DECORATIONS[i].id === id) decorHtml += DECORATIONS[i].emoji + " ";
+          for (var i = 0; i < DECORATIONS.length; i++) if (DECORATIONS[i].id === id) decorHtml += "<img src='" + DECORATIONS[i].img + "' style='width:32px;height:32px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:4px' />";
         });
         var plotHtml = "";
         (snap.plots || []).forEach(function (p) {
-          var cell = "·", label = "Empty";
+          var cell = "<img src='farm3d/stage-empty.jpg' style='width:42px;height:42px;border-radius:9px;object-fit:cover' />", label = "Empty";
           if (p.crop && CROPS[p.crop]) {
             var c = CROPS[p.crop];
-            if (!snap.noWither && now >= (p.readyAt || 0) + WITHER_MS) { cell = "🥀"; label = "Withered"; }
-            else if (now >= (p.readyAt || 0)) { cell = c.emoji; label = "Ready!"; }
+            if (!snap.noWither && now >= (p.readyAt || 0) + WITHER_MS) { cell = "<img src='farm3d/stage-withered.jpg' style='width:42px;height:42px;border-radius:9px;object-fit:cover' />"; label = "Withered"; }
+            else if (now >= (p.readyAt || 0)) { cell = "<img src='" + c.img + "' style='width:42px;height:42px;border-radius:9px;object-fit:cover' />"; label = "Ready!"; }
             else {
               var total = (p.readyAt - p.plantedAt) || 1;
               var pct = Math.floor(100 * (now - p.plantedAt) / total);
               if (pct < 0) pct = 0;
               if (pct > 99) pct = 99;
-              cell = pct < 45 ? "🌱" : c.emoji;
+              cell = pct < 45 ? "<img src='farm3d/stage-seed.jpg' style='width:42px;height:42px;border-radius:9px;object-fit:cover' />" : "<img src='" + c.img + "' style='width:42px;height:42px;border-radius:9px;object-fit:cover' />";
               label = pct + "% grown";
             }
           }
