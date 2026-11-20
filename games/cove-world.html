@@ -2365,7 +2365,9 @@
         try {
           if (window.localStorage.getItem("cove-restored-welcome")) {
             window.localStorage.removeItem("cove-restored-welcome");
-            window.setTimeout(function () { toast("\uD83D\uDD11 Welcome back! Your farm is restored."); }, 1200);
+            var wasPrev = window.localStorage.getItem("cove-restored-prev");
+            if (wasPrev) window.localStorage.removeItem("cove-restored-prev");
+            window.setTimeout(function () { toast(wasPrev ? "\uD83D\uDD11 Welcome back! We used your earlier backup \u2014 the newest one looked like a fresh start." : "\uD83D\uDD11 Welcome back! Your farm is restored."); }, 1200);
           }
         } catch (e) { /* ignore */ }
         window.addEventListener("pagehide", function () { cloudBackup(true); });
@@ -2374,6 +2376,9 @@
       function scheduleBackup(delay) {
         if (!saveCode || backupTimer) return;
         backupTimer = window.setTimeout(function () { backupTimer = null; cloudBackup(false); }, delay || 4000);
+      }
+      function earnedOfBackup(raw) {
+        try { var d = JSON.parse(raw); return (d && d.farm && d.farm.stats && d.farm.stats.earned) || 0; } catch (e) { return 0; }
       }
       function cloudBackup(useKeepalive) {
         if (!saveCode || restoringFarm) return;
@@ -2386,7 +2391,17 @@
           } catch (e) { /* ignore */ }
           return;
         }
-        api(["SET", "save:" + saveCode, JSON.stringify(payload)]).then(function () {
+        var payloadStr = JSON.stringify(payload);
+        api(["GET", "save:" + saveCode]).then(function (curRaw) {
+          if (!curRaw) return null;
+          return api(["GET", "saveprev:" + saveCode]).then(function (prevRaw) {
+            var prevEarned = prevRaw ? earnedOfBackup(prevRaw) : -1;
+            if (earnedOfBackup(curRaw) >= prevEarned) return api(["SET", "saveprev:" + saveCode, curRaw]);
+            return null;
+          });
+        }).then(function () {
+          return api(["SET", "save:" + saveCode, payloadStr]);
+        }).then(function () {
           var el = document.getElementById("backupState");
           if (el) el.textContent = "\u2601\uFE0F Farm backed up just now \u2014 it is safe on the Cove shelf.";
         }, function () { /* offline: the next save tries again */ });
@@ -2400,11 +2415,17 @@
         code = "KEY-" + code;
         st.textContent = "Looking for your farm\u2026";
         api(["GET", "save:" + code]).then(function (raw) {
-          if (!raw) { st.textContent = "No farm found under that code \u2014 double-check the letters and try again."; return; }
-          var data = null;
-          try { data = JSON.parse(raw); } catch (e) { data = null; }
+          return api(["GET", "saveprev:" + code]).then(function (prevRaw) { return [raw, prevRaw]; });
+        }).then(function (both) {
+          var raw = both[0], prevRaw = both[1];
+          if (!raw && !prevRaw) { st.textContent = "No farm found under that code \u2014 double-check the letters and try again."; return; }
+          var data = null, prevData = null;
+          try { data = raw ? JSON.parse(raw) : null; } catch (e) { data = null; }
+          try { prevData = prevRaw ? JSON.parse(prevRaw) : null; } catch (e) { prevData = null; }
+          var usedPrev = false;
+          if (prevData && prevData.farm && (!data || !data.farm || earnedOfBackup(prevRaw) > earnedOfBackup(raw))) { data = prevData; usedPrev = true; }
           if (!data || !data.farm) { st.textContent = "That backup could not be read \u2014 try again in a moment."; return; }
-          if (!window.confirm("Bring back the farm saved as \u201C" + (data.name || "your farm") + "\u201D? It will replace the farm on this phone.")) { st.textContent = ""; return; }
+          if (!window.confirm("Bring back the farm saved as \u201C" + (data.name || "your farm") + "\u201D?" + (usedPrev ? " (Your earlier backup \u2014 it has more of your farm in it.)" : "") + " It will replace the farm on this phone.")) { st.textContent = ""; return; }
           restoringFarm = true;
           try {
             window.localStorage.setItem(SAVE_KEY, JSON.stringify(data.farm));
@@ -2413,6 +2434,7 @@
             window.localStorage.setItem(SAVECODE_KEY, code);
             if (data.pet) window.localStorage.setItem("cove-pet-v1", JSON.stringify(data.pet));
             window.localStorage.setItem("cove-restored-welcome", "1");
+            if (usedPrev) window.localStorage.setItem("cove-restored-prev", "1");
           } catch (e) { /* ignore */ }
           st.textContent = "Found it! Bringing your farm back\u2026";
           window.setTimeout(function () { window.location.reload(); }, 150);
