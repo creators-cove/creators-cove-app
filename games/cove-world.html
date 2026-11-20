@@ -668,9 +668,30 @@
         strawberry:{ emoji: "🍓", img: "farm3d/crop-strawberry.jpg", name: "Strawberry",seed: 20, sell: 55,  growMs: 60 * 60 * 1000 },
         starfruit: { emoji: "⭐", img: "farm3d/crop-starfruit.jpg", name: "Starfruit", seed: 35, sell: 95,  growMs: 2 * 60 * 60 * 1000 },
         poinsettia:{ emoji: "🌺", img: "farm3d/crop-poinsettia.jpg", name: "Poinsettia",seed: 45, sell: 135, growMs: 3 * 60 * 60 * 1000 },
-        moonmelon: { emoji: "🍈", img: "farm3d/crop-moonmelon.jpg", name: "Moon Melon",seed: 60, sell: 200, growMs: 8 * 60 * 60 * 1000 }
+        moonmelon: { emoji: "🍈", img: "farm3d/crop-moonmelon.jpg", name: "Moon Melon",seed: 60, sell: 200, growMs: 8 * 60 * 60 * 1000 },
+        cranberry: { emoji: "\uD83C\uDF52", img: "farm3d/crop-cranberry.jpg", name: "Cranberry", seed: 15, sell: 63, growMs: 25 * 60 * 1000, seasonal: true, win: { from: [11, 19], to: [11, 30] }, leaves: "Nov 30" },
+        sweetpotato: { emoji: "\uD83C\uDF60", img: "farm3d/crop-sweetpotato.jpg", name: "Sweet Potato", seed: 5, sell: 18, growMs: 5 * 60 * 1000, seasonal: true, win: { from: [11, 19], to: [11, 30] }, leaves: "Nov 30" },
+        chestnut:  { emoji: "\uD83C\uDF30", img: "farm3d/crop-chestnut.jpg", name: "Chestnut", seed: 35, sell: 140, growMs: 2 * 60 * 60 * 1000, seasonal: true, win: { from: [11, 19], to: [11, 30] }, leaves: "Nov 30" },
+        hollyberry:{ emoji: "\uD83C\uDF3F", img: "farm3d/crop-hollyberry.jpg", name: "Holly Berry", seed: 20, sell: 83, growMs: 60 * 60 * 1000, seasonal: true, win: { from: [12, 1], to: [12, 25] }, leaves: "Dec 25" },
+        ginger:    { emoji: "\uD83E\uDEDA", img: "farm3d/crop-ginger.jpg", name: "Ginger", seed: 12, sell: 45, growMs: 30 * 60 * 1000, seasonal: true, win: { from: [12, 1], to: [12, 25] }, leaves: "Dec 25" },
+        christmasrose: { emoji: "\uD83C\uDF38", img: "farm3d/crop-christmasrose.jpg", name: "Christmas Rose", seed: 45, sell: 200, growMs: 3 * 60 * 60 * 1000, seasonal: true, win: { from: [12, 1], to: [12, 25] }, leaves: "Dec 25" },
+        snowpea:   { emoji: "\uD83E\uDED8", img: "farm3d/crop-snowpea.jpg", name: "Snow Pea", seed: 8, sell: 30, growMs: 15 * 60 * 1000, seasonal: true, win: { from: [12, 26], to: [1, 31] }, leaves: "Jan 31" },
+        wintersquash: { emoji: "\uD83C\uDF41", img: "farm3d/crop-wintersquash.jpg", name: "Winter Squash", seed: 30, sell: 140, growMs: 2 * 60 * 60 * 1000, seasonal: true, win: { from: [12, 26], to: [1, 31] }, leaves: "Jan 31" },
+        frostberry:{ emoji: "\u2744\uFE0F", img: "farm3d/crop-frostberry.jpg", name: "Frostberry", seed: 60, sell: 300, growMs: 8 * 60 * 60 * 1000, seasonal: true, win: { from: [12, 26], to: [1, 31] }, leaves: "Jan 31" }
       };
       var CROP_ORDER = ["carrot", "pumpkin", "sunflower", "peppermint", "corn", "strawberry", "starfruit", "poinsettia", "moonmelon"];
+      var SEASONAL_ORDER = ["sweetpotato", "cranberry", "chestnut", "ginger", "hollyberry", "christmasrose", "snowpea", "wintersquash", "frostberry"];
+      /* limited-time windows are player-local, month/day, and may wrap the year end */
+      function mdNum(m, d) { return m * 100 + d; }
+      function inWindow(win, when) {
+        if (!win) return true;
+        var dt = when || new Date();
+        var cur = mdNum(dt.getMonth() + 1, dt.getDate());
+        var from = mdNum(win.from[0], win.from[1]), to = mdNum(win.to[0], win.to[1]);
+        return from <= to ? (cur >= from && cur <= to) : (cur >= from || cur <= to);
+      }
+      function cropInSeason(key, when) { var c = CROPS[key]; return !!(c && c.seasonal && inWindow(c.win, when)); }
+      function seasonalInWindow(when) { return SEASONAL_ORDER.filter(function (k) { return cropInSeason(k, when); }); }
 
       var BUILDINGS = [
         { id: "canvas",   emoji: "🎨", img: "farm3d/bld-canvas.jpg", name: "The Salty Canvas",   desc: "Kim's art studio — the heart of the Cove.", cost: 0,   rate: 4 },
@@ -681,7 +702,8 @@
         { id: "icecream", emoji: "🍦", img: "farm3d/bld-icecream.jpg", name: "The Ice Cream Cart", desc: "Brain-freeze central — the line never ends.", cost: 280, rate: 20 },
         { id: "lighthouse", emoji: "🗼", img: "farm3d/bld-lighthouse.jpg", name: "Cove Lighthouse",  desc: "It keeps the whole Cove glowing, day and night.", cost: 600, rate: 45 },
         { id: "bakery",   emoji: "🧁", img: "farm3d/bld-bakery.jpg", name: "Boardwalk Bakery",  desc: "Smells like cinnamon, all day long.", cost: 450, rate: 32 },
-        { id: "giftshop", emoji: "🎁", img: "farm3d/bld-giftshop.jpg", name: "The Gift Shop",      desc: "Sprocket wraps, the visitors buy.",   cost: 800, rate: 60 }
+        { id: "giftshop", emoji: "🎁", img: "farm3d/bld-giftshop.jpg", name: "The Gift Shop",      desc: "Sprocket wraps, the visitors buy.",   cost: 800, rate: 60 },
+        { id: "cocoa",    emoji: "\u2615", img: "farm3d/bld-cocoa.jpg", name: "Hot Cocoa Stand", desc: "Steaming mugs of cocoa with marshmallows \u2014 a holiday pop-up the Cove loved so much, it stayed.", cost: 500, rate: 36, saleWin: { from: [11, 19], to: [12, 25] }, saleEnds: "Dec 25" }
       ];
 
       function plotCost(n) { /* cost of the (n+1)th plot, n = current count */
@@ -777,6 +799,7 @@
         var g = CROPS[key].growMs;
         if (state.upgrades && state.upgrades.bees) g = Math.round(g * 0.8); /* Busy Bees: 20% faster */
         if (state.animals && state.animals.bunny) g = Math.round(g * 0.9); /* Clover the Bunny: 10% faster */
+        if (CROPS[key].seasonal && state.animals && state.animals.reindeer) g = Math.round(g * 0.75); /* Rudolph: seasonal crops grow 25% faster */
         return g;
       }
       function readyAt(plot) {
@@ -883,8 +906,8 @@
       }
 
       /* ---- village scene: the actual buildings on their lots ---- */
-      var GIRL_FOR_BUILDING = { canvas: "kim", cottage: "trish", shack: "sandy", workshop: "gladys", shed: "sprocket", icecream: "cove", lighthouse: "cove", bakery: "cove", giftshop: "cove" };
-      var HOUSE_FOR_BUILDING = { canvas: "🏠", cottage: "🏡", shack: "🏖️", workshop: "🏠", shed: "🏠", icecream: "🍦", lighthouse: "🗼", bakery: "🧁", giftshop: "🎁" };
+      var GIRL_FOR_BUILDING = { canvas: "kim", cottage: "trish", shack: "sandy", workshop: "gladys", shed: "sprocket", icecream: "cove", lighthouse: "cove", bakery: "cove", giftshop: "cove", cocoa: "cove" };
+      var HOUSE_FOR_BUILDING = { canvas: "🏠", cottage: "🏡", shack: "🏖️", workshop: "🏠", shed: "🏠", icecream: "🍦", lighthouse: "🗼", bakery: "🧁", giftshop: "🎁", cocoa: "☕" };
       function renderScene() {
         var now = Date.now();
         var scene = document.getElementById("villageScene");
@@ -898,8 +921,9 @@
             d.innerHTML = '<img class="house-img" style="opacity:.55" src="' + bDef.img + '" alt="" />' +
               '<div class="l-name">Empty lot</div>' +
               '<div class="l-sub">' + bDef.name + '</div>' +
-              '<div class="l-bank">🐚 ' + bDef.cost + ' to build</div>';
+              '<div class="l-bank">' + (bDef.saleWin && !inWindow(bDef.saleWin) ? 'Back next season 🎄' : '🐚 ' + bDef.cost + ' to build') + '</div>';
             d.addEventListener("click", function () {
+              if (bDef.saleWin && !inWindow(bDef.saleWin)) { Sfx.click(); toast(bDef.name + " is a holiday pop-up — back next season!"); return; }
               if (state.shells < bDef.cost) { Sfx.thud(); toast(bDef.name + " costs 🐚 " + bDef.cost + " — keep harvesting! 🏠"); return; }
               buyBuilding(i);
             });
@@ -954,12 +978,15 @@
           }
           scene.appendChild(d);
         })();
-        /* a sunny filler lot so the grid stays even */
-        var sun = document.createElement("div");
-        sun.className = "lot";
-        sun.style.cursor = "default";
-        sun.innerHTML = '<span class="house">🎄</span><div class="l-name">Winter Cove</div><div class="l-sub">Snow much fun! ⛄</div>';
-        scene.appendChild(sun);
+        /* a sunny filler lot so the grid stays even — only when the lots
+           (buildings + the two grand projects) don't fill the last row */
+        if ((BUILDINGS.length + 2) % 3 !== 0) {
+          var sun = document.createElement("div");
+          sun.className = "lot";
+          sun.style.cursor = "default";
+          sun.innerHTML = '<span class="house">🎄</span><div class="l-name">Winter Cove</div><div class="l-sub">Snow much fun! ⛄</div>';
+          scene.appendChild(sun);
+        }
         /* the decorations strip — everything pretty the player has bought */
         var ownedDecor = DECORATIONS.filter(function (dc) { return state.decor[dc.id]; });
         if (ownedDecor.length) {
@@ -1039,8 +1066,10 @@
             '<div class="b-desc">' + bDef.desc + '</div>';
           var btn = "";
           if (!b.owned) {
-            info += '<div class="b-bank">Earns 🐚 ' + bDef.rate + '/hr once built</div></div>';
-            btn = '<button class="btn gold" type="button" data-act="buy" data-i="' + i + '"' + (state.shells < bDef.cost ? " disabled" : "") + '>Build · 🐚 ' + bDef.cost + '</button>';
+            info += '<div class="b-bank">Earns 🐚 ' + bDef.rate + '/hr once built</div>' + (bDef.saleWin && inWindow(bDef.saleWin) ? '<div class="b-bank" style="color:#c0392b">🎄 Holiday pop-up — on sale until ' + bDef.saleEnds + '!</div>' : '') + (bDef.saleWin && !inWindow(bDef.saleWin) ? '<div class="b-bank">A holiday pop-up — back next season.</div>' : '') + '</div>';
+            btn = (bDef.saleWin && !inWindow(bDef.saleWin))
+              ? '<button class="btn ghost" type="button" disabled>Back next season</button>'
+              : '<button class="btn gold" type="button" data-act="buy" data-i="' + i + '"' + (state.shells < bDef.cost ? " disabled" : "") + '>Build · 🐚 ' + bDef.cost + '</button>';
           } else {
             var banked = bankedNow(b, now);
             var rate = buildingRate(b);
@@ -1080,7 +1109,8 @@
       };
       function makeOrder() {
         var girl = ORDER_GIRLS[Math.floor(Math.random() * ORDER_GIRLS.length)];
-        var key = CROP_ORDER[Math.floor(Math.random() * CROP_ORDER.length)];
+        var pool = CROP_ORDER.concat(seasonalInWindow());
+        var key = pool[Math.floor(Math.random() * pool.length)];
         var c = CROPS[key];
         var need = c.growMs <= 15 * 60 * 1000 ? 3 + Math.floor(Math.random() * 3)
           : c.growMs <= 60 * 60 * 1000 ? 2 + Math.floor(Math.random() * 3)
@@ -1135,6 +1165,7 @@
         { id: "cat",    emoji: "🐱", img: "farm3d/pet-cat.jpg", name: "Biscuit the Cat",    pal: "Biscuit", cost: 1000,  desc: "The wandering crab adores her — crab catches pay double shells." },
         { id: "puppy",  emoji: "🐶", img: "farm3d/pet-puppy.jpg", name: "Waffles the Puppy",  pal: "Waffles", cost: 2000,  desc: "Charms every visitor — Lend a Hand gifts are worth 20 shells instead of 10." },
         { id: "piglet", emoji: "🐷", img: "farm3d/pet-piglet.jpg", name: "Pudding the Piglet", pal: "Pudding", cost: 4500,  desc: "Snuffles up truffles — a 1-in-4 chance of a bonus 40\u2013120 shells whenever you collect from a building." },
+        { id: "reindeer", emoji: "\uD83E\uDD8C", img: "farm3d/pet-rudolph.jpg", name: "Rudolph the Reindeer", pal: "Rudolph", cost: 6000, desc: "His nose lights the winter fields \u2014 seasonal crops grow 25% faster. He only visits in December!", saleWin: { from: [12, 1], to: [12, 25] } },
         { id: "goat",   emoji: "🐐", img: "farm3d/pet-goat.jpg", name: "Nibbles the Goat",   pal: "Nibbles", cost: 8000,  desc: "Eats everything except your crops — ready crops never wither." },
         { id: "owl",    emoji: "🦉", img: "farm3d/pet-owl.jpg", name: "Hoot the Owl",       pal: "Hoot",    cost: 12000, desc: "Keeps watch over the Cove — little surprises wash up much more often." }
       ];
@@ -1204,10 +1235,15 @@
           var d = document.createElement("div");
           d.className = "building owned";
           var has = !!(state.animals && state.animals[a.id]);
-          var info = '<div class="b-info"><div class="b-name">' + a.name + '</div><div class="b-desc">' + a.desc + '</div></div>';
+          var offSale = a.saleWin && !inWindow(a.saleWin);
+          if (offSale && !has) d.style.opacity = ".55";
+          var info = '<div class="b-info"><div class="b-name">' + a.name + '</div><div class="b-desc">' + a.desc + '</div>' +
+            (!has && a.saleWin && !offSale ? '<div class="b-bank" style="color:#c0392b">🎄 On sale until Dec 25!</div>' : "") + '</div>';
           var btn = has
             ? '<button class="btn ghost" type="button" disabled>Lives here \u2713</button>'
-            : '<button class="btn gold" type="button" data-animal="' + a.id + '"' + (state.shells < a.cost ? " disabled" : "") + ">Adopt \u00b7 \ud83d\udc1a " + a.cost + "</button>";
+            : offSale
+              ? '<button class="btn ghost" type="button" disabled>Back next December</button>'
+              : '<button class="btn gold" type="button" data-animal="' + a.id + '"' + (state.shells < a.cost ? " disabled" : "") + ">Adopt \u00b7 \ud83d\udc1a " + a.cost + "</button>";
           d.innerHTML = '<div class="b-emoji"><img class="b-img" src="' + a.img + '" alt="" /></div>' + info + '<div style="display:flex;flex-direction:column;gap:6px">' + btn + "</div>";
           el.appendChild(d);
         });
@@ -1219,6 +1255,7 @@
         var a = null;
         ANIMALS.forEach(function (x) { if (x.id === id) a = x; });
         if (!a || hasAnimal(a.id)) return;
+        if (a.saleWin && !inWindow(a.saleWin)) { Sfx.thud(); toast(a.name + " only visits in December — back next December!"); return; }
         if (state.shells < a.cost) { Sfx.thud(); toast("That costs \ud83d\udc1a " + a.cost + " — keep harvesting!"); return; }
         state.shells -= a.cost;
         if (!state.animals) state.animals = {};
@@ -1951,12 +1988,14 @@
         { id: "benches", emoji: "🪑", img: "farm3d/decor-benches.jpg", name: "Boardwalk Benches", cost: 200 },
         { id: "flamingos", emoji: "🦩", img: "farm3d/decor-flamingos.jpg", name: "Flamingo Family", cost: 220 },
         { id: "lamps", emoji: "🏮", img: "farm3d/decor-lamps.jpg", name: "Lamp Posts", cost: 250 },
-        { id: "fountain", emoji: "⛲", img: "farm3d/decor-fountain.jpg", name: "The Cove Fountain", cost: 300 }
+        { id: "fountain", emoji: "⛲", img: "farm3d/decor-fountain.jpg", name: "The Cove Fountain", cost: 300 },
+        { id: "xmastree", emoji: "🎄", img: "farm3d/decor-xmastree.jpg", name: "Christmas Tree", cost: 750, saleWin: { from: [11, 19], to: [12, 25] } }
       ];
       function buyDecor(id) {
         var item = null;
         DECORATIONS.forEach(function (dc) { if (dc.id === id) item = dc; });
         if (!item || state.decor[id]) return;
+        if (item.saleWin && !inWindow(item.saleWin)) { Sfx.thud(); toast(item.name + " is a holiday favorite — back next season!"); return; }
         if (state.shells < item.cost) { Sfx.thud(); toast("That costs 🐚 " + item.cost + " — keep harvesting!"); return; }
         state.shells -= item.cost;
         state.decor[id] = true;
@@ -1970,12 +2009,15 @@
         el.innerHTML = "";
         DECORATIONS.forEach(function (dc) {
           var owned = !!state.decor[dc.id];
+          var offSale = dc.saleWin && !inWindow(dc.saleWin);
           var d = document.createElement("div");
+          if (offSale && !owned) d.style.opacity = ".55";
           d.className = "building owned";
           d.innerHTML = '<div class="b-emoji"><img class="b-img" src="' + dc.img + '" alt="" /></div>' +
             '<div class="b-info"><div class="b-name">' + dc.name + "</div>" +
-            '<div class="b-desc">' + (owned ? "On display in the village." : "Pure pretty — shows off in the village scene.") + "</div></div>" +
+            '<div class="b-desc">' + (owned ? "On display in the village." : offSale ? "A holiday favorite — back next season." : "Pure pretty — shows off in the village scene.") + "</div>" + (!owned && dc.saleWin && !offSale ? '<div class="b-bank" style="color:#c0392b">🎄 On sale until Dec 25!</div>' : "") + "</div>" +
             (owned ? '<button class="btn ghost" type="button" disabled>On display ✓</button>'
+                   : offSale ? '<button class="btn ghost" type="button" disabled>Back next season</button>'
                    : '<button class="btn gold" type="button" data-decor="' + dc.id + '"' + (state.shells < dc.cost ? " disabled" : "") + ">Buy · 🐚 " + dc.cost + "</button>");
           el.appendChild(d);
         });
@@ -2000,6 +2042,23 @@
           b.addEventListener("click", function () { plantSeed(key); });
           seedsEl.appendChild(b);
         });
+        var inSeason = seasonalInWindow();
+        if (inSeason.length) {
+          var head = document.createElement("div");
+          head.style.cssText = "flex:1 1 100%;font-family:'Baloo 2',cursive;font-weight:800;font-size:.95rem;margin-top:6px";
+          head.textContent = "🎄 Seasonal — here for a limited time!";
+          seedsEl.appendChild(head);
+          inSeason.forEach(function (key) {
+            var c = CROPS[key];
+            var b = document.createElement("button");
+            b.className = "seed";
+            b.type = "button";
+            b.innerHTML = '<img class="seed-img" src="' + c.img + '" alt="" /><span class="nm">' + c.name + '</span><div class="pr">🐚 ' + c.seed + ' seed · sells 🐚 ' + c.sell + '<br/>⏱ ' + fmtLeft(effGrowMs(key)) + '<br/>🎄 Leaves ' + c.leaves + '!</div>';
+            if (state.shells < c.seed) b.disabled = true;
+            b.addEventListener("click", function () { plantSeed(key); });
+            seedsEl.appendChild(b);
+          });
+        }
         var cancel = document.createElement("button");
         cancel.className = "seed cancel";
         cancel.type = "button";
@@ -2056,6 +2115,7 @@
       }
       function plantSeed(key) {
         var c = CROPS[key];
+        if (c.seasonal && !cropInSeason(key)) { Sfx.thud(); toast(c.name + " is out of season — those seeds are gone until next year!"); hidePicker(); return; }
         if (selectedPlot < 0 || !state.plots[selectedPlot]) { hidePicker(); return; }
         if (state.shells < c.seed) { Sfx.thud(); toast("Not enough shells for " + c.name + " seeds yet!"); return; }
         state.shells -= c.seed;
@@ -2077,6 +2137,7 @@
       function buyBuilding(i) {
         var bDef = BUILDINGS[i], b = state.buildings[i];
         if (b.owned) return;
+        if (bDef.saleWin && !inWindow(bDef.saleWin)) { Sfx.thud(); toast(bDef.name + " is a holiday pop-up — back next season!"); return; }
         if (state.shells < bDef.cost) { Sfx.thud(); toast("That costs 🐚 " + bDef.cost + " — keep harvesting!"); return; }
         state.shells -= bDef.cost;
         b.owned = true; b.level = 1; b.banked = 0; b.lastBankedAt = Date.now();
