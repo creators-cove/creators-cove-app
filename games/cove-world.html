@@ -544,11 +544,11 @@
         var ctx = null, master = null, musicBus = null;
         var muted = false;
         try { muted = window.localStorage.getItem(MUTE_KEY) === "1"; } catch (e) { /* ignore */ }
-        /* Village background tune: Cozy Nights (instrumental), looping. */
+        /* Village background tune: Kim's pick (instrumental), looping. */
         var bgAudio = null;
         function ensureBg() {
           if (!bgAudio) {
-            bgAudio = new Audio("../music/cozy-nights.mp3");
+            bgAudio = new Audio("../music/village-breeze.mp3");
             bgAudio.loop = true;
             bgAudio.volume = 0.4;
             bgAudio.preload = "auto";
