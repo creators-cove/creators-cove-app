@@ -60,9 +60,14 @@
   <button id="tabStreet">🌅 Main Street</button>
   <button id="tabLot">🏡 My Lot</button>
 </div>
+<div class="scenetabs" id="lotTabs" style="display:none; margin-top:8px;">
+  <button id="plotFront" class="active">🏡 Front Lot</button>
+  <button id="plotBack">🔒 Back Acre · 🐚 7,500</button>
+</div>
 <div id="scene">
   <img class="town" id="bgTown" src="village2/town.jpg" alt="A cheerful beach town with cottages, a bakery, a fountain plaza and a lighthouse">
   <img class="town" id="bgStreet" src="village2/street.jpg" alt="Main Street at sunset: the Salty Canvas storefront, a signpost, and the lighthouse over the sea" style="display:none">
+  <img class="town" id="bgLot2" src="village2/lot2.jpg" alt="The Back Acre: rolling lawn, a lily pond, a garden patch and the sea beyond the fence" style="display:none">
   <img class="town" id="bgLot" src="village2/lot.jpg" alt="Your own fenced beach lot with a building pad, a garden patch and the sea all around" style="display:none">
   <div id="dusk"></div>
   <div class="zones" id="zonesTown">
@@ -178,7 +183,10 @@ function setScene(name) {
   document.getElementById("scene").classList.toggle("street", street);
   document.getElementById("bgTown").style.display = (!street && !lot) ? "block" : "none";
   document.getElementById("bgStreet").style.display = street ? "block" : "none";
-  document.getElementById("bgLot").style.display = lot ? "block" : "none";
+  var frontPlot = (typeof lotPlot === "undefined" || lotPlot === "front");
+  document.getElementById("bgLot").style.display = (lot && frontPlot) ? "block" : "none";
+  document.getElementById("bgLot2").style.display = (lot && !frontPlot) ? "block" : "none";
+  document.getElementById("lotTabs").style.display = lot ? "flex" : "none";
   document.getElementById("zonesTown").style.display = (!street && !lot) ? "block" : "none";
   document.getElementById("zonesStreet").style.display = street ? "block" : "none";
   document.getElementById("lotLayer").style.display = lot ? "block" : "none";
@@ -351,7 +359,8 @@ var ITEMS = {
   fountain:{ name: "Fountain", emoji: "⛲", price: 1200, size: "med", img: "item-fountain.png", blurb: "A stone fountain with sparkling water. The whole lot sounds calmer already." },
   garden:  { name: "Flower Garden", emoji: "🌸", price: 300, size: "any", img: "item-garden.png", blurb: "Rows of tulips, daisies and marigolds in a raised bed. Bees approve." },
   bench:   { name: "Garden Bench", emoji: "🪑", price: 150, size: "small", img: "item-bench.png", blurb: "A sturdy wooden bench. For sitting, thinking, and watching the water." },
-  chairs:  { name: "Beach Chairs", emoji: "🏖️", price: 250, size: "small", img: "item-chairs.png", blurb: "Two loungers and a striped umbrella. Naps are a town service." }
+  chairs:  { name: "Beach Chairs", emoji: "🏖️", price: 250, size: "small", img: "item-chairs.png", blurb: "Two loungers and a striped umbrella. Naps are a town service." },
+  gazebo:  { name: "Gazebo", emoji: "🏛️", price: 3000, size: "med", img: "item-gazebo.png", blurb: "A white gazebo with a blue roof and a flower vine. Shade, breeze, and the best seat on the property." }
 };
 var SPOTS = {
   house:  { left: 15, bottom: 58, w: 31, sizes: ["big"] },
@@ -362,13 +371,27 @@ var SPOTS = {
   front2: { left: 60, bottom: 18, w: 17, sizes: ["small", "any"] }
 };
 var SPOT_ORDER = ["shop", "house", "mid", "garden", "front1", "front2"];
+var SPOTS_B = {
+  hill:   { left: 15, bottom: 60, w: 26, sizes: ["big", "med"] },
+  pad:    { left: 53, bottom: 53, w: 27, sizes: ["big"] },
+  pond:   { left: 36, bottom: 25, w: 14, sizes: ["small", "any"] },
+  soil:   { left: 52, bottom: 28, w: 25, sizes: ["any", "med"] },
+  front:  { left: 38, bottom: 8, w: 16, sizes: ["small", "any"] },
+  gate:   { left: 74, bottom: 10, w: 15, sizes: ["small", "any"] }
+};
+var SPOT_ORDER_B = ["hill", "pad", "pond", "soil", "front", "gate"];
+var ACRE_PRICE = 7500;
+var lotPlot = "front";
+function activePlaced() { return lotPlot === "back" ? town.placedB : town.placed; }
+function activeSpots() { return lotPlot === "back" ? SPOTS_B : SPOTS; }
+function activeOrder() { return lotPlot === "back" ? SPOT_ORDER_B : SPOT_ORDER; }
 var AVATARS = [
   ["av1", "Coral"], ["av2", "Kai"], ["av3", "Fern"], ["av4", "Captain"],
   ["av5", "Sunny"], ["av6", "Walter"], ["av7", "Nana"], ["av8", "Marina"]
 ];
 
 var TOWN_KEY = "cove-village2-v1";
-var town = { avatar: null, inv: {}, placed: {} };
+var town = { avatar: null, inv: {}, placed: {}, placedB: {}, expanded: false };
 try {
   var savedTown = JSON.parse(localStorage.getItem(TOWN_KEY));
   if (savedTown && typeof savedTown === "object") town = Object.assign(town, savedTown);
@@ -405,7 +428,7 @@ window.addEventListener("pagehide", function () {
     if (!r) return;
     try {
       var t = JSON.parse(r);
-      if (t && typeof t === "object") { town = Object.assign({ avatar: null, inv: {}, placed: {} }, t); localStorage.setItem(TOWN_KEY, JSON.stringify(town)); renderLot(); }
+      if (t && typeof t === "object") { town = Object.assign({ avatar: null, inv: {}, placed: {}, placedB: {}, expanded: false }, t); localStorage.setItem(TOWN_KEY, JSON.stringify(town)); renderLot(); }
     } catch (e) {}
   }).catch(function () {});
 })();
@@ -440,17 +463,24 @@ function openPanel(id) {
 
 function placedCount(itemId) {
   var n = 0;
-  Object.keys(town.placed).forEach(function (s) { if (town.placed[s] === itemId) n++; });
+  [town.placed, town.placedB].forEach(function (map) {
+    Object.keys(map || {}).forEach(function (s) { if (map[s] === itemId) n++; });
+  });
   return n;
 }
 function available(itemId) { return (town.inv[itemId] || 0) - placedCount(itemId); }
 
 function renderLot() {
   document.getElementById("lotBalance").textContent = "🐚 " + shells().toLocaleString();
+  document.getElementById("plotFront").classList.toggle("active", lotPlot === "front");
+  var pb = document.getElementById("plotBack");
+  pb.classList.toggle("active", lotPlot === "back");
+  pb.textContent = town.expanded ? "🌾 The Back Acre" : "🔒 Back Acre · 🐚 7,500";
   var layer = document.getElementById("lotLayer");
   layer.innerHTML = "";
-  SPOT_ORDER.forEach(function (spotId) {
-    var spot = SPOTS[spotId], itemId = town.placed[spotId];
+  var placedMap = activePlaced(), spotSet = activeSpots();
+  activeOrder().forEach(function (spotId) {
+    var spot = spotSet[spotId], itemId = placedMap[spotId];
     if (itemId && ITEMS[itemId]) {
       var img = document.createElement("img");
       img.src = "village2/" + ITEMS[itemId].img;
@@ -472,13 +502,14 @@ function renderLot() {
     av.src = "village2/" + town.avatar + ".png";
     av.alt = "Your avatar";
     av.className = "lotfig";
-    av.style.left = "43%"; av.style.bottom = "7%"; av.style.height = "31%";
+    if (lotPlot === "back") { av.style.left = "22%"; av.style.bottom = "4%"; } else { av.style.left = "43%"; av.style.bottom = "7%"; }
+    av.style.height = "31%";
     av.addEventListener("click", function () { startMusic(); openPicker(); });
     layer.appendChild(av);
   } else {
     var pick = document.createElement("button");
     pick.className = "avatarpick"; pick.textContent = "🎭 Pick your avatar";
-    pick.style.left = "50%"; pick.style.bottom = "16%";
+    if (lotPlot === "back") { pick.style.left = "30%"; pick.style.bottom = "14%"; } else { pick.style.left = "50%"; pick.style.bottom = "16%"; }
     pick.addEventListener("click", function () { startMusic(); openPicker(); });
     layer.appendChild(pick);
   }
@@ -487,7 +518,7 @@ function renderLot() {
 var placingSpot = null;
 function openCatalog(spotId) {
   placingSpot = spotId;
-  var spot = SPOTS[spotId], bal = shells();
+  var spot = activeSpots()[spotId], bal = shells();
   document.getElementById("catalogTitle").textContent = "🛒 Build & Decorate";
   document.getElementById("catalogHint").innerHTML = "Your farm shells: <b>🐚 " + bal.toLocaleString() + "</b>" + (farmState() ? "" : " — start a farm to earn shells for your lot.");
   var grid = document.getElementById("catalogGrid");
@@ -517,7 +548,7 @@ function placeItem(spotId, id) {
   if (available(id) > 0) { /* already owned */ }
   else if (!spendShells(ITEMS[id].price)) { toast("Not enough shells — your farm has 🐚 " + shells().toLocaleString()); return; }
   else town.inv[id] = (town.inv[id] || 0) + 1;
-  town.placed[spotId] = id;
+  activePlaced()[spotId] = id;
   saveTown(); renderLot(); closePanels();
   toast(ITEMS[id].emoji + " " + ITEMS[id].name + " placed. Looking good.");
 }
@@ -525,14 +556,14 @@ function placeItem(spotId, id) {
 var menuSpot = null;
 function openItemMenu(spotId) {
   menuSpot = spotId;
-  var it = ITEMS[town.placed[spotId]];
+  var it = ITEMS[activePlaced()[spotId]];
   if (!it) return;
   document.getElementById("itemMenuTitle").textContent = it.emoji + " " + it.name;
   document.getElementById("itemMenuText").textContent = it.blurb;
   openPanel("itemMenu");
 }
 document.getElementById("putAwayBtn").addEventListener("click", function () {
-  if (menuSpot) { delete town.placed[menuSpot]; saveTown(); renderLot(); }
+  if (menuSpot) { delete activePlaced()[menuSpot]; saveTown(); renderLot(); }
   closePanels(); toast("Back in the shed — place it again anytime.");
 });
 document.getElementById("itemMenuClose").addEventListener("click", closePanels);
@@ -556,6 +587,19 @@ function openPicker() {
   openPanel("picker");
 }
 document.getElementById("pickAvatarBtn").addEventListener("click", function () { startMusic(); openPicker(); });
+function setPlot(p) {
+  if (p === "back" && !town.expanded) {
+    if (!spendShells(ACRE_PRICE)) { toast("The Back Acre costs 🐚 " + ACRE_PRICE.toLocaleString() + " — your farm has 🐚 " + shells().toLocaleString()); return; }
+    town.expanded = true; saveTown();
+    toast("🔓 The Back Acre is yours — a whole second plot out back!");
+  }
+  lotPlot = p;
+  document.getElementById("bgLot").style.display = p === "front" ? "block" : "none";
+  document.getElementById("bgLot2").style.display = p === "back" ? "block" : "none";
+  closePanels(); renderLot();
+}
+document.getElementById("plotFront").addEventListener("click", function () { startMusic(); setPlot("front"); });
+document.getElementById("plotBack").addEventListener("click", function () { startMusic(); setPlot("back"); });
 document.getElementById("lotHintBtn").addEventListener("click", function () {
   startMusic();
   document.getElementById("scene").scrollIntoView({ behavior: "smooth" });
