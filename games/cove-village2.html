@@ -58,10 +58,12 @@
 <div class="scenetabs">
   <button id="tabTown" class="active">🏘️ Town Square</button>
   <button id="tabStreet">🌅 Main Street</button>
+  <button id="tabLot">🏡 My Lot</button>
 </div>
 <div id="scene">
   <img class="town" id="bgTown" src="village2/town.jpg" alt="A cheerful beach town with cottages, a bakery, a fountain plaza and a lighthouse">
   <img class="town" id="bgStreet" src="village2/street.jpg" alt="Main Street at sunset: the Salty Canvas storefront, a signpost, and the lighthouse over the sea" style="display:none">
+  <img class="town" id="bgLot" src="village2/lot.jpg" alt="Your own fenced beach lot with a building pad, a garden patch and the sea all around" style="display:none">
   <div id="dusk"></div>
   <div class="zones" id="zonesTown">
   <button class="zone" style="left:3%;top:5%;width:23%;height:29%" data-place="canvas" aria-label="The Salty Canvas"></button>
@@ -79,6 +81,7 @@
   <button class="zone" style="left:65%;top:6%;width:15%;height:32%" data-place="lighthouse2" aria-label="Cove Lighthouse"></button>
   <button class="zone" style="left:73%;top:60%;width:16%;height:33%" data-place="bike" aria-label="The town bike"></button>
   </div>
+  <div id="lotLayer" style="display:none; position:absolute; inset:0;"></div>
   <img class="sprite" id="sp-kim" src="village2/kim.png" alt="Kim" style="left:6%;bottom:27%;height:32%;animation-delay:.1s">
   <img class="sprite" id="sp-trish" src="village2/trish.png" alt="Trish" style="left:32%;bottom:28%;height:31%;animation-delay:.7s">
   <img class="sprite" id="sp-sandy" src="village2/sandy.png" alt="Sandy" style="left:52%;bottom:27%;height:31%;animation-delay:1.3s">
@@ -90,11 +93,11 @@
 <div id="card"><div class="inner">
   <h2 id="cardTitle"></h2>
   <p id="cardText"></p>
-  <p class="soon">Village 2 is just getting started — today the town is for visiting. Shops, jobs and decorating are coming.</p>
+  <p class="soon">Village 2 is growing — your own lot is open (tap 🏡 My Lot up top), and the Treasure Hunt and Lucky Lighthouse are on the way.</p>
 </div></div>
 
 <div class="directory">
-  <h3>📍 Around Town — tap a place, or tap the girls in the picture</h3>
+  <h3 id="dirTitle">📍 Around Town — tap a place, or tap the girls in the picture</h3>
   <div class="row" id="dirTown">
     <button data-place="canvas">🎨 The Salty Canvas</button>
     <button data-place="bakery">🥐 Boardwalk Bakery</button>
@@ -110,6 +113,11 @@
     <button data-place="signpost">🪧 The Signpost</button>
     <button data-place="lighthouse2">🗼 The Lighthouse</button>
     <button data-place="bike">🚲 The Town Bike</button>
+  </div>
+  <div class="row" id="dirLot" style="display:none">
+    <button id="pickAvatarBtn">🎭 Pick Your Avatar</button>
+    <button id="lotHintBtn">🛒 Build &amp; Decorate</button>
+    <span id="lotBalance">🐚 —</span>
   </div>
 </div>
 
@@ -161,32 +169,44 @@ var POS = {
 };
 var SUBS = {
   town: "The crew's new neighborhood by the sea",
-  street: "Main Street at sunset"
+  street: "Main Street at sunset",
+  lot: "Your own little piece of the Cove"
 };
 var townNameSet = !!document.getElementById("townSub").textContent.match(/COVE-/);
 function setScene(name) {
-  var street = name === "street";
+  var street = name === "street", lot = name === "lot";
   document.getElementById("scene").classList.toggle("street", street);
-  document.getElementById("bgTown").style.display = street ? "none" : "block";
+  document.getElementById("bgTown").style.display = (!street && !lot) ? "block" : "none";
   document.getElementById("bgStreet").style.display = street ? "block" : "none";
-  document.getElementById("zonesTown").style.display = street ? "none" : "block";
+  document.getElementById("bgLot").style.display = lot ? "block" : "none";
+  document.getElementById("zonesTown").style.display = (!street && !lot) ? "block" : "none";
   document.getElementById("zonesStreet").style.display = street ? "block" : "none";
-  document.getElementById("dirTown").style.display = street ? "none" : "flex";
+  document.getElementById("lotLayer").style.display = lot ? "block" : "none";
+  document.getElementById("dirTown").style.display = (!street && !lot) ? "flex" : "none";
   document.getElementById("dirStreet").style.display = street ? "flex" : "none";
-  document.getElementById("tabTown").classList.toggle("active", !street);
+  document.getElementById("dirLot").style.display = lot ? "flex" : "none";
+  document.getElementById("tabTown").classList.toggle("active", !street && !lot);
   document.getElementById("tabStreet").classList.toggle("active", street);
+  document.getElementById("tabLot").classList.toggle("active", lot);
+  document.getElementById("dirTitle").textContent = lot ? "🏡 Your Lot — tap a ＋ spot to build; tap your things to put them away" : "📍 Around Town — tap a place, or tap the girls in the picture";
   if (street) document.getElementById("dusk").style.display = "none"; else applyDusk();
   if (!townNameSet) document.getElementById("townSub").textContent = SUBS[name];
-  var pos = POS[name];
-  Object.keys(pos).forEach(function (who) {
-    var el = document.getElementById("sp-" + who), p = pos[who];
-    el.style.left = p[0] + "%"; el.style.bottom = p[1] + "%"; el.style.height = p[2] + "%";
-  });
+  document.querySelectorAll(".sprite").forEach(function (el) { el.style.display = lot ? "none" : "block"; });
+  if (!lot) {
+    var pos = POS[name];
+    Object.keys(pos).forEach(function (who) {
+      var el = document.getElementById("sp-" + who), p = pos[who];
+      el.style.left = p[0] + "%"; el.style.bottom = p[1] + "%"; el.style.height = p[2] + "%";
+    });
+  }
   document.getElementById("bubble").style.display = "none";
   document.getElementById("card").style.display = "none";
+  if (typeof closePanels === "function") closePanels();
+  if (lot && typeof renderLot === "function") renderLot();
 }
 document.getElementById("tabTown").addEventListener("click", function () { setScene("town"); });
 document.getElementById("tabStreet").addEventListener("click", function () { startMusic(); setScene("street"); });
+document.getElementById("tabLot").addEventListener("click", function () { startMusic(); setScene("lot"); });
 
 function showPlace(key) {
   var p = PLACES[key]; if (!p) return;
@@ -254,5 +274,295 @@ document.addEventListener("visibilitychange", function () {
   } catch (e) { /* counting is never worth breaking a game */ }
 })();
 </script>
+<style>
+  .panel { max-width: 1100px; margin: 12px auto 0; padding: 0 12px; display: none; }
+  .panel .inner { background: #fff8ec; color: #17384a; border-radius: 14px; padding: 14px 16px; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+  .panel h2 { font-size: 1.1rem; margin-bottom: 4px; }
+  .panel p { font-size: .9rem; line-height: 1.45; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; margin-top: 10px; }
+  .shopcard { background: #fff; border: 2px solid #e5d9bd; border-radius: 12px; padding: 8px 6px; text-align: center; }
+  .shopcard img { width: 100%; height: 82px; object-fit: contain; }
+  .shopcard .nm { font-size: .82rem; font-weight: bold; margin: 4px 0 2px; }
+  .shopcard .pr { font-size: .8rem; color: #7a5b12; margin-bottom: 6px; }
+  .shopcard button { background: #14607f; color: #fff8ec; border: none; border-radius: 999px; padding: 6px 10px; font-size: .8rem; cursor: pointer; width: 100%; }
+  .shopcard button:disabled { background: #b9c4c7; cursor: default; }
+  .shopcard.picked { border-color: #e8a33d; box-shadow: 0 0 0 3px rgba(232,163,61,.35); }
+  .closebtn { margin-top: 12px; background: #14607f; color: #fff8ec; border: none; border-radius: 999px; padding: 8px 16px; font-size: .88rem; cursor: pointer; }
+  .closebtn.alt { background: #e8a33d; color: #17384a; font-weight: bold; }
+  .spotmark { position: absolute; transform: translateX(-50%); width: 40px; height: 40px; border-radius: 50%; border: 2px dashed rgba(255,248,236,.95); background: rgba(11,61,84,.45); color: #fff8ec; font-size: 1.25rem; line-height: 1; cursor: pointer; z-index: 6; }
+  .placeditem { position: absolute; cursor: pointer; filter: drop-shadow(0 5px 5px rgba(0,0,0,.3)); z-index: 5; }
+  .lotfig { position: absolute; filter: drop-shadow(0 6px 5px rgba(0,0,0,.35)); animation: bob 2.8s ease-in-out infinite; z-index: 8; }
+  .avatarpick { position: absolute; transform: translateX(-50%); background: #ffd98a; color: #17384a; border: none; border-radius: 999px; padding: 9px 14px; font-size: .88rem; font-weight: bold; cursor: pointer; z-index: 8; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+  #toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: #17384a; color: #fff8ec; border: 1px solid #2c85a8; border-radius: 999px; padding: 10px 18px; font-size: .9rem; display: none; z-index: 99; box-shadow: 0 8px 22px rgba(0,0,0,.4); max-width: 92vw; text-align: center; }
+  #lotBalance { align-self: center; color: #ffd98a; font-weight: bold; font-size: .95rem; padding: 0 4px; }
+</style>
+
+<div id="catalog" class="panel"><div class="inner">
+  <h2 id="catalogTitle">🛒 Build &amp; Decorate</h2>
+  <p id="catalogHint"></p>
+  <div id="catalogGrid" class="grid"></div>
+  <button class="closebtn" id="catalogClose">Done</button>
+</div></div>
+
+<div id="picker" class="panel"><div class="inner">
+  <h2>🎭 Pick Your Avatar</h2>
+  <p>Tap the one that's you — they'll stand on your lot, and wave at your visitors when visiting opens up.</p>
+  <div id="pickerGrid" class="grid"></div>
+  <button class="closebtn" id="pickerClose">Done</button>
+</div></div>
+
+<div id="itemMenu" class="panel"><div class="inner">
+  <h2 id="itemMenuTitle"></h2>
+  <p id="itemMenuText"></p>
+  <button class="closebtn alt" id="putAwayBtn">↩️ Put it away</button>
+  <button class="closebtn" id="itemMenuClose">Keep it there</button>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+var COVE_API_URL = "https://enabled-platypus-167183.upstash.io";
+      var COVE_API_KEY = "gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg";
+      var CODE_KEY = "cove-farm-code";
+      var NAME_KEY = "cove-farm-name";
+      var farmCode = "";
+      var farmName = "";
+      var lastPublish = 0;
+      var publishDirty = true;
+
+      function escHtml(s) {
+        return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+      function genCode() {
+        var chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789", out = "";
+        for (var i = 0; i < 6; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+        return "COVE-" + out;
+      }
+      function api(cmd) {
+        return fetch(COVE_API_URL, { method: "POST", headers: { "Authorization": "Bearer " + COVE_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(cmd) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { return j ? j.result : null; });
+      }
+      function apiReady() { return COVE_API_URL.indexOf("http") === 0; }
+
+var ITEMS = {
+  cottage: { name: "Beach Cottage", emoji: "🏠", price: 2500, size: "big", img: "item-cottage.png", blurb: "A little white cottage with a blue roof and flower boxes. Home sweet home." },
+  shop:    { name: "Craft Shop", emoji: "🛍️", price: 4000, size: "big", img: "item-shop.png", blurb: "Your own little storefront, striped awning and all. The sign is blank — it's yours to name." },
+  fountain:{ name: "Fountain", emoji: "⛲", price: 1200, size: "med", img: "item-fountain.png", blurb: "A stone fountain with sparkling water. The whole lot sounds calmer already." },
+  garden:  { name: "Flower Garden", emoji: "🌸", price: 300, size: "any", img: "item-garden.png", blurb: "Rows of tulips, daisies and marigolds in a raised bed. Bees approve." },
+  bench:   { name: "Garden Bench", emoji: "🪑", price: 150, size: "small", img: "item-bench.png", blurb: "A sturdy wooden bench. For sitting, thinking, and watching the water." },
+  chairs:  { name: "Beach Chairs", emoji: "🏖️", price: 250, size: "small", img: "item-chairs.png", blurb: "Two loungers and a striped umbrella. Naps are a town service." }
+};
+var SPOTS = {
+  house:  { left: 15, bottom: 58, w: 31, sizes: ["big"] },
+  shop:   { left: 57, bottom: 63, w: 25, sizes: ["big"] },
+  mid:    { left: 42, bottom: 44, w: 18, sizes: ["med", "any", "small"] },
+  garden: { left: 62, bottom: 38, w: 24, sizes: ["any", "med"] },
+  front1: { left: 12, bottom: 26, w: 15, sizes: ["small", "any"] },
+  front2: { left: 60, bottom: 18, w: 17, sizes: ["small", "any"] }
+};
+var SPOT_ORDER = ["shop", "house", "mid", "garden", "front1", "front2"];
+var AVATARS = [
+  ["av1", "Coral"], ["av2", "Kai"], ["av3", "Fern"], ["av4", "Captain"],
+  ["av5", "Sunny"], ["av6", "Walter"], ["av7", "Nana"], ["av8", "Marina"]
+];
+
+var TOWN_KEY = "cove-village2-v1";
+var town = { avatar: null, inv: {}, placed: {} };
+try {
+  var savedTown = JSON.parse(localStorage.getItem(TOWN_KEY));
+  if (savedTown && typeof savedTown === "object") town = Object.assign(town, savedTown);
+} catch (e) {}
+
+function saveCode() { try { return localStorage.getItem("cove-farm-savecode"); } catch (e) { return null; } }
+var backupTimer = null, townDirty = false;
+function saveTown() {
+  try { localStorage.setItem(TOWN_KEY, JSON.stringify(town)); } catch (e) {}
+  townDirty = true;
+  var code = saveCode();
+  if (!code || !apiReady()) return;
+  clearTimeout(backupTimer);
+  backupTimer = setTimeout(flushTownBackup, 2500);
+}
+function flushTownBackup() {
+  var code = saveCode();
+  if (!code || !townDirty) return;
+  townDirty = false;
+  api(["SET", "town:" + code, JSON.stringify(town)]).catch(function () { townDirty = true; });
+}
+window.addEventListener("pagehide", function () {
+  var code = saveCode();
+  if (!code || !townDirty) return;
+  try {
+    fetch(COVE_API_URL, { method: "POST", headers: { "Authorization": "Bearer " + COVE_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(["SET", "town:" + code, JSON.stringify(town)]), keepalive: true }).catch(function () {});
+    townDirty = false;
+  } catch (e) {}
+});
+(function restoreTown() {
+  var code = saveCode();
+  if (!code || localStorage.getItem(TOWN_KEY)) return;
+  api(["GET", "town:" + code]).then(function (r) {
+    if (!r) return;
+    try {
+      var t = JSON.parse(r);
+      if (t && typeof t === "object") { town = Object.assign({ avatar: null, inv: {}, placed: {} }, t); localStorage.setItem(TOWN_KEY, JSON.stringify(town)); renderLot(); }
+    } catch (e) {}
+  }).catch(function () {});
+})();
+
+function farmState() { try { return JSON.parse(localStorage.getItem("cove-farm-village-v1")); } catch (e) { return null; } }
+function shells() { var f = farmState(); return f ? (parseInt(f.shells, 10) || 0) : 0; }
+function spendShells(n) {
+  var f = farmState();
+  if (!f || (parseInt(f.shells, 10) || 0) < n) return false;
+  f.shells = (parseInt(f.shells, 10) || 0) - n;
+  try { localStorage.setItem("cove-farm-village-v1", JSON.stringify(f)); } catch (e) { return false; }
+  return true;
+}
+
+var toastTimer = null;
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.style.display = "none"; }, 3200);
+}
+function closePanels() {
+  ["catalog", "picker", "itemMenu"].forEach(function (id) { document.getElementById(id).style.display = "none"; });
+}
+function openPanel(id) {
+  closePanels();
+  document.getElementById("card").style.display = "none";
+  var p = document.getElementById(id);
+  p.style.display = "block";
+  p.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function placedCount(itemId) {
+  var n = 0;
+  Object.keys(town.placed).forEach(function (s) { if (town.placed[s] === itemId) n++; });
+  return n;
+}
+function available(itemId) { return (town.inv[itemId] || 0) - placedCount(itemId); }
+
+function renderLot() {
+  document.getElementById("lotBalance").textContent = "🐚 " + shells().toLocaleString();
+  var layer = document.getElementById("lotLayer");
+  layer.innerHTML = "";
+  SPOT_ORDER.forEach(function (spotId) {
+    var spot = SPOTS[spotId], itemId = town.placed[spotId];
+    if (itemId && ITEMS[itemId]) {
+      var img = document.createElement("img");
+      img.src = "village2/" + ITEMS[itemId].img;
+      img.alt = ITEMS[itemId].name;
+      img.className = "placeditem";
+      img.style.left = spot.left + "%"; img.style.bottom = spot.bottom + "%"; img.style.width = spot.w + "%";
+      img.addEventListener("click", function () { startMusic(); openItemMenu(spotId); });
+      layer.appendChild(img);
+    } else {
+      var b = document.createElement("button");
+      b.className = "spotmark"; b.textContent = "＋"; b.setAttribute("aria-label", "Build on this spot");
+      b.style.left = (spot.left + spot.w / 2) + "%"; b.style.bottom = (spot.bottom + 2) + "%";
+      b.addEventListener("click", function () { startMusic(); openCatalog(spotId); });
+      layer.appendChild(b);
+    }
+  });
+  if (town.avatar) {
+    var av = document.createElement("img");
+    av.src = "village2/" + town.avatar + ".png";
+    av.alt = "Your avatar";
+    av.className = "lotfig";
+    av.style.left = "43%"; av.style.bottom = "7%"; av.style.height = "31%";
+    av.addEventListener("click", function () { startMusic(); openPicker(); });
+    layer.appendChild(av);
+  } else {
+    var pick = document.createElement("button");
+    pick.className = "avatarpick"; pick.textContent = "🎭 Pick your avatar";
+    pick.style.left = "50%"; pick.style.bottom = "16%";
+    pick.addEventListener("click", function () { startMusic(); openPicker(); });
+    layer.appendChild(pick);
+  }
+}
+
+var placingSpot = null;
+function openCatalog(spotId) {
+  placingSpot = spotId;
+  var spot = SPOTS[spotId], bal = shells();
+  document.getElementById("catalogTitle").textContent = "🛒 Build & Decorate";
+  document.getElementById("catalogHint").innerHTML = "Your farm shells: <b>🐚 " + bal.toLocaleString() + "</b>" + (farmState() ? "" : " — start a farm to earn shells for your lot.");
+  var grid = document.getElementById("catalogGrid");
+  grid.innerHTML = "";
+  Object.keys(ITEMS).forEach(function (id) {
+    var it = ITEMS[id];
+    if (spot.sizes.indexOf(it.size) < 0 && it.size !== "any") return;
+    if (it.size === "any" && spot.sizes.indexOf("any") < 0 && spot.sizes.indexOf("med") < 0 && spot.sizes.indexOf("small") < 0) return;
+    var card = document.createElement("div");
+    card.className = "shopcard";
+    var avail = available(id);
+    var btn;
+    if (avail > 0) btn = '<button data-act="place">Place — you own one</button>';
+    else if (bal >= it.price) btn = '<button data-act="buy">Buy &amp; place · 🐚 ' + it.price.toLocaleString() + '</button>';
+    else btn = '<button disabled>🐚 ' + it.price.toLocaleString() + ' — not yet</button>';
+    card.innerHTML = '<img src="village2/' + it.img + '" alt="">' +
+      '<div class="nm">' + it.emoji + " " + it.name + "</div>" +
+      '<div class="pr">' + (avail > 0 ? "In your shed" : "🐚 " + it.price.toLocaleString()) + "</div>" + btn;
+    var b = card.querySelector("button");
+    if (b && !b.disabled) b.addEventListener("click", function () { placeItem(spotId, id); });
+    grid.appendChild(card);
+  });
+  if (!grid.children.length) document.getElementById("catalogHint").textContent = "Nothing fits this spot yet.";
+  openPanel("catalog");
+}
+function placeItem(spotId, id) {
+  if (available(id) > 0) { /* already owned */ }
+  else if (!spendShells(ITEMS[id].price)) { toast("Not enough shells — your farm has 🐚 " + shells().toLocaleString()); return; }
+  else town.inv[id] = (town.inv[id] || 0) + 1;
+  town.placed[spotId] = id;
+  saveTown(); renderLot(); closePanels();
+  toast(ITEMS[id].emoji + " " + ITEMS[id].name + " placed. Looking good.");
+}
+
+var menuSpot = null;
+function openItemMenu(spotId) {
+  menuSpot = spotId;
+  var it = ITEMS[town.placed[spotId]];
+  if (!it) return;
+  document.getElementById("itemMenuTitle").textContent = it.emoji + " " + it.name;
+  document.getElementById("itemMenuText").textContent = it.blurb;
+  openPanel("itemMenu");
+}
+document.getElementById("putAwayBtn").addEventListener("click", function () {
+  if (menuSpot) { delete town.placed[menuSpot]; saveTown(); renderLot(); }
+  closePanels(); toast("Back in the shed — place it again anytime.");
+});
+document.getElementById("itemMenuClose").addEventListener("click", closePanels);
+document.getElementById("catalogClose").addEventListener("click", closePanels);
+document.getElementById("pickerClose").addEventListener("click", closePanels);
+
+function openPicker() {
+  var grid = document.getElementById("pickerGrid");
+  grid.innerHTML = "";
+  AVATARS.forEach(function (pair) {
+    var card = document.createElement("div");
+    card.className = "shopcard" + (town.avatar === pair[0] ? " picked" : "");
+    card.innerHTML = '<img src="village2/' + pair[0] + '.png" alt="" style="height:104px"><div class="nm">' + pair[1] + "</div>";
+    card.addEventListener("click", function () {
+      town.avatar = pair[0];
+      saveTown(); renderLot(); closePanels();
+      toast("That's you, " + pair[1] + ". Welcome to the neighborhood.");
+    });
+    grid.appendChild(card);
+  });
+  openPanel("picker");
+}
+document.getElementById("pickAvatarBtn").addEventListener("click", function () { startMusic(); openPicker(); });
+document.getElementById("lotHintBtn").addEventListener("click", function () {
+  startMusic();
+  document.getElementById("scene").scrollIntoView({ behavior: "smooth" });
+  toast("Tap a ＋ spot on your lot to build there.");
+});
+renderLot();
+</script>
+
 </body>
 </html>
