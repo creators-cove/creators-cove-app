@@ -15,6 +15,11 @@
   .backrow { padding: 8px 12px 0; max-width: 1100px; margin: 0 auto; }
   .backrow a { color: #ffd98a; font-size: .85rem; text-decoration: none; }
   #scene { position: relative; width: 100%; max-width: 1100px; margin: 10px auto 0; aspect-ratio: 3 / 2; overflow: hidden; }
+  .scenetabs { max-width: 1100px; margin: 12px auto 0; padding: 0 12px; display: flex; gap: 8px; }
+  .scenetabs button { flex: 1; background: #14607f; color: #fff8ec; border: 1px solid #2c85a8; border-radius: 12px; padding: 9px 10px; font-size: .95rem; cursor: pointer; font-family: inherit; }
+  .scenetabs button.active { background: #ffd98a; color: #17384a; border-color: #ffd98a; font-weight: bold; }
+  #scene.street { aspect-ratio: 16 / 9; }
+  .zones { position: absolute; inset: 0; }
   #scene > img.town { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   #dusk { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(26,18,66,.34), rgba(255,138,66,.10) 55%, rgba(10,10,44,.30)); display: none; }
   .zone { position: absolute; background: transparent; border: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
@@ -50,9 +55,15 @@
 </header>
 <div class="backrow"><a href="cove-world.html?v=40">← Back to your Farm &amp; Village</a></div>
 
+<div class="scenetabs">
+  <button id="tabTown" class="active">🏘️ Town Square</button>
+  <button id="tabStreet">🌅 Main Street</button>
+</div>
 <div id="scene">
-  <img class="town" src="village2/town.jpg" alt="A cheerful beach town with cottages, a bakery, a fountain plaza and a lighthouse">
+  <img class="town" id="bgTown" src="village2/town.jpg" alt="A cheerful beach town with cottages, a bakery, a fountain plaza and a lighthouse">
+  <img class="town" id="bgStreet" src="village2/street.jpg" alt="Main Street at sunset: the Salty Canvas storefront, a signpost, and the lighthouse over the sea" style="display:none">
   <div id="dusk"></div>
+  <div class="zones" id="zonesTown">
   <button class="zone" style="left:3%;top:5%;width:23%;height:29%" data-place="canvas" aria-label="The Salty Canvas"></button>
   <button class="zone" style="left:37%;top:1%;width:21%;height:26%" data-place="bakery" aria-label="Boardwalk Bakery"></button>
   <button class="zone" style="left:56%;top:13%;width:22%;height:26%" data-place="giftshop" aria-label="Cove Gift Shop"></button>
@@ -60,6 +71,14 @@
   <button class="zone" style="left:34%;top:33%;width:23%;height:19%" data-place="fountain" aria-label="Fountain Plaza"></button>
   <button class="zone" style="left:57%;top:44%;width:17%;height:21%" data-place="cocoa" aria-label="Hot Cocoa Stand"></button>
   <button class="zone" style="left:3%;top:47%;width:36%;height:26%" data-place="cottages" aria-label="The Cottages"></button>
+  </div>
+  <div class="zones" id="zonesStreet" style="display:none">
+  <button class="zone" style="left:0;top:6%;width:41%;height:64%" data-place="shopfront" aria-label="The Salty Canvas storefront"></button>
+  <button class="zone" style="left:75%;top:0;width:25%;height:30%" data-place="shops" aria-label="The shops"></button>
+  <button class="zone" style="left:81%;top:29%;width:19%;height:36%" data-place="signpost" aria-label="The signpost"></button>
+  <button class="zone" style="left:65%;top:6%;width:15%;height:32%" data-place="lighthouse2" aria-label="Cove Lighthouse"></button>
+  <button class="zone" style="left:73%;top:60%;width:16%;height:33%" data-place="bike" aria-label="The town bike"></button>
+  </div>
   <img class="sprite" id="sp-kim" src="village2/kim.png" alt="Kim" style="left:6%;bottom:27%;height:32%;animation-delay:.1s">
   <img class="sprite" id="sp-trish" src="village2/trish.png" alt="Trish" style="left:32%;bottom:28%;height:31%;animation-delay:.7s">
   <img class="sprite" id="sp-sandy" src="village2/sandy.png" alt="Sandy" style="left:52%;bottom:27%;height:31%;animation-delay:1.3s">
@@ -76,7 +95,7 @@
 
 <div class="directory">
   <h3>📍 Around Town — tap a place, or tap the girls in the picture</h3>
-  <div class="row">
+  <div class="row" id="dirTown">
     <button data-place="canvas">🎨 The Salty Canvas</button>
     <button data-place="bakery">🥐 Boardwalk Bakery</button>
     <button data-place="giftshop">🎁 Cove Gift Shop</button>
@@ -84,6 +103,13 @@
     <button data-place="fountain">⛲ Fountain Plaza</button>
     <button data-place="lighthouse">🗼 Cove Lighthouse</button>
     <button data-place="cottages">🏡 The Cottages</button>
+  </div>
+  <div class="row" id="dirStreet" style="display:none">
+    <button data-place="shopfront">🎨 The Salty Canvas</button>
+    <button data-place="shops">🛍️ The Shops</button>
+    <button data-place="signpost">🪧 The Signpost</button>
+    <button data-place="lighthouse2">🗼 The Lighthouse</button>
+    <button data-place="bike">🚲 The Town Bike</button>
   </div>
 </div>
 
@@ -97,7 +123,12 @@ var PLACES = {
   cocoa:     ["☕ Hot Cocoa Stand", "Open all winter. Extra marshmallows when Gladys is working the counter."],
   fountain:  ["⛲ Fountain Plaza", "Make a wish. The town is saving up for something big."],
   lighthouse:["🗼 Cove Lighthouse", "The light that brings everybody home. Sprocket counts the steps. Twice."],
-  cottages:  ["🏡 The Cottages", "Home sweet home — the girls' own cottages, with the best porches in town."]
+  cottages:  ["🏡 The Cottages", "Home sweet home — the girls' own cottages, with the best porches in town."],
+  shopfront: ["🎨 The Salty Canvas — Main Street", "The shop front at golden hour. Sunflowers by the door, and the chalkboard says it all: Art · Stones · Canvas · Gifts."],
+  shops:     ["🛍️ The Shops", "Coffee, ice cream, and memories — the signpost swears by all three, and so far it has not been wrong."],
+  signpost:  ["🪧 The Signpost", "Beach one way, Sweet Beach the other. Shops, coffee, ice cream and memories right here."],
+  lighthouse2:["🗼 Cove Lighthouse", "The same light you can see from the town square — and from Main Street at sunset, it earns its keep."],
+  bike:      ["🚲 The Town Bike", "The basket is rated for flowers, fresh bread, and one small robot."]
 };
 var LINES = {
   kim:     ["Welcome to the neighborhood.", "Canvas is open if you need a painting.", "Mind the wet paint. It is everywhere."],
@@ -118,10 +149,44 @@ try {
   }
 } catch (e) {}
 
-(function () {
+function applyDusk() {
   var h = new Date().getHours();
-  if (h >= 18 || h < 6) document.getElementById("dusk").style.display = "block";
-})();
+  document.getElementById("dusk").style.display = (h >= 18 || h < 6) ? "block" : "none";
+}
+applyDusk();
+
+var POS = {
+  town:   { kim: [6, 27, 32], trish: [32, 28, 31], sandy: [52, 27, 31], gladys: [71, 28, 31], sprocket: [86, 28, 16] },
+  street: { kim: [3, 1, 40], trish: [26, 2, 37], sandy: [47, 1, 38], gladys: [66, 2, 36], sprocket: [86, 3, 19] }
+};
+var SUBS = {
+  town: "The crew's new neighborhood by the sea",
+  street: "Main Street at sunset"
+};
+var townNameSet = !!document.getElementById("townSub").textContent.match(/COVE-/);
+function setScene(name) {
+  var street = name === "street";
+  document.getElementById("scene").classList.toggle("street", street);
+  document.getElementById("bgTown").style.display = street ? "none" : "block";
+  document.getElementById("bgStreet").style.display = street ? "block" : "none";
+  document.getElementById("zonesTown").style.display = street ? "none" : "block";
+  document.getElementById("zonesStreet").style.display = street ? "block" : "none";
+  document.getElementById("dirTown").style.display = street ? "none" : "flex";
+  document.getElementById("dirStreet").style.display = street ? "flex" : "none";
+  document.getElementById("tabTown").classList.toggle("active", !street);
+  document.getElementById("tabStreet").classList.toggle("active", street);
+  if (street) document.getElementById("dusk").style.display = "none"; else applyDusk();
+  if (!townNameSet) document.getElementById("townSub").textContent = SUBS[name];
+  var pos = POS[name];
+  Object.keys(pos).forEach(function (who) {
+    var el = document.getElementById("sp-" + who), p = pos[who];
+    el.style.left = p[0] + "%"; el.style.bottom = p[1] + "%"; el.style.height = p[2] + "%";
+  });
+  document.getElementById("bubble").style.display = "none";
+  document.getElementById("card").style.display = "none";
+}
+document.getElementById("tabTown").addEventListener("click", function () { setScene("town"); });
+document.getElementById("tabStreet").addEventListener("click", function () { startMusic(); setScene("street"); });
 
 function showPlace(key) {
   var p = PLACES[key]; if (!p) return;
