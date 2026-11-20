@@ -199,6 +199,7 @@ function setScene(name) {
       el.style.left = p[0] + "%"; el.style.bottom = p[1] + "%"; el.style.height = p[2] + "%";
     });
   }
+  if (typeof movingSpot !== "undefined") movingSpot = null;
   document.getElementById("bubble").style.display = "none";
   document.getElementById("card").style.display = "none";
   if (typeof closePanels === "function") closePanels();
@@ -295,6 +296,10 @@ document.addEventListener("visibilitychange", function () {
   .avatarpick { position: absolute; transform: translateX(-50%); background: #ffd98a; color: #17384a; border: none; border-radius: 999px; padding: 9px 14px; font-size: .88rem; font-weight: bold; cursor: pointer; z-index: 8; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
   #toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: #17384a; color: #fff8ec; border: 1px solid #2c85a8; border-radius: 999px; padding: 10px 18px; font-size: .9rem; display: none; z-index: 99; box-shadow: 0 8px 22px rgba(0,0,0,.4); max-width: 92vw; text-align: center; }
   #lotBalance { align-self: center; color: #ffd98a; font-weight: bold; font-size: .95rem; padding: 0 4px; }
+  .placeditem.moving { animation: movepulse .9s ease-in-out infinite; filter: drop-shadow(0 0 12px #ffd98a); }
+  @keyframes movepulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .spotmark.target { border-color: #ffd98a; background: rgba(232,163,61,.6); box-shadow: 0 0 10px rgba(255,217,138,.8); }
+  .movechip { position: absolute; transform: translateX(-50%); background: #17384a; color: #fff8ec; border: 1px solid #ffd98a; border-radius: 999px; padding: 8px 14px; font-size: .85rem; font-weight: bold; cursor: pointer; z-index: 9; }
 </style>
 
 <div id="catalog" class="panel"><div class="inner">
@@ -314,7 +319,8 @@ document.addEventListener("visibilitychange", function () {
 <div id="itemMenu" class="panel"><div class="inner">
   <h2 id="itemMenuTitle"></h2>
   <p id="itemMenuText"></p>
-  <button class="closebtn alt" id="putAwayBtn">↩️ Put it away</button>
+  <button class="closebtn alt" id="moveBtn">🔀 Move it</button>
+  <button class="closebtn" id="putAwayBtn">↩️ Put it away</button>
   <button class="closebtn" id="itemMenuClose">Keep it there</button>
 </div></div>
 
@@ -372,6 +378,13 @@ var SPOTS = {
   front2: { left: 30, bottom: 17, w: 14, sizes: ["small", "any"] }
 };
 var ACRE_PRICE = 7500;
+var movingSpot = null;
+function fits(itemId, spot) {
+  var size = ITEMS[itemId].size;
+  if (spot.sizes.indexOf(size) >= 0) return true;
+  if (size === "any" && (spot.sizes.indexOf("med") >= 0 || spot.sizes.indexOf("small") >= 0 || spot.sizes.indexOf("any") >= 0)) return true;
+  return false;
+}
 var AVATARS = [
   ["av1", "Coral"], ["av2", "Kai"], ["av3", "Fern"], ["av4", "Captain"],
   ["av5", "Sunny"], ["av6", "Walter"], ["av7", "Nana"], ["av8", "Marina"]
@@ -477,22 +490,35 @@ function renderLot() {
       img.alt = ITEMS[itemId].name;
       img.className = "placeditem";
       img.style.left = spot.left + "%"; img.style.bottom = spot.bottom + "%"; img.style.width = spot.w + "%";
-      img.addEventListener("click", function () { startMusic(); openItemMenu(spotId); });
+      if (movingSpot === spotId) img.className += " moving";
+      img.addEventListener("click", function () {
+        startMusic();
+        if (movingSpot) { var was = movingSpot; movingSpot = null; if (was !== spotId) { openItemMenu(spotId); } renderLot(); if (was === spotId) toast("Move cancelled."); return; }
+        openItemMenu(spotId);
+      });
       layer.appendChild(img);
     } else if (spot.acre && !town.expanded) {
       var lock = document.createElement("button");
       lock.className = "spotmark"; lock.textContent = "🔒"; lock.setAttribute("aria-label", "Open the back half of the property");
       lock.style.left = (spot.left + spot.w / 2) + "%"; lock.style.bottom = (spot.bottom + 2) + "%";
-      lock.addEventListener("click", function () { startMusic(); tryUnlock(); });
+      lock.addEventListener("click", function () { startMusic(); if (movingSpot) { toast("That half is still locked — finish your move first."); return; } tryUnlock(); });
       layer.appendChild(lock);
     } else {
       var b = document.createElement("button");
-      b.className = "spotmark"; b.textContent = "＋"; b.setAttribute("aria-label", "Build on this spot");
+      b.className = "spotmark" + (movingSpot && fits((town.placedAll || {})[movingSpot], spot) ? " target" : "");
+      b.textContent = "＋"; b.setAttribute("aria-label", "Build on this spot");
       b.style.left = (spot.left + spot.w / 2) + "%"; b.style.bottom = (spot.bottom + 2) + "%";
-      b.addEventListener("click", function () { startMusic(); openCatalog(spotId); });
+      b.addEventListener("click", function () { startMusic(); if (movingSpot) attemptMove(spotId); else openCatalog(spotId); });
       layer.appendChild(b);
     }
   });
+  if (movingSpot) {
+    var chip = document.createElement("button");
+    chip.className = "movechip"; chip.textContent = "✖ Cancel move";
+    chip.style.left = "50%"; chip.style.top = "8px";
+    chip.addEventListener("click", function () { movingSpot = null; renderLot(); toast("Move cancelled."); });
+    layer.appendChild(chip);
+  }
   if (town.avatar) {
     var av = document.createElement("img");
     av.src = "village2/" + town.avatar + ".png";
@@ -552,6 +578,16 @@ function placeItem(spotId, id) {
   toast(ITEMS[id].emoji + " " + ITEMS[id].name + " placed. Looking good.");
 }
 
+function attemptMove(spotId) {
+  var itemId = (town.placedAll || {})[movingSpot];
+  if (!itemId) { movingSpot = null; renderLot(); return; }
+  if (!fits(itemId, SPOTS[spotId])) { toast("Too big for that spot — try a glowing one."); return; }
+  town.placedAll[spotId] = itemId;
+  delete town.placedAll[movingSpot];
+  movingSpot = null;
+  saveTown(); renderLot();
+  toast("🔀 Moved your " + ITEMS[itemId].name + ".");
+}
 var menuSpot = null;
 function openItemMenu(spotId) {
   menuSpot = spotId;
@@ -561,6 +597,12 @@ function openItemMenu(spotId) {
   document.getElementById("itemMenuText").textContent = it.blurb;
   openPanel("itemMenu");
 }
+document.getElementById("moveBtn").addEventListener("click", function () {
+  if (!menuSpot) return;
+  movingSpot = menuSpot;
+  closePanels(); renderLot();
+  toast("Tap a glowing spot to move your " + ITEMS[town.placedAll[movingSpot]].name + " there.");
+});
 document.getElementById("putAwayBtn").addEventListener("click", function () {
   if (menuSpot) { delete town.placedAll[menuSpot]; saveTown(); renderLot(); }
   closePanels(); toast("Back in the shed — place it again anytime.");
