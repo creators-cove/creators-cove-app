@@ -59,11 +59,14 @@
   <button id="tabTown" class="active">🏘️ Town Square</button>
   <button id="tabStreet">🌅 Main Street</button>
   <button id="tabLot">🏡 My Lot</button>
+  <button id="tabBoard">🎡 The Boardwalk</button>
 </div>
+<div id="ladderStrip"><button id="ladderBtn">🪜 Town Ladder</button></div>
 <div id="scene">
   <img class="town" id="bgTown" src="village2/town.jpg" alt="A cheerful beach town with cottages, a bakery, a fountain plaza and a lighthouse">
   <img class="town" id="bgStreet" src="village2/street.jpg" alt="Main Street at sunset: the Salty Canvas storefront, a signpost, and the lighthouse over the sea" style="display:none">
   <img class="town" id="bgLot" src="village2/lotfull.jpg" alt="Your whole beach property in one picture: two building pads, a hill, a lily pond, a garden patch and the beach" style="display:none">
+  <img class="town" id="bgBoard" src="village2/boardwalk.jpg" alt="The boardwalk: a wooden pier over the sea with string lights, a little shuttered stand and a ferris wheel in the distance" style="display:none">
   <div id="dusk"></div>
   <div class="zones" id="zonesTown">
   <button class="zone" style="left:3%;top:5%;width:23%;height:29%" data-place="canvas" aria-label="The Salty Canvas"></button>
@@ -81,6 +84,12 @@
   <button class="zone" style="left:65%;top:6%;width:15%;height:32%" data-place="lighthouse2" aria-label="Cove Lighthouse"></button>
   <button class="zone" style="left:73%;top:60%;width:16%;height:33%" data-place="bike" aria-label="The town bike"></button>
   </div>
+  <div class="zones" id="zonesBoard" style="display:none">
+  <button class="zone" style="left:20%;top:35%;width:20%;height:36%" data-place="stand" aria-label="The ice cream stand"></button>
+  <button class="zone" style="left:63%;top:15%;width:17%;height:40%" data-place="pier" aria-label="The fishing pier"></button>
+  <button class="zone" style="left:85%;top:28%;width:14%;height:20%" data-place="wheel" aria-label="The ferris wheel"></button>
+  <button class="zone" style="left:38%;top:62%;width:30%;height:30%" data-place="railing" aria-label="The railing"></button>
+  </div>
   <div id="lotLayer" style="display:none; position:absolute; inset:0;"></div>
   <img class="sprite" id="sp-kim" src="village2/kim.png" alt="Kim" style="left:6%;bottom:27%;height:32%;animation-delay:.1s">
   <img class="sprite" id="sp-trish" src="village2/trish.png" alt="Trish" style="left:32%;bottom:28%;height:31%;animation-delay:.7s">
@@ -93,7 +102,7 @@
 <div id="card"><div class="inner">
   <h2 id="cardTitle"></h2>
   <p id="cardText"></p>
-  <p class="soon">Village 2 is growing — your own lot is open (tap 🏡 My Lot up top), and the Treasure Hunt and Lucky Lighthouse are on the way.</p>
+  <p class="soon">Village 2 is growing — climb your 🪜 Town Ladder to open new places. The Treasure Hunt and Lucky Lighthouse are on the way.</p>
 </div></div>
 
 <div class="directory">
@@ -119,6 +128,12 @@
     <button id="lotHintBtn">🛒 Build &amp; Decorate</button>
     <span id="lotBalance">🐚 —</span>
   </div>
+  <div class="row" id="dirBoard" style="display:none">
+    <button data-place="pier">🎣 The Fishing Pier</button>
+    <button data-place="stand">🍦 The Ice Cream Stand</button>
+    <button data-place="wheel">🎡 The Ferris Wheel</button>
+    <button data-place="railing">🌊 The Railing</button>
+  </div>
 </div>
 
 <footer>Village 2 shares your farm's name and code — your neighbors here are your farm neighbors.<br>The town tune is the same soft one from the farm. First tap starts the music.</footer>
@@ -136,7 +151,11 @@ var PLACES = {
   shops:     ["🛍️ The Shops", "Coffee, ice cream, and memories — the signpost swears by all three, and so far it has not been wrong."],
   signpost:  ["🪧 The Signpost", "Beach one way, Sweet Beach the other. Shops, coffee, ice cream and memories right here."],
   lighthouse2:["🗼 Cove Lighthouse", "The same light you can see from the town square — and from Main Street at sunset, it earns its keep."],
-  bike:      ["🚲 The Town Bike", "The basket is rated for flowers, fresh bread, and one small robot."]
+  bike:      ["🚲 The Town Bike", "The basket is rated for flowers, fresh bread, and one small robot."],
+  pier:      ["🎣 The Fishing Pier", "The boards run out past the breakers, and the fish are already telling stories about the Cove. Fishing is coming — collectibles to catch and trade when the town grows again."],
+  stand:     ["🍦 The Ice Cream Stand", "Shuttered up tight for the season. The town is saving it for something sweet."],
+  wheel:     ["🎡 The Ferris Wheel", "On a clear day you can see the whole Cove from the top — the farm, the lighthouse, and somebody's laundry."],
+  railing:   ["🌊 The Railing", "Lean here long enough and somebody will tell you a story. Lean here longer and you will tell one back."]
 };
 var LINES = {
   kim:     ["Welcome to the neighborhood.", "Canvas is open if you need a painting.", "Mind the wet paint. It is everywhere."],
@@ -165,29 +184,35 @@ applyDusk();
 
 var POS = {
   town:   { kim: [6, 27, 32], trish: [32, 28, 31], sandy: [52, 27, 31], gladys: [71, 28, 31], sprocket: [86, 28, 16] },
-  street: { kim: [3, 1, 40], trish: [26, 2, 37], sandy: [47, 1, 38], gladys: [66, 2, 36], sprocket: [86, 3, 19] }
+  street: { kim: [3, 1, 40], trish: [26, 2, 37], sandy: [47, 1, 38], gladys: [66, 2, 36], sprocket: [86, 3, 19] },
+  board:  { kim: [4, 5, 30], trish: [24, 4, 28], sandy: [42, 5, 28], gladys: [59, 4, 27], sprocket: [76, 6, 15] }
 };
 var SUBS = {
   town: "The crew's new neighborhood by the sea",
   street: "Main Street at sunset",
-  lot: "Your own little piece of the Cove"
+  lot: "Your own little piece of the Cove",
+  board: "The Boardwalk — sea air and string lights"
 };
 var townNameSet = !!document.getElementById("townSub").textContent.match(/COVE-/);
 function setScene(name) {
-  var street = name === "street", lot = name === "lot";
+  var street = name === "street", lot = name === "lot", board = name === "board", townS = name === "town";
   document.getElementById("scene").classList.toggle("street", street);
-  document.getElementById("bgTown").style.display = (!street && !lot) ? "block" : "none";
+  document.getElementById("bgTown").style.display = townS ? "block" : "none";
   document.getElementById("bgStreet").style.display = street ? "block" : "none";
   document.getElementById("bgLot").style.display = lot ? "block" : "none";
-  document.getElementById("zonesTown").style.display = (!street && !lot) ? "block" : "none";
+  document.getElementById("bgBoard").style.display = board ? "block" : "none";
+  document.getElementById("zonesTown").style.display = townS ? "block" : "none";
   document.getElementById("zonesStreet").style.display = street ? "block" : "none";
+  document.getElementById("zonesBoard").style.display = board ? "block" : "none";
   document.getElementById("lotLayer").style.display = lot ? "block" : "none";
-  document.getElementById("dirTown").style.display = (!street && !lot) ? "flex" : "none";
+  document.getElementById("dirTown").style.display = townS ? "flex" : "none";
   document.getElementById("dirStreet").style.display = street ? "flex" : "none";
   document.getElementById("dirLot").style.display = lot ? "flex" : "none";
-  document.getElementById("tabTown").classList.toggle("active", !street && !lot);
+  document.getElementById("dirBoard").style.display = board ? "flex" : "none";
+  document.getElementById("tabTown").classList.toggle("active", townS);
   document.getElementById("tabStreet").classList.toggle("active", street);
   document.getElementById("tabLot").classList.toggle("active", lot);
+  document.getElementById("tabBoard").classList.toggle("active", board);
   document.getElementById("dirTitle").textContent = lot ? "🏡 Your Lot — tap ＋ to build, 🔒 opens the back half; tap your things to put them away" : "📍 Around Town — tap a place, or tap the girls in the picture";
   if (street) document.getElementById("dusk").style.display = "none"; else applyDusk();
   if (!townNameSet) document.getElementById("townSub").textContent = SUBS[name];
@@ -205,9 +230,10 @@ function setScene(name) {
   if (typeof closePanels === "function") closePanels();
   if (lot && typeof renderLot === "function") renderLot();
 }
-document.getElementById("tabTown").addEventListener("click", function () { setScene("town"); });
-document.getElementById("tabStreet").addEventListener("click", function () { startMusic(); setScene("street"); });
+document.getElementById("tabTown").addEventListener("click", function () { if (!sceneUnlocked("town")) { lockedTap("town"); return; } setScene("town"); });
+document.getElementById("tabStreet").addEventListener("click", function () { startMusic(); if (!sceneUnlocked("street")) { lockedTap("street"); return; } setScene("street"); });
 document.getElementById("tabLot").addEventListener("click", function () { startMusic(); setScene("lot"); });
+document.getElementById("tabBoard").addEventListener("click", function () { startMusic(); if (!sceneUnlocked("board")) { lockedTap("board"); return; } setScene("board"); });
 
 function showPlace(key) {
   var p = PLACES[key]; if (!p) return;
@@ -300,6 +326,14 @@ document.addEventListener("visibilitychange", function () {
   @keyframes movepulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
   .spotmark.target { border-color: #ffd98a; background: rgba(232,163,61,.6); box-shadow: 0 0 10px rgba(255,217,138,.8); }
   .movechip { position: absolute; transform: translateX(-50%); background: #17384a; color: #fff8ec; border: 1px solid #ffd98a; border-radius: 999px; padding: 8px 14px; font-size: .85rem; font-weight: bold; cursor: pointer; z-index: 9; }
+  #ladderStrip { max-width: 1100px; margin: 8px auto 0; padding: 0 12px; }
+  #ladderStrip button { width: 100%; background: #17384a; color: #ffd98a; border: 1px solid #e8a33d; border-radius: 999px; padding: 8px 14px; font-size: .88rem; cursor: pointer; font-family: inherit; }
+  .rung { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid #e5d9bd; }
+  .rung:last-child { border-bottom: none; }
+  .rung .st { font-size: 1.15rem; line-height: 1.2; }
+  .rung .nm { font-weight: bold; font-size: .95rem; }
+  .rung .nd { font-size: .86rem; opacity: .85; }
+  .rung .pg { font-size: .8rem; color: #7a5b12; margin-top: 2px; }
 </style>
 
 <div id="catalog" class="panel"><div class="inner">
@@ -322,6 +356,13 @@ document.addEventListener("visibilitychange", function () {
   <button class="closebtn alt" id="moveBtn">🔀 Move it</button>
   <button class="closebtn" id="putAwayBtn">↩️ Put it away</button>
   <button class="closebtn" id="itemMenuClose">Keep it there</button>
+</div></div>
+
+<div id="ladderPanel" class="panel"><div class="inner">
+  <h2>🪜 Your Town Ladder</h2>
+  <p id="ladderIntro"></p>
+  <div id="ladderRows"></div>
+  <button class="closebtn" id="ladderClose">Done</button>
 </div></div>
 
 <div id="toast"></div>
@@ -394,9 +435,10 @@ var TOWN_KEY = "cove-village2-v1";
 var town = { avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false };
 try {
   var savedTown = JSON.parse(localStorage.getItem(TOWN_KEY));
-  if (savedTown && typeof savedTown === "object") town = Object.assign(town, savedTown);
+  if (savedTown && typeof savedTown === "object") { town = Object.assign(town, savedTown); town.veteran = true; }
 } catch (e) {}
 migrateTown();
+try { localStorage.setItem(TOWN_KEY, JSON.stringify(town)); } catch (e) {}
 
 function migrateTown() {
   if (!town.placedAll) town.placedAll = {};
@@ -437,7 +479,7 @@ window.addEventListener("pagehide", function () {
     if (!r) return;
     try {
       var t = JSON.parse(r);
-      if (t && typeof t === "object") { town = Object.assign({ avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false }, t); migrateTown(); localStorage.setItem(TOWN_KEY, JSON.stringify(town)); renderLot(); }
+      if (t && typeof t === "object") { town = Object.assign({ avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false }, t); town.veteran = true; migrateTown(); localStorage.setItem(TOWN_KEY, JSON.stringify(town)); renderLot(); paintLadder(); setScene("town"); }
     } catch (e) {}
   }).catch(function () {});
 })();
@@ -460,7 +502,7 @@ function toast(msg) {
   toastTimer = setTimeout(function () { t.style.display = "none"; }, 3200);
 }
 function closePanels() {
-  ["catalog", "picker", "itemMenu"].forEach(function (id) { document.getElementById(id).style.display = "none"; });
+  ["catalog", "picker", "itemMenu", "ladderPanel"].forEach(function (id) { document.getElementById(id).style.display = "none"; });
 }
 function openPanel(id) {
   closePanels();
@@ -534,11 +576,14 @@ function renderLot() {
     pick.addEventListener("click", function () { startMusic(); openPicker(); });
     layer.appendChild(pick);
   }
+  paintLadder();
 }
 function tryUnlock() {
   if (!spendShells(ACRE_PRICE)) { toast("The back half costs 🐚 " + ACRE_PRICE.toLocaleString() + " to open — your farm has 🐚 " + shells().toLocaleString()); return; }
+  var before = ladderSig();
   town.expanded = true; saveTown(); renderLot();
-  toast("🔓 The whole property is yours — the back half is open!");
+  if (newlyOpened(before)) toast("🔓 The whole property is yours — and ✨ Town Features are unlocked!");
+  else toast("🔓 The whole property is yours — the back half is open!");
 }
 var placingSpot = null;
 function openCatalog(spotId) {
@@ -570,12 +615,15 @@ function openCatalog(spotId) {
   openPanel("catalog");
 }
 function placeItem(spotId, id) {
+  var before = ladderSig();
   if (available(id) > 0) { /* already owned */ }
   else if (!spendShells(ITEMS[id].price)) { toast("Not enough shells — your farm has 🐚 " + shells().toLocaleString()); return; }
   else town.inv[id] = (town.inv[id] || 0) + 1;
   town.placedAll[spotId] = id;
   saveTown(); renderLot(); closePanels();
-  toast(ITEMS[id].emoji + " " + ITEMS[id].name + " placed. Looking good.");
+  var opened = newlyOpened(before);
+  if (opened) toast("🎉 You opened " + opened + "! Look up top.");
+  else toast(ITEMS[id].emoji + " " + ITEMS[id].name + " placed. Looking good.");
 }
 
 function attemptMove(spotId) {
@@ -633,7 +681,69 @@ document.getElementById("lotHintBtn").addEventListener("click", function () {
   document.getElementById("scene").scrollIntoView({ behavior: "smooth" });
   toast("Tap a ＋ spot on your lot to build there.");
 });
+function ladderState() {
+  var placed = Object.keys(town.placedAll || {}).length;
+  var hasBuilding = Object.keys(town.placedAll || {}).some(function (sp) { var id = town.placedAll[sp]; return id === "cottage" || id === "shop"; });
+  return { placed: placed, rungs: [
+    { key: "town", icon: "🏘️", name: "Town Square", need: "Place 3 things on your lot", prog: Math.min(placed, 3), goal: 3, done: placed >= 3 },
+    { key: "street", icon: "🌅", name: "Main Street", need: "Place a cottage or a craft shop on your lot", prog: hasBuilding ? 1 : 0, goal: 1, done: hasBuilding },
+    { key: "features", icon: "✨", name: "Town Features", need: "Open the Back Acre", prog: town.expanded ? 1 : 0, goal: 1, done: !!town.expanded, note: "The Treasure Hunt, Lucky Lighthouse and Mystery Shop will open here." },
+    { key: "board", icon: "🎡", name: "The Boardwalk", need: "Fill 8 spots on your property", prog: Math.min(placed, 8), goal: 8, done: placed >= 8 }
+  ]};
+}
+function sceneUnlocked(name) {
+  if (town.veteran) return true;
+  if (name === "lot") return true;
+  var rungs = ladderState().rungs;
+  for (var i = 0; i < rungs.length; i++) if (rungs[i].key === name) return rungs[i].done;
+  return true;
+}
+function ladderSig() { return ladderState().rungs.map(function (r) { return r.done ? "1" : "0"; }).join(""); }
+function newlyOpened(before) {
+  var after = ladderState().rungs, now = ladderSig();
+  for (var i = 0; i < after.length; i++) if (before.charAt(i) === "0" && now.charAt(i) === "1") return after[i].icon + " " + after[i].name;
+  return null;
+}
+function lockedTap(key) {
+  var r = null;
+  ladderState().rungs.forEach(function (x) { if (x.key === key) r = x; });
+  openLadder();
+  if (r) toast("🔒 " + r.name + " is locked — " + r.need.charAt(0).toLowerCase() + r.need.slice(1) + " (" + r.prog + " of " + r.goal + ").");
+}
+function openLadder() { paintLadder(); openPanel("ladderPanel"); }
+function renderLadderRows() {
+  var L = ladderState();
+  document.getElementById("ladderIntro").textContent = town.veteran
+    ? "You were building here before the ladder — founding neighbor. Everything stays open for you."
+    : "Start with your land. Build it up, and the town opens one rung at a time.";
+  var html = "";
+  L.rungs.forEach(function (r) {
+    var done = town.veteran || r.done;
+    html += '<div class="rung"><div class="st">' + (done ? "✅" : "🔒") + '</div><div><div class="nm">' + r.icon + " " + r.name + '</div><div class="nd">' + (done ? "Open" : r.need) + "</div>" + (r.goal > 1 && !done ? '<div class="pg">' + r.prog + " of " + r.goal + " so far</div>" : "") + (r.note ? '<div class="pg">' + r.note + "</div>" : "") + "</div></div>";
+  });
+  document.getElementById("ladderRows").innerHTML = html;
+}
+function paintLadder() {
+  var L = ladderState();
+  var tabs = { town: ["tabTown", "🏘️ Town Square"], street: ["tabStreet", "🌅 Main Street"], board: ["tabBoard", "🎡 The Boardwalk"] };
+  Object.keys(tabs).forEach(function (k) {
+    var done = town.veteran || L.rungs.some(function (r) { return r.key === k && r.done; });
+    document.getElementById(tabs[k][0]).textContent = done ? tabs[k][1] : "🔒 " + tabs[k][1].split(" ").slice(1).join(" ");
+  });
+  var btn = document.getElementById("ladderBtn");
+  if (town.veteran) btn.textContent = "🪜 Town Ladder — founding neighbor, your whole town is open ✅";
+  else {
+    var next = null;
+    L.rungs.forEach(function (r) { if (!r.done && !next) next = r; });
+    btn.textContent = next ? "🪜 Next rung: " + next.need + " → opens " + next.icon + " " + next.name + " (" + next.prog + " of " + next.goal + ")" : "🪜 Town Ladder — the whole town is open ✅";
+  }
+  renderLadderRows();
+}
+document.getElementById("ladderBtn").addEventListener("click", function () { startMusic(); openLadder(); });
+document.getElementById("ladderClose").addEventListener("click", closePanels);
 renderLot();
+paintLadder();
+if (!town.veteran && !sceneUnlocked("town")) setScene("lot");
 </script>
 
 </body>
