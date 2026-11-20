@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cove Village 2 — Beach Town</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: #0b3d54; color: #fff8ec; min-height: 100vh; }
+  header { padding: 10px 16px 10px; text-align: center; background: linear-gradient(180deg, #0e4a66, #0b3d54); display: flex; flex-direction: column; }
+  header h1 { font-size: 1.35rem; letter-spacing: .02em; }
+  header p { opacity: .85; font-size: .85rem; margin-top: 3px; }
+  .topbtns { align-self: flex-end; display: flex; gap: 6px; margin-bottom: 2px; }
+  .topbtns button, .topbtns a { background: #14607f; color: #fff8ec; border: 1px solid #2c85a8; border-radius: 999px; padding: 6px 11px; font-size: .85rem; text-decoration: none; cursor: pointer; }
+  .backrow { padding: 8px 12px 0; max-width: 1100px; margin: 0 auto; }
+  .backrow a { color: #ffd98a; font-size: .85rem; text-decoration: none; }
+  #scene { position: relative; width: 100%; max-width: 1100px; margin: 10px auto 0; aspect-ratio: 3 / 2; overflow: hidden; }
+  #scene > img.town { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #dusk { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(26,18,66,.34), rgba(255,138,66,.10) 55%, rgba(10,10,44,.30)); display: none; }
+  .zone { position: absolute; background: transparent; border: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .zone:active { background: rgba(255,217,138,.18); border-radius: 12px; }
+  .sprite { position: absolute; cursor: pointer; -webkit-tap-highlight-color: transparent; filter: drop-shadow(0 6px 5px rgba(0,0,0,.35)); animation: bob 2.8s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.2%); } }
+  .sprite.wiggle { animation: wig .55s ease-in-out; }
+  @keyframes wig { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-4deg) translateY(-2%); } 60% { transform: rotate(4deg); } }
+  @media (prefers-reduced-motion: reduce) { .sprite { animation: none; } }
+  #bubble { position: absolute; max-width: 62%; background: #fff8ec; color: #17384a; border-radius: 14px; padding: 8px 12px; font-size: .86rem; line-height: 1.35; box-shadow: 0 6px 18px rgba(0,0,0,.35); display: none; z-index: 30; }
+  #bubble b { color: #b3541e; }
+  #bubble:after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 9px solid transparent; border-top-color: #fff8ec; border-bottom: none; }
+  #card { max-width: 1100px; margin: 12px auto 0; padding: 0 12px; display: none; }
+  #card .inner { background: #fff8ec; color: #17384a; border-radius: 14px; padding: 14px 16px; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+  #card h2 { font-size: 1.1rem; margin-bottom: 4px; }
+  #card p { font-size: .92rem; line-height: 1.45; }
+  #card .soon { margin-top: 7px; font-size: .8rem; color: #7a5b12; }
+  .directory { max-width: 1100px; margin: 16px auto 8px; padding: 0 12px 20px; }
+  .directory h3 { font-size: 1rem; margin-bottom: 8px; color: #ffd98a; }
+  .directory .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .directory button { background: #14607f; color: #fff8ec; border: 1px solid #2c85a8; border-radius: 999px; padding: 8px 13px; font-size: .88rem; cursor: pointer; }
+  footer { text-align: center; font-size: .8rem; opacity: .75; padding: 0 16px 22px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="townTitle">🏖️ Cove Village 2 — Beach Town</h1>
+  <p id="townSub">The crew's new neighborhood by the sea</p>
+  <div class="topbtns">
+    <button id="muteBtn" aria-label="Sound on or off">🔊</button>
+    <a href="../index.html">🏠 App</a>
+  </div>
+</header>
+<div class="backrow"><a href="cove-world.html?v=40">← Back to your Farm &amp; Village</a></div>
+
+<div id="scene">
+  <img class="town" src="village2/town.jpg" alt="A cheerful beach town with cottages, a bakery, a fountain plaza and a lighthouse">
+  <div id="dusk"></div>
+  <button class="zone" style="left:3%;top:5%;width:23%;height:29%" data-place="canvas" aria-label="The Salty Canvas"></button>
+  <button class="zone" style="left:37%;top:1%;width:21%;height:26%" data-place="bakery" aria-label="Boardwalk Bakery"></button>
+  <button class="zone" style="left:56%;top:13%;width:22%;height:26%" data-place="giftshop" aria-label="Cove Gift Shop"></button>
+  <button class="zone" style="left:85%;top:5%;width:12%;height:34%" data-place="lighthouse" aria-label="Cove Lighthouse"></button>
+  <button class="zone" style="left:34%;top:33%;width:23%;height:19%" data-place="fountain" aria-label="Fountain Plaza"></button>
+  <button class="zone" style="left:57%;top:44%;width:17%;height:21%" data-place="cocoa" aria-label="Hot Cocoa Stand"></button>
+  <button class="zone" style="left:3%;top:47%;width:36%;height:26%" data-place="cottages" aria-label="The Cottages"></button>
+  <img class="sprite" id="sp-kim" src="village2/kim.png" alt="Kim" style="left:6%;bottom:27%;height:32%;animation-delay:.1s">
+  <img class="sprite" id="sp-trish" src="village2/trish.png" alt="Trish" style="left:32%;bottom:28%;height:31%;animation-delay:.7s">
+  <img class="sprite" id="sp-sandy" src="village2/sandy.png" alt="Sandy" style="left:52%;bottom:27%;height:31%;animation-delay:1.3s">
+  <img class="sprite" id="sp-gladys" src="village2/gladys.png" alt="Gladys" style="left:71%;bottom:28%;height:31%;animation-delay:.4s">
+  <img class="sprite" id="sp-sprocket" src="village2/sprocket.png" alt="Sprocket" style="left:86%;bottom:28%;height:16%;animation-delay:1s">
+  <div id="bubble"></div>
+</div>
+
+<div id="card"><div class="inner">
+  <h2 id="cardTitle"></h2>
+  <p id="cardText"></p>
+  <p class="soon">Village 2 is just getting started — today the town is for visiting. Shops, jobs and decorating are coming.</p>
+</div></div>
+
+<div class="directory">
+  <h3>📍 Around Town — tap a place, or tap the girls in the picture</h3>
+  <div class="row">
+    <button data-place="canvas">🎨 The Salty Canvas</button>
+    <button data-place="bakery">🥐 Boardwalk Bakery</button>
+    <button data-place="giftshop">🎁 Cove Gift Shop</button>
+    <button data-place="cocoa">☕ Hot Cocoa Stand</button>
+    <button data-place="fountain">⛲ Fountain Plaza</button>
+    <button data-place="lighthouse">🗼 Cove Lighthouse</button>
+    <button data-place="cottages">🏡 The Cottages</button>
+  </div>
+</div>
+
+<footer>Village 2 shares your farm's name and code — your neighbors here are your farm neighbors.<br>The town tune is the same soft one from the farm. First tap starts the music.</footer>
+
+<script>
+var PLACES = {
+  canvas:    ["🎨 The Salty Canvas", "The crew's art studio. Painting, glitter, and strong opinions about both, every day."],
+  bakery:    ["🥐 Boardwalk Bakery", "Warm bread and cinnamon by eight in the morning. The line forms early."],
+  giftshop:  ["🎁 Cove Gift Shop", "Where the town spends its shells on pretty things it did not know it needed."],
+  cocoa:     ["☕ Hot Cocoa Stand", "Open all winter. Extra marshmallows when Gladys is working the counter."],
+  fountain:  ["⛲ Fountain Plaza", "Make a wish. The town is saving up for something big."],
+  lighthouse:["🗼 Cove Lighthouse", "The light that brings everybody home. Sprocket counts the steps. Twice."],
+  cottages:  ["🏡 The Cottages", "Home sweet home — the girls' own cottages, with the best porches in town."]
+};
+var LINES = {
+  kim:     ["Welcome to the neighborhood.", "Canvas is open if you need a painting.", "Mind the wet paint. It is everywhere."],
+  trish:   ["I was just reading the light down here.", "Fountain coins are for wishes, not snacks.", "Something is always brewing in this town."],
+  sandy:   ["Beach day is every day here.", "I call dibs on the boardwalk.", "Purple looks good on this town."],
+  gladys:  ["I made a map of the town. It is color-coded.", "Sprocket wrapped the lighthouse again.", "Did you sign the guestbook yet?"],
+  sprocket:["Beep! All presents accounted for.", "Wrapping paper levels: optimal.", "I counted the fences. Twice."]
+};
+var NAMES = { kim: "Kim", trish: "Trish", sandy: "Sandy", gladys: "Gladys", sprocket: "Sprocket" };
+var lineIdx = { kim: 0, trish: 0, sandy: 0, gladys: 0, sprocket: 0 };
+
+try {
+  var fname = localStorage.getItem("cove-farm-name");
+  var fcode = localStorage.getItem("cove-farm-code");
+  if (fname) {
+    document.getElementById("townTitle").textContent = "🏖️ " + fname + " Beach Town";
+    document.getElementById("townSub").textContent = "Village 2" + (fcode ? " · " + fcode : "");
+  }
+} catch (e) {}
+
+(function () {
+  var h = new Date().getHours();
+  if (h >= 18 || h < 6) document.getElementById("dusk").style.display = "block";
+})();
+
+function showPlace(key) {
+  var p = PLACES[key]; if (!p) return;
+  document.getElementById("cardTitle").textContent = p[0];
+  document.getElementById("cardText").textContent = p[1];
+  var card = document.getElementById("card");
+  card.style.display = "block";
+  card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+document.querySelectorAll("[data-place]").forEach(function (el) {
+  el.addEventListener("click", function () { startMusic(); showPlace(el.getAttribute("data-place")); });
+});
+
+var bubble = document.getElementById("bubble"), bubbleTimer = null;
+document.querySelectorAll(".sprite").forEach(function (el) {
+  el.addEventListener("click", function () {
+    startMusic();
+    var who = el.id.replace("sp-", "");
+    var lines = LINES[who];
+    var line = lines[lineIdx[who] % lines.length]; lineIdx[who]++;
+    bubble.innerHTML = "<b>" + NAMES[who] + ":</b> " + line;
+    var scene = document.getElementById("scene").getBoundingClientRect();
+    var r = el.getBoundingClientRect();
+    bubble.style.display = "block";
+    var bw = bubble.offsetWidth;
+    var left = (r.left - scene.left) + r.width / 2 - bw / 2;
+    left = Math.max(4, Math.min(left, scene.width - bw - 4));
+    bubble.style.left = left + "px";
+    bubble.style.top = Math.max(2, (r.top - scene.top) - bubble.offsetHeight - 14) + "px";
+    el.classList.remove("wiggle"); void el.offsetWidth; el.classList.add("wiggle");
+    clearTimeout(bubbleTimer);
+    bubbleTimer = setTimeout(function () { bubble.style.display = "none"; }, 3400);
+  });
+});
+
+var bgAudio = null, musicMuted = false;
+function startMusic() {
+  if (!bgAudio) {
+    bgAudio = new Audio("../music/village-breeze.mp3");
+    bgAudio.loop = true; bgAudio.volume = 0.4;
+  }
+  if (!musicMuted && bgAudio.paused) bgAudio.play().catch(function () {});
+}
+var muteBtn = document.getElementById("muteBtn");
+function paintMute() { muteBtn.textContent = musicMuted ? "🔇" : "🔊"; }
+muteBtn.addEventListener("click", function () {
+  musicMuted = !musicMuted; paintMute();
+  if (bgAudio) { if (musicMuted) bgAudio.pause(); else bgAudio.play().catch(function () {}); }
+});
+document.addEventListener("visibilitychange", function () {
+  if (!bgAudio) return;
+  if (document.hidden) bgAudio.pause();
+  else if (!musicMuted) bgAudio.play().catch(function () {});
+});
+</script>
+<script>
+/* Cove traffic tally - counts page opens per day, never who */
+(function () {
+  try {
+    var d = new Date();
+    var day = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    var H = { "Authorization": "Bearer gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg", "Content-Type": "application/json" };
+    fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "village2", 1]), keepalive: true }).catch(function () {});
+    fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "_total", 1]), keepalive: true }).catch(function () {});
+  } catch (e) { /* counting is never worth breaking a game */ }
+})();
+</script>
+</body>
+</html>
