@@ -27,7 +27,9 @@
   .sprite { position: absolute; cursor: pointer; -webkit-tap-highlight-color: transparent; filter: drop-shadow(0 6px 5px rgba(0,0,0,.35)); animation: bob 2.8s ease-in-out infinite; }
   @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.2%); } }
   .sprite.wiggle { animation: wig .55s ease-in-out; }
-  .sprite.walking { animation: walkbob .34s ease-in-out infinite; }
+  .sprite.walking { animation: glidebob .55s ease-in-out infinite; }
+  @keyframes glidebob { 0%,100% { transform: translateY(0) rotate(-0.8deg); } 50% { transform: translateY(-1.2px) rotate(0.8deg); } }
+  #sp-sprocket.walking { animation: walkbob .34s ease-in-out infinite; }
   @keyframes walkbob { 0%,100% { transform: translateY(0) rotate(-1.6deg); } 50% { transform: translateY(-4px) rotate(1.6deg); } }
   .sprite.busy { animation: busybob .7s ease-in-out infinite; }
   @keyframes busybob { 0%,100% { transform: rotate(-1.3deg); } 50% { transform: rotate(1.3deg) translateY(-2px); } }
