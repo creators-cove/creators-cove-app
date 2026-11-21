@@ -48,6 +48,7 @@
   .choiceopt:disabled { opacity: .5; cursor: default; }
   .choice.locked { background: rgba(255,248,236,.75); color: #47626e; font-size: 13.5px; font-weight: 600; }
   #epChoice .choice { border: 2px solid #eed9ae; box-shadow: none; margin-top: 14px; }
+  #epVideo video { width: 100%; border-radius: 14px; display: block; margin-bottom: 8px; background: #0b2836; box-shadow: 0 3px 10px rgba(0,0,0,.25); }
   #epChoice .picked { display: flex; gap: 10px; align-items: center; }
   #epChoice .picked .oi { font-size: 30px; }
   .secttl { color: #ffd98a; font-weight: 800; font-size: 15px; margin: 10px 2px 6px; }
@@ -153,6 +154,7 @@
   <div class="sheet">
     <div class="eptag" id="epTag">Episode 1</div>
     <h2 id="epTitle"></h2>
+    <div id="epVideo"></div>
     <div id="epBeats"></div>
     <div id="epChoice"></div>
     <button class="bigbtn" id="epClose">▶ Back to the studio</button>
@@ -217,7 +219,7 @@ var BUILD_TASKS = [
     ["mailbox", "📮", "Story Mailbox"], ["fountain", "🐚", "Shell Fountain"], ["masks", "🎭", "Drama Mask Planter"] ] }
 ];
 var EPISODES = [
-  { at: 0, title: "Opening Day at the Salty Canvas", beats: [
+  { at: 0, title: "Opening Day at the Salty Canvas", video: "drama/ep1.mp4", poster: "drama/ep1-poster.jpg", beats: [
     ["kim", "The Cove Art Fair is in two weeks, girls. Our studio is entering — and we are going to win it."],
     ["sandy", "Then explain THESE. A whole bouquet of perfect seashells, left on the studio step. No note. Third day in a row."],
     ["trish", "A secret admirer. Or a very tidy crab. My money's on the admirer."],
@@ -401,6 +403,7 @@ function showEpisode(i) {
     else html += '<div class="beat">' + faceHTML(who, "face") + '<div class="line"><b>' + PEOPLE[who].name + "</b><span>" + line + "</span></div></div>";
   }
   document.getElementById("epBeats").innerHTML = html;
+  document.getElementById("epVideo").innerHTML = ep.video ? '<video src="' + ep.video + '" poster="' + (ep.poster || "") + '" autoplay muted loop playsinline controls></video>' : "";
   renderEpisodeChoice(i);
   document.getElementById("epOverlay").className = "overlay open";
   sndSting();
@@ -432,6 +435,7 @@ function renderEpisodeChoice(ep) {
 }
 function closeEpisode() {
   document.getElementById("epOverlay").className = "overlay";
+  document.getElementById("epVideo").innerHTML = "";
   var unlocked = unlockedEpisodes();
   var seen = 0;
   var tag = document.getElementById("epTag").textContent;
