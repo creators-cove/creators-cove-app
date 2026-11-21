@@ -20,6 +20,33 @@
   .epbar .track { flex: 1; height: 10px; background: rgba(0,0,0,.3); border-radius: 99px; overflow: hidden; }
   .epbar .fill { height: 100%; background: linear-gradient(90deg, #ffd98a, #ffb347); width: 0%; transition: width .5s; }
   .epbar button { background: #ffd98a; color: #5a3b12; border: none; border-radius: 999px; font-weight: 800; padding: 6px 12px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+  /* ---------- Your Salty Canvas studio (build choices) ---------- */
+  .scene { position: relative; height: 186px; border-radius: 18px; overflow: hidden; background: linear-gradient(180deg, #8ed8f2 0%, #cdeffb 46%, #f7dfae 46.5%, #eec98d 100%); border: 4px solid #a97c3f; box-shadow: inset 0 2px 10px rgba(120,80,20,.2), 0 4px 0 rgba(0,0,0,.2); }
+  .scene .sun { position: absolute; top: 10px; right: 14px; font-size: 26px; }
+  .shopfront { position: absolute; left: 7%; right: 7%; bottom: 14px; height: 118px; background: linear-gradient(180deg, #fff8ec, #ffe9bd); border: 3px solid #a97c3f; border-radius: 12px 12px 6px 6px; }
+  .shopfront .door { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 34px; height: 62px; background: #7db8d9; border: 3px solid #a97c3f; border-bottom: none; border-radius: 10px 10px 0 0; }
+  .shopfront .win { position: absolute; bottom: 22px; width: 40px; height: 44px; background: #bfe8f5; border: 3px solid #a97c3f; border-radius: 8px; }
+  .shopfront .win.l { left: 9%; } .shopfront .win.r { right: 9%; }
+  .slot { position: absolute; z-index: 3; text-align: center; min-width: 52px; }
+  .slot .ic { font-size: 31px; line-height: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+  .slot .lb { display: block; font-size: 9.5px; font-weight: 800; color: #5a3b12; background: rgba(255,255,255,.88); border-radius: 99px; padding: 2px 6px; margin-top: 2px; white-space: nowrap; }
+  .slot.empty { opacity: .4; filter: grayscale(1); }
+  .slot.filled .ic { animation: popin .35s ease-out; }
+  .choice { margin-top: 8px; background: #fff8ec; border-radius: 16px; padding: 10px 12px; box-shadow: 0 3px 0 rgba(0,0,0,.18); }
+  .choice .chead { display: flex; gap: 10px; align-items: center; }
+  .choice .face { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: #cfeef7; flex: none; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+  .choice .face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; transform: scale(1.9) translateY(14%); }
+  .choice .face .bot { font-size: 26px; text-align: center; line-height: 46px; }
+  .choice .ct { font-weight: 800; font-size: 14.5px; }
+  .choice .cp { font-size: 13px; color: #47626e; line-height: 1.4; }
+  .choice .cost { font-size: 12px; font-weight: 800; color: #8a6d1f; }
+  .choice .opts { display: flex; gap: 8px; margin-top: 9px; }
+  .choiceopt { flex: 1; background: #fff; border: 3px solid #eed9ae; border-radius: 14px; padding: 8px 4px; cursor: pointer; font-family: inherit; }
+  .choiceopt .oi { font-size: 26px; display: block; }
+  .choiceopt .on2 { font-size: 12px; font-weight: 800; color: #12303e; display: block; margin-top: 2px; line-height: 1.2; }
+  .choiceopt:active { transform: scale(.97); }
+  .choiceopt:disabled { opacity: .5; cursor: default; }
+  .choice.locked { background: rgba(255,248,236,.75); color: #47626e; font-size: 13.5px; font-weight: 600; }
   .secttl { color: #ffd98a; font-weight: 800; font-size: 15px; margin: 10px 2px 6px; }
   #orders { display: flex; flex-direction: column; gap: 8px; }
   .order { background: #fff8ec; border-radius: 16px; padding: 9px 11px; display: flex; gap: 10px; align-items: center; box-shadow: 0 3px 0 rgba(0,0,0,.18); border: 3px solid transparent; }
@@ -103,6 +130,10 @@
     <button id="episodesBtn">📺 Episodes</button>
   </div>
 
+  <div class="secttl">🏠 Your Salty Canvas Studio — your picks stay up for good</div>
+  <div id="studio"></div>
+  <div id="choicePanel"></div>
+
   <div class="secttl">📋 Orders from the girls</div>
   <div id="orders"></div>
 
@@ -112,7 +143,7 @@
 
   <div id="gens"></div>
 
-  <p class="howto">How it works: tap a supply box and supplies pop onto the board. Tap any item, then tap an identical one to merge them into the next tier up. Fill the girls' orders to earn shells and ⭐ stars — stars unlock the next episode of the drama. Top-tier items sell for a nice pile of shells.</p>
+  <p class="howto">How it works: tap a supply box and supplies pop onto the board. Tap any item, then tap an identical one to merge them into the next tier up. Fill the girls' orders to earn shells and ⭐ stars — stars unlock the next episode of the drama. Top-tier items sell for a nice pile of shells. Watching episodes unlocks studio picks — spend stars to choose the sign, the awning and more, and every pick stays up for good. Your studio will look like nobody else's.</p>
 </div>
 
 <div class="overlay" id="epOverlay">
@@ -167,6 +198,20 @@ var GOSSIP = {
   gladys: ["For the fair booth. Label it this time!", "Sprocket keeps wrapping the supplies. Hurry."],
   sprocket: ["WRAPPING EMERGENCY. THIS IS NOT A DRILL.", "SUPPLIES REQUIRED. PLEASE AND THANK YOU."]
 };
+var BUILD_TASKS = [
+  { ep: 0, slot: "sign", who: "sandy", title: "The Studio Sign", cost: 1, ph: "🪧", prompt: "Every great studio needs a sign, and Sandy gets to pick this one. No pressure. (There is pressure.)", options: [
+    ["wave", "🌊", "Wave Sign"], ["shell", "🐚", "Shell Sign"], ["star", "⭐", "Starfish Sign"] ] },
+  { ep: 1, slot: "awning", who: "kim", title: "The Front Awning", cost: 2, ph: "⛱️", prompt: "Kim's call: what shades the studio door? Pick the awning and it goes up today.", options: [
+    ["sunset", "🌅", "Sunset Awning"], ["leafy", "🌿", "Leafy Awning"], ["purple", "💜", "Purple Awning"] ] },
+  { ep: 2, slot: "flowers", who: "gladys", title: "The Window Boxes", cost: 3, ph: "🌼", prompt: "Gladys is in charge of the window boxes, which means they WILL be labeled. What goes in them?", options: [
+    ["sunflower", "🌻", "Sunflowers"], ["blossom", "🌸", "Pink Blossoms"], ["succulent", "🌵", "Succulents"] ] },
+  { ep: 3, slot: "charm", who: "trish", title: "The Door Charm", cost: 4, ph: "🔔", prompt: "Trish read the leaves and the leaves said: the door needs a charm. Choose wisely. Or don't. The leaves aren't picky.", options: [
+    ["bell", "🔔", "Brass Bell"], ["chime", "🐚", "Shell Chime"], ["star", "✨", "Star Charm"] ] },
+  { ep: 4, slot: "mural", who: "kim", title: "The Wall Mural", cost: 5, ph: "🖼️", prompt: "Fair Day is won and the studio wall is blank. Kim gets the mural pick — make it a good one.", options: [
+    ["ribbon", "🏆", "Blue Ribbon Mural"], ["splash", "🎨", "Paint Splash Mural"], ["wave", "🌊", "Big Wave Mural"] ] },
+  { ep: 5, slot: "finale", who: "sprocket", title: "The Finishing Touch", cost: 6, ph: "📮", prompt: "SPROCKET HAS PREPARED THREE FINISHING TOUCHES. ALL OF THEM ARE SAFE. PROBABLY.", options: [
+    ["mailbox", "📮", "Story Mailbox"], ["fountain", "🐚", "Shell Fountain"], ["masks", "🎭", "Drama Mask Planter"] ] }
+];
 var EPISODES = [
   { at: 0, title: "Opening Day at the Salty Canvas", beats: [
     ["kim", "The Cove Art Fair is in two weeks, girls. Our studio is entering — and we are going to win it."],
@@ -215,7 +260,7 @@ var EPISODES = [
 var SAVE_KEY = "cove-drama-v1";
 var state = null;
 function defaultState() {
-  return { board: [], stars: 0, merges: 0, epSeen: 0, orders: [], bank: 0, muted: false, started: false };
+  return { board: [], stars: 0, totalStars: 0, merges: 0, epSeen: 0, orders: [], bank: 0, muted: false, started: false, studio: {} };
 }
 function loadState() {
   try { state = JSON.parse(localStorage.getItem(SAVE_KEY)) || defaultState(); }
@@ -225,6 +270,9 @@ function loadState() {
     state.board = []; for (var i = 0; i < 28; i++) state.board.push(old[i] || null);
   }
   if (!Array.isArray(state.orders)) state.orders = [];
+  if (!state.studio || typeof state.studio !== "object") state.studio = {};
+  state.stars = parseInt(state.stars, 10) || 0;
+  state.totalStars = Math.max(parseInt(state.totalStars, 10) || 0, state.stars);
 }
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {} }
 
@@ -280,7 +328,7 @@ function boardCount(c, t) {
 function genOrder() {
   var whoKeys = ["kim", "sandy", "trish", "gladys", "sprocket"];
   var who = whoKeys[Math.floor(Math.random() * (Math.random() < 0.14 ? 5 : 4))];
-  var maxTier = state.stars < 8 ? 3 : state.stars < 20 ? 4 : state.stars < 35 ? 5 : 6;
+  var maxTier = (state.totalStars || 0) < 8 ? 3 : (state.totalStars || 0) < 20 ? 4 : (state.totalStars || 0) < 35 ? 5 : 6;
   var wants = [];
   var nWants = Math.random() < 0.35 ? 2 : 1;
   var used = {};
@@ -315,6 +363,7 @@ function deliver(idx) {
   }
   addShells(o.reward);
   state.stars += o.stars;
+  state.totalStars = (state.totalStars || 0) + o.stars;
   state.orders[idx] = genOrder();
   sel = -1;
   save(); renderAll();
@@ -327,7 +376,7 @@ function deliver(idx) {
 /* ============ EPISODES ============ */
 function unlockedEpisodes() {
   var n = 0;
-  for (var i = 0; i < EPISODES.length; i++) if (state.stars >= EPISODES[i].at) n++;
+  for (var i = 0; i < EPISODES.length; i++) if ((state.totalStars || 0) >= EPISODES[i].at) n++;
   return n;
 }
 function faceHTML(who, cls) {
@@ -358,7 +407,10 @@ function closeEpisode() {
   if (m) seen = parseInt(m[1], 10);
   if (seen > state.epSeen) state.epSeen = seen;
   if (state.epSeen < unlocked) state.epSeen = state.epSeen; /* next one waits for next delivery or the Episodes button */
-  save(); renderHUD();
+  save(); renderAll();
+  for (var ti = 0; ti < BUILD_TASKS.length; ti++) {
+    if (!state.studio[BUILD_TASKS[ti].slot] && state.epSeen > BUILD_TASKS[ti].ep) { toast("🏠 New studio pick unlocked: " + BUILD_TASKS[ti].title + "!"); break; }
+  }
 }
 function openList() {
   var unlocked = unlockedEpisodes();
@@ -377,6 +429,72 @@ function openList() {
     showEpisode(parseInt(this.getAttribute("data-ep"), 10));
   });
   document.getElementById("listOverlay").className = "overlay open";
+}
+
+/* ============ STUDIO BUILD CHOICES ============ */
+var SLOT_POS = {
+  sign: "left:50%;top:4px;transform:translateX(-50%);",
+  awning: "left:50%;top:52px;transform:translateX(-50%);",
+  flowers: "left:9%;bottom:26px;",
+  charm: "left:26%;bottom:34px;",
+  mural: "right:9%;bottom:26px;",
+  finale: "left:50%;bottom:2px;transform:translateX(-50%);"
+};
+var SLOT_LABEL = { sign: "Sign", awning: "Awning", flowers: "Window boxes", charm: "Door charm", mural: "Mural", finale: "Doorstep" };
+function taskOption(task, id) {
+  for (var i = 0; i < task.options.length; i++) if (task.options[i][0] === id) return task.options[i];
+  return null;
+}
+function nextChoice() {
+  for (var i = 0; i < BUILD_TASKS.length; i++) {
+    var t = BUILD_TASKS[i];
+    if (!state.studio[t.slot] && state.epSeen > t.ep) return t;
+  }
+  return null;
+}
+function renderStudio() {
+  var wrap = document.getElementById("studio");
+  if (!wrap) return;
+  var html = '<div class="scene"><div class="sun">☀️</div><div class="shopfront"><div class="win l"></div><div class="win r"></div><div class="door"></div></div>';
+  for (var i = 0; i < BUILD_TASKS.length; i++) {
+    var t = BUILD_TASKS[i], chosen = state.studio[t.slot] ? taskOption(t, state.studio[t.slot]) : null;
+    html += '<div class="slot ' + (chosen ? "filled" : "empty") + '" style="' + SLOT_POS[t.slot] + '"><span class="ic">' + (chosen ? chosen[1] : t.ph) + '</span><span class="lb">' + (chosen ? chosen[2] : SLOT_LABEL[t.slot]) + "</span></div>";
+  }
+  html += "</div>";
+  wrap.innerHTML = html;
+  var panel = document.getElementById("choicePanel");
+  var task = nextChoice();
+  if (task) {
+    var afford = state.stars >= task.cost;
+    var phtml = '<div class="choice"><div class="chead">' + faceHTML(task.who, "face") + '<div><div class="ct">' + PEOPLE[task.who].name + " picks: " + task.title + '</div><div class="cp">' + task.prompt + '</div><div class="cost">Costs ⭐ ' + task.cost + " · you have ⭐ " + state.stars + (afford ? "" : " — fill more orders to earn stars!") + '</div></div></div><div class="opts">';
+    for (var j = 0; j < task.options.length; j++) {
+      var op = task.options[j];
+      phtml += '<button class="choiceopt" data-ep="' + task.ep + '" data-op="' + op[0] + '"' + (afford ? "" : " disabled") + '><span class="oi">' + op[1] + '</span><span class="on2">' + op[2] + "</span></button>";
+    }
+    phtml += "</div></div>";
+    panel.innerHTML = phtml;
+    var btns = panel.querySelectorAll(".choiceopt");
+    for (var k = 0; k < btns.length; k++) btns[k].addEventListener("click", function () { chooseDecor(parseInt(this.getAttribute("data-ep"), 10), this.getAttribute("data-op")); });
+  } else {
+    var remaining = 0, nextEp = -1;
+    for (var m = 0; m < BUILD_TASKS.length; m++) if (!state.studio[BUILD_TASKS[m].slot]) { remaining++; if (nextEp < 0) nextEp = BUILD_TASKS[m].ep; }
+    panel.innerHTML = remaining === 0
+      ? '<div class="choice locked">🏠 Your studio is fully decorated — every pick was yours. Next season brings new choices…</div>'
+      : '<div class="choice locked">🔒 The next studio pick unlocks after Episode ' + (nextEp + 1) + ". Keep filling orders and watching the drama!</div>";
+  }
+}
+function chooseDecor(ep, opId) {
+  var task = null;
+  for (var i = 0; i < BUILD_TASKS.length; i++) if (BUILD_TASKS[i].ep === ep) task = BUILD_TASKS[i];
+  if (!task || state.studio[task.slot] || state.epSeen <= task.ep) return;
+  var op = taskOption(task, opId);
+  if (!op) return;
+  if (state.stars < task.cost) { toast("Not enough stars yet — that pick costs ⭐ " + task.cost); return; }
+  state.stars -= task.cost;
+  state.studio[task.slot] = opId;
+  save(); renderAll();
+  sndDeliver();
+  toast("🏠 " + op[2] + " is up! Your studio, your pick.");
 }
 
 /* ============ BOARD ============ */
@@ -477,7 +595,7 @@ function renderHUD() {
     var cur = EPISODES[unlocked - 1] ? EPISODES[unlocked - 1].at : 0;
     var next = EPISODES[unlocked];
     label.textContent = "🎭 " + state.epSeen + " of " + EPISODES.length + " episodes · next at ⭐" + next.at;
-    fill.style.width = Math.round(100 * (state.stars - cur) / (next.at - cur)) + "%";
+    fill.style.width = Math.round(100 * ((state.totalStars || 0) - cur) / (next.at - cur)) + "%";
   }
   document.getElementById("muteBtn").textContent = state.muted ? "🔇" : "🔊";
 }
@@ -506,7 +624,7 @@ function tapGen(gi, btn) {
   sndSpawn();
   save(); renderAll();
 }
-function renderAll() { renderHUD(); renderOrders(); renderBoard(); renderInfo(); }
+function renderAll() { renderHUD(); renderStudio(); renderOrders(); renderBoard(); renderInfo(); }
 
 /* ============ BOOT ============ */
 loadState();
