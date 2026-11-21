@@ -214,7 +214,7 @@ function setScene(name) {
   document.getElementById("tabStreet").classList.toggle("active", street);
   document.getElementById("tabLot").classList.toggle("active", lot);
   document.getElementById("tabBoard").classList.toggle("active", board);
-  document.getElementById("dirTitle").textContent = lot ? "🏡 Your Lot — tap ＋ to build, 🔒 opens the back half; tap your things to put them away" : "📍 Around Town — tap a place, or tap the girls in the picture";
+  document.getElementById("dirTitle").textContent = lot ? "🏡 Your Lots — tap a chip up top to switch lots, ＋ to build; tap your things to put them away" : "📍 Around Town — tap a place, or tap the girls in the picture";
   if (street) document.getElementById("dusk").style.display = "none"; else applyDusk();
   if (!townNameSet) document.getElementById("townSub").textContent = SUBS[name];
   document.querySelectorAll(".sprite").forEach(function (el) { el.style.display = lot ? "none" : "block"; });
@@ -349,6 +349,9 @@ document.addEventListener("visibilitychange", function () {
   .wlabel { position: absolute; left: 50%; top: 50%; width: 44px; margin-left: -22px; margin-top: -10px; text-align: center; font-size: .85rem; font-weight: bold; }
   .bigbtn { background: #e8a33d; color: #17384a; font-weight: bold; border: none; border-radius: 999px; padding: 9px 20px; font-size: .92rem; cursor: pointer; font-family: inherit; }
   .bigbtn:disabled { background: #b9c4c7; color: #fff8ec; cursor: default; }
+  .lotrow { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 9; max-width: 96%; }
+  .lotchip { background: rgba(23,56,74,.88); color: #fff8ec; border: 1px solid #2c85a8; border-radius: 999px; padding: 7px 12px; font-size: .82rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .lotchip.cur { background: #ffd98a; color: #17384a; border-color: #ffd98a; font-weight: bold; }
   @media (prefers-reduced-motion: reduce) { .huntitem { animation: none; } #wheel { transition: none; } }
 </style>
 
@@ -408,6 +411,13 @@ document.addEventListener("visibilitychange", function () {
   <button class="closebtn" id="funClose">Done</button>
 </div></div>
 
+<div id="lotPanel" class="panel"><div class="inner">
+  <h2 id="lotBuyTitle"></h2>
+  <p id="lotBuyText"></p>
+  <button class="closebtn alt" id="lotBuyBtn"></button>
+  <button class="closebtn" id="lotBuyClose">Not yet</button>
+</div></div>
+
 <div id="toast"></div>
 
 <script>
@@ -448,7 +458,13 @@ var ITEMS = {
   birdbath:{ name: "Bird Bath", emoji: "🐦", price: 275, size: "small", img: "item-birdbath.png", blurb: "A stone bird bath, already popular with the local birds." },
   flamingo:{ name: "Lawn Flamingo", emoji: "🦩", price: 450, size: "small", img: "item-flamingo.png", myst: true, blurb: "A pink lawn flamingo, standing on one leg like it owns the place. Around here, it does." },
   mermaid: { name: "Mermaid Statue", emoji: "🧜", price: 1800, size: "med", img: "item-mermaid.png", myst: true, blurb: "A stone mermaid for the garden. She has watched over the Cove from somebody's yard for years." },
-  anchor:  { name: "Old Anchor", emoji: "⚓", price: 900, size: "med", img: "item-anchor.png", myst: true, blurb: "A rusty ship's anchor, heavy with stories. Every beach property needs one." }
+  anchor:  { name: "Old Anchor", emoji: "⚓", price: 900, size: "med", img: "item-anchor.png", myst: true, blurb: "A rusty ship's anchor, heavy with stories. Every beach property needs one." },
+  icecart: { name: "Ice Cream Cart", emoji: "🍦", price: 850, size: "med", img: "item-icecart.png", blurb: "A little ice cream cart with a striped awning. The crew's favorite shift to work, for obvious reasons." },
+  well:    { name: "Wishing Well", emoji: "🪙", price: 1500, size: "med", img: "item-well.png", blurb: "A stone wishing well. Toss a shell, make a wish — the town keeps both." },
+  hammock: { name: "Hammock", emoji: "🌙", price: 700, size: "med", img: "item-hammock.png", blurb: "A striped hammock between two posts. Officially the best seat in the Cove." },
+  surfrack:{ name: "Surfboard Rack", emoji: "🏄", price: 400, size: "small", img: "item-surfrack.png", blurb: "Three surfboards, racked and ready. Somebody here is braver than the rest of us." },
+  gnome:   { name: "Garden Gnome", emoji: "🍄", price: 325, size: "small", img: "item-gnome.png", blurb: "A garden gnome with a watering can and strong opinions about your flower beds." },
+  picnic:  { name: "Picnic Table", emoji: "🧺", price: 550, size: "med", img: "item-picnic.png", blurb: "A picnic table with a checkered cloth. Seats the whole crew, plus one small robot." }
 };
 var SPOTS = {
   hill:   { left: 31, bottom: 63, w: 21, sizes: ["big", "med"], acre: true },
@@ -478,12 +494,13 @@ var AVATARS = [
 ];
 
 var TOWN_KEY = "cove-village2-v1";
-var town = { avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false, fun: null };
+var town = { avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false, fun: null, lots: 1, curLot: 1, placed2: {}, placed3: {} };
 try {
   var savedTown = JSON.parse(localStorage.getItem(TOWN_KEY));
   if (savedTown && typeof savedTown === "object") { town = Object.assign(town, savedTown); town.veteran = true; }
 } catch (e) {}
 migrateTown();
+normLots();
 try { localStorage.setItem(TOWN_KEY, JSON.stringify(town)); } catch (e) {}
 
 function migrateTown() {
@@ -494,6 +511,46 @@ function migrateTown() {
   });
   if (had) { town.placed = {}; town.placedB = {}; try { localStorage.setItem(TOWN_KEY, JSON.stringify(town)); } catch (e) {} }
 }
+var LOT_DEFS = [
+  { n: 1, name: "Lot 1 · Home Lot", img: "lotfull.jpg", price: 0 },
+  { n: 2, name: "Lot 2 · The Palm Lot", img: "lot-palms.jpg", price: 25000 },
+  { n: 3, name: "Lot 3 · The Meadow Lot", img: "lot-meadow.jpg", price: 60000 }
+];
+function normLots() {
+  if (!town.lots || town.lots < 1) town.lots = 1;
+  if (town.lots > 3) town.lots = 3;
+  if (!town.curLot || town.curLot < 1 || town.curLot > town.lots) town.curLot = 1;
+  if (!town.placed2) town.placed2 = {};
+  if (!town.placed3) town.placed3 = {};
+}
+function curMap() { return town.curLot === 2 ? town.placed2 : town.curLot === 3 ? town.placed3 : (town.placedAll || {}); }
+function allMaps() { return [town.placedAll || {}, town.placed2 || {}, town.placed3 || {}]; }
+function totalPlaced() { var n = 0; allMaps().forEach(function (m) { n += Object.keys(m).length; }); return n; }
+var buyLotN = null;
+function openLotBuy(n) {
+  buyLotN = n;
+  var d = LOT_DEFS[n - 1];
+  document.getElementById("lotBuyTitle").textContent = "🏡 " + d.name;
+  document.getElementById("lotBuyText").textContent = "A whole new property to fill — twelve more spots for cottages, shops and pretty things. One payment, yours forever. Your farm shells: 🐚 " + shells().toLocaleString();
+  var b = document.getElementById("lotBuyBtn");
+  if (shells() >= d.price) { b.disabled = false; b.textContent = "Buy it · 🐚 " + d.price.toLocaleString(); }
+  else { b.disabled = true; b.textContent = "🐚 " + d.price.toLocaleString() + " — not yet"; }
+  openPanel("lotPanel");
+}
+function buyLot() {
+  if (!buyLotN) return;
+  var d = LOT_DEFS[buyLotN - 1];
+  if ((town.lots || 1) >= buyLotN) { closePanels(); return; }
+  if (!spendShells(d.price)) { toast("That lot costs 🐚 " + d.price.toLocaleString() + " — your farm has 🐚 " + shells().toLocaleString()); return; }
+  town.lots = buyLotN;
+  town.curLot = buyLotN;
+  saveTown();
+  closePanels();
+  renderLot();
+  toast("🎉 " + d.name + " is YOURS! Twelve fresh spots — happy shopping.");
+}
+document.getElementById("lotBuyBtn").addEventListener("click", function () { startMusic(); buyLot(); });
+document.getElementById("lotBuyClose").addEventListener("click", closePanels);
 function saveCode() { try { return localStorage.getItem("cove-farm-savecode"); } catch (e) { return null; } }
 var backupTimer = null, townDirty = false;
 function saveTown() {
@@ -525,7 +582,7 @@ window.addEventListener("pagehide", function () {
     if (!r) return;
     try {
       var t = JSON.parse(r);
-      if (t && typeof t === "object") { town = Object.assign({ avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false, fun: null }, t); town.veteran = true; migrateTown(); localStorage.setItem(TOWN_KEY, JSON.stringify(town)); renderLot(); paintLadder(); setScene("town"); }
+      if (t && typeof t === "object") { town = Object.assign({ avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false, fun: null, lots: 1, curLot: 1, placed2: {}, placed3: {} }, t); town.veteran = true; migrateTown(); normLots(); localStorage.setItem(TOWN_KEY, JSON.stringify(town)); renderLot(); paintLadder(); setScene("town"); }
     } catch (e) {}
   }).catch(function () {});
 })();
@@ -567,7 +624,7 @@ function toast(msg) {
   toastTimer = setTimeout(function () { t.style.display = "none"; }, 3200);
 }
 function closePanels() {
-  ["catalog", "picker", "itemMenu", "ladderPanel", "funPanel"].forEach(function (id) { document.getElementById(id).style.display = "none"; });
+  ["catalog", "picker", "itemMenu", "ladderPanel", "funPanel", "lotPanel"].forEach(function (id) { document.getElementById(id).style.display = "none"; });
 }
 function openPanel(id) {
   closePanels();
@@ -579,18 +636,20 @@ function openPanel(id) {
 
 function placedCount(itemId) {
   var n = 0;
-  Object.keys(town.placedAll || {}).forEach(function (s) { if (town.placedAll[s] === itemId) n++; });
+  allMaps().forEach(function (m) { Object.keys(m).forEach(function (s) { if (m[s] === itemId) n++; }); });
   return n;
 }
 function available(itemId) { return (town.inv[itemId] || 0) - placedCount(itemId); }
 
 function renderLot() {
+  normLots();
+  document.getElementById("bgLot").src = "village2/" + LOT_DEFS[town.curLot - 1].img;
   document.getElementById("lotBalance").textContent = "🐚 " + shells().toLocaleString();
   var layer = document.getElementById("lotLayer");
   layer.innerHTML = "";
   var order = Object.keys(SPOTS).sort(function (a, b) { return SPOTS[b].bottom - SPOTS[a].bottom; });
   order.forEach(function (spotId) {
-    var spot = SPOTS[spotId], itemId = (town.placedAll || {})[spotId];
+    var spot = SPOTS[spotId], itemId = curMap()[spotId];
     if (itemId && ITEMS[itemId]) {
       var img = document.createElement("img");
       img.src = "village2/" + ITEMS[itemId].img;
@@ -604,7 +663,7 @@ function renderLot() {
         openItemMenu(spotId);
       });
       layer.appendChild(img);
-    } else if (spot.acre && !town.expanded) {
+    } else if (spot.acre && !town.expanded && town.curLot === 1) {
       var lock = document.createElement("button");
       lock.className = "spotmark"; lock.textContent = "🔒"; lock.setAttribute("aria-label", "Open the back half of the property");
       lock.style.left = (spot.left + spot.w / 2) + "%"; lock.style.bottom = (spot.bottom + 2) + "%";
@@ -612,17 +671,34 @@ function renderLot() {
       layer.appendChild(lock);
     } else {
       var b = document.createElement("button");
-      b.className = "spotmark" + (movingSpot && fits((town.placedAll || {})[movingSpot], spot) ? " target" : "");
+      b.className = "spotmark" + (movingSpot && fits(curMap()[movingSpot], spot) ? " target" : "");
       b.textContent = "＋"; b.setAttribute("aria-label", "Build on this spot");
       b.style.left = (spot.left + spot.w / 2) + "%"; b.style.bottom = (spot.bottom + 2) + "%";
       b.addEventListener("click", function () { startMusic(); if (movingSpot) attemptMove(spotId); else openCatalog(spotId); });
       layer.appendChild(b);
     }
   });
+  var lotRow = document.createElement("div");
+  lotRow.className = "lotrow";
+  LOT_DEFS.forEach(function (d) {
+    var lchip = document.createElement("button");
+    var owned = d.n <= (town.lots || 1);
+    lchip.className = "lotchip" + (town.curLot === d.n ? " cur" : "");
+    lchip.textContent = owned ? (d.n === 1 ? "🏡 Lot 1" : d.n === 2 ? "🌴 Lot 2" : "🌼 Lot 3") : "🔒 " + (d.n === 2 ? "Lot 2" : "Lot 3") + " · 🐚 " + d.price.toLocaleString();
+    lchip.addEventListener("click", function () {
+      startMusic();
+      if (movingSpot) { toast("Finish your move first."); return; }
+      if (d.n <= (town.lots || 1)) {
+        if (town.curLot !== d.n) { town.curLot = d.n; saveTown(); renderLot(); toast("🏡 " + d.name + " — make it yours."); }
+      } else openLotBuy(d.n);
+    });
+    lotRow.appendChild(lchip);
+  });
+  layer.appendChild(lotRow);
   if (movingSpot) {
     var chip = document.createElement("button");
     chip.className = "movechip"; chip.textContent = "✖ Cancel move";
-    chip.style.left = "50%"; chip.style.top = "8px";
+    chip.style.left = "50%"; chip.style.top = "54px";
     chip.addEventListener("click", function () { movingSpot = null; renderLot(); toast("Move cancelled."); });
     layer.appendChild(chip);
   }
@@ -686,7 +762,7 @@ function placeItem(spotId, id) {
   if (available(id) > 0) { /* already owned */ }
   else if (!spendShells(ITEMS[id].price)) { toast("Not enough shells — your farm has 🐚 " + shells().toLocaleString()); return; }
   else town.inv[id] = (town.inv[id] || 0) + 1;
-  town.placedAll[spotId] = id;
+  curMap()[spotId] = id;
   saveTown(); renderLot(); closePanels();
   var opened = newlyOpened(before);
   if (opened) toast("🎉 You opened " + opened + "! Look up top.");
@@ -694,11 +770,11 @@ function placeItem(spotId, id) {
 }
 
 function attemptMove(spotId) {
-  var itemId = (town.placedAll || {})[movingSpot];
+  var itemId = curMap()[movingSpot];
   if (!itemId) { movingSpot = null; renderLot(); return; }
   if (!fits(itemId, SPOTS[spotId])) { toast("Too big for that spot — try a glowing one."); return; }
-  town.placedAll[spotId] = itemId;
-  delete town.placedAll[movingSpot];
+  curMap()[spotId] = itemId;
+  delete curMap()[movingSpot];
   movingSpot = null;
   saveTown(); renderLot();
   toast("🔀 Moved your " + ITEMS[itemId].name + ".");
@@ -706,7 +782,7 @@ function attemptMove(spotId) {
 var menuSpot = null;
 function openItemMenu(spotId) {
   menuSpot = spotId;
-  var it = ITEMS[town.placedAll[spotId]];
+  var it = ITEMS[curMap()[spotId]];
   if (!it) return;
   document.getElementById("itemMenuTitle").textContent = it.emoji + " " + it.name;
   document.getElementById("itemMenuText").textContent = it.blurb;
@@ -716,10 +792,10 @@ document.getElementById("moveBtn").addEventListener("click", function () {
   if (!menuSpot) return;
   movingSpot = menuSpot;
   closePanels(); renderLot();
-  toast("Tap a glowing spot to move your " + ITEMS[town.placedAll[movingSpot]].name + " there.");
+  toast("Tap a glowing spot to move your " + ITEMS[curMap()[movingSpot]].name + " there.");
 });
 document.getElementById("putAwayBtn").addEventListener("click", function () {
-  if (menuSpot) { delete town.placedAll[menuSpot]; saveTown(); renderLot(); }
+  if (menuSpot) { delete curMap()[menuSpot]; saveTown(); renderLot(); }
   closePanels(); toast("Back in the shed — place it again anytime.");
 });
 document.getElementById("itemMenuClose").addEventListener("click", closePanels);
@@ -749,8 +825,8 @@ document.getElementById("lotHintBtn").addEventListener("click", function () {
   toast("Tap a ＋ spot on your lot to build there.");
 });
 function ladderState() {
-  var placed = Object.keys(town.placedAll || {}).length;
-  var hasBuilding = Object.keys(town.placedAll || {}).some(function (sp) { var id = town.placedAll[sp]; return id === "cottage" || id === "shop"; });
+  var placed = totalPlaced();
+  var hasBuilding = allMaps().some(function (m) { return Object.keys(m).some(function (sp) { return m[sp] === "cottage" || m[sp] === "shop"; }); });
   return { placed: placed, rungs: [
     { key: "town", icon: "🏘️", name: "Town Square", need: "Place 3 things on your lot", prog: Math.min(placed, 3), goal: 3, done: placed >= 3 },
     { key: "street", icon: "🌅", name: "Main Street", need: "Place a cottage or a craft shop on your lot", prog: hasBuilding ? 1 : 0, goal: 1, done: hasBuilding },
