@@ -39,13 +39,16 @@
   #board { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background: linear-gradient(180deg, #fdf3d8, #f3dfae); border: 4px solid #a97c3f; border-radius: 18px; padding: 8px; box-shadow: inset 0 2px 10px rgba(120,80,20,.25), 0 4px 0 rgba(0,0,0,.2); }
   .cell { aspect-ratio: 1; background: rgba(255,255,255,.55); border: 2px dashed rgba(150,110,50,.35); border-radius: 12px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; user-select: none; }
   .cell .it { font-size: clamp(22px, 7.5vw, 34px); line-height: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,.2)); pointer-events: none; }
+  .cell .itimg { width: 94%; height: 94%; object-fit: cover; border-radius: 9px; pointer-events: none; box-shadow: 0 1px 3px rgba(120,80,20,.25); }
+  .wimg { width: 27px; height: 27px; border-radius: 8px; vertical-align: -8px; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .gen .gimg { width: 62px; height: 62px; border-radius: 14px; box-shadow: 0 2px 5px rgba(0,0,0,.22); }
   .cell .pips { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 6px; letter-spacing: 1px; color: #a97c3f; pointer-events: none; }
   .cell.sel { border: 3px solid #e2703a; background: #fff3d6; }
   .cell.match { border: 3px solid #58b26a; animation: wig 0.5s infinite alternate; }
   .cell.maxed { background: linear-gradient(180deg, #fff6cf, #ffe98a); border-color: #d9a514; }
   @keyframes wig { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
   @keyframes popin { 0% { transform: scale(.3); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
-  .cell.pop .it { animation: popin .28s ease-out; }
+  .cell.pop .it, .cell.pop .itimg { animation: popin .28s ease-out; }
   #infobar { min-height: 42px; margin-top: 8px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 12px; color: #eaf7fb; display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 13.5px; font-weight: 600; }
   #infobar button { margin-left: auto; background: #ffd98a; color: #5a3b12; border: none; border-radius: 999px; font-weight: 800; padding: 6px 12px; cursor: pointer; font-size: 13px; white-space: nowrap; }
   #gens { display: flex; gap: 8px; margin-top: 10px; }
@@ -137,16 +140,16 @@
 /* ============ DATA ============ */
 var CHAINS = [
   { id: "paint", name: "Paint", color: "#ffe3ef", items: [
-    ["🖍️", "Crayon"], ["🖌️", "Paintbrush"], ["🧪", "Paint Pot"], ["🎨", "Palette"], ["🖼️", "Framed Canvas"], ["🏆", "Masterpiece"] ] },
+    ["🖍️", "Crayon", "merge3d/p1.jpg"], ["🖌️", "Paintbrush", "merge3d/p2.jpg"], ["🧪", "Paint Pot", "merge3d/p3.jpg"], ["🎨", "Palette", "merge3d/p4.jpg"], ["🖼️", "Framed Canvas", "merge3d/p5.jpg"], ["🏆", "Masterpiece", "merge3d/p6.jpg"] ] },
   { id: "craft", name: "Craft", color: "#e7defc", items: [
-    ["✂️", "Scissors"], ["🧵", "Thread Spool"], ["🧶", "Yarn Ball"], ["🎀", "Ribbon Bow"], ["🎁", "Wrapped Gift"], ["👑", "Cove Crown"] ] },
+    ["✂️", "Scissors", "merge3d/c1.jpg"], ["🧵", "Thread Spool", "merge3d/c2.jpg"], ["🧶", "Yarn Ball", "merge3d/c3.jpg"], ["🎀", "Ribbon Bow", "merge3d/c4.jpg"], ["🎁", "Wrapped Gift", "merge3d/c5.jpg"], ["👑", "Cove Crown", "merge3d/c6.jpg"] ] },
   { id: "treat", name: "Treat", color: "#ffefc4", items: [
-    ["🥚", "Egg"], ["🥛", "Glass of Milk"], ["🧁", "Cupcake"], ["🍰", "Cake Slice"], ["🎂", "Layer Cake"], ["🌲", "Tree Cake"] ] }
+    ["🥚", "Egg", "merge3d/t1.jpg"], ["🥛", "Glass of Milk", "merge3d/t2.jpg"], ["🧁", "Cupcake", "merge3d/t3.jpg"], ["🍰", "Cake Slice", "merge3d/t4.jpg"], ["🎂", "Layer Cake", "merge3d/t5.jpg"], ["🌲", "Tree Cake", "merge3d/t6.jpg"] ] }
 ];
 var GENS = [
-  { chain: 0, icon: "🎨", name: "Paint Box", tap: "paint supplies" },
-  { chain: 1, icon: "🧺", name: "Craft Basket", tap: "craft supplies" },
-  { chain: 2, icon: "🍰", name: "Bakery Box", tap: "baking supplies" }
+  { chain: 0, icon: "🎨", name: "Paint Box", tap: "paint supplies", img: "merge3d/gen0.jpg" },
+  { chain: 1, icon: "🧺", name: "Craft Basket", tap: "craft supplies", img: "merge3d/gen1.jpg" },
+  { chain: 2, icon: "🍰", name: "Bakery Box", tap: "baking supplies", img: "merge3d/gen2.jpg" }
 ];
 var SELL = [1, 2, 4, 8, 15, 25];
 var FACES = { kim: "village2/kim.png", sandy: "village2/sandy.png", trish: "village2/trish.png", gladys: "village2/gladys.png", walter: "village2/av6.png" };
@@ -390,7 +393,7 @@ function renderBoard() {
     if (i === popCell) cls += " pop";
     if (sel >= 0 && state.board[sel] && b && i !== sel && b.c === state.board[sel].c && b.t === state.board[sel].t && b.t < 6) cls += " match";
     html += '<div class="' + cls + '" data-i="' + i + '">' +
-      (b ? '<span class="it">' + itemOf(b)[0] + '</span><span class="pips">' + "●".repeat(b.t) + "</span>" : "") + "</div>";
+      (b ? '<img class="itimg" src="' + itemOf(b)[2] + '" alt="' + itemOf(b)[1] + '"><span class="pips">' + "●".repeat(b.t) + "</span>" : "") + "</div>";
   }
   board.innerHTML = html;
   var cells = board.querySelectorAll(".cell");
@@ -425,7 +428,7 @@ function renderInfo() {
   if (oldBtn) oldBtn.remove();
   if (sel >= 0 && state.board[sel]) {
     var b = state.board[sel], it = itemOf(b);
-    txt.textContent = it[0] + " " + it[1] + " · Tier " + b.t + " of 6" + (b.t < 6 ? " — tap its twin to merge!" : " — top tier!");
+    txt.textContent = it[1] + " · Tier " + b.t + " of 6" + (b.t < 6 ? " — tap its twin to merge!" : " — top tier!");
     var btn = document.createElement("button");
     btn.id = "sellBtn";
     btn.textContent = "Sell · 🐚" + SELL[b.t - 1];
@@ -448,7 +451,7 @@ function renderOrders() {
     var wants = "";
     for (var j = 0; j < o.wants.length; j++) {
       var w = o.wants[j], have = boardCount(w.c, w.t);
-      wants += CHAINS[w.c].items[w.t - 1][0] + (w.n > 1 ? "×" + w.n : "") +
+      wants += '<img class="wimg" src="' + CHAINS[w.c].items[w.t - 1][2] + '" alt="' + CHAINS[w.c].items[w.t - 1][1] + '">' + (w.n > 1 ? "×" + w.n : "") +
         ' <span class="' + (have >= w.n ? "have" : "lack") + '">(' + Math.min(have, w.n) + "/" + w.n + ")</span> ";
     }
     html += '<div class="order' + (ready ? " ready" : "") + '">' + faceHTML(o.who, "face") +
@@ -482,7 +485,7 @@ function renderGens() {
   var wrap = document.getElementById("gens");
   var html = "";
   for (var i = 0; i < GENS.length; i++) {
-    html += '<button class="gen" data-i="' + i + '"><div class="gi">' + GENS[i].icon + '</div><div class="gn">' + GENS[i].name + '</div><div class="gt">tap for ' + GENS[i].tap + "</div></button>";
+    html += '<button class="gen" data-i="' + i + '"><img class="gimg" src="' + GENS[i].img + '" alt=""><div class="gn">' + GENS[i].name + '</div><div class="gt">tap for ' + GENS[i].tap + "</div></button>";
   }
   wrap.innerHTML = html;
   var btns = wrap.querySelectorAll(".gen");
