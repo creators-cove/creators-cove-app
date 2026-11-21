@@ -105,6 +105,31 @@
       .btn.claim { font-size: 1.45rem; padding: 14px 38px; min-height: 62px; }
       .claim-msg { min-height: 26px; font-weight: 800; margin-top: 10px; line-height: 1.4; }
       .claim-msg.err { color: #b3372c; }
+      /* ---------- Pixar-3D gloss pass ---------- */
+      .ball { position: relative; }
+      .ball::before { content: ""; position: absolute; top: 8px; left: 15px; width: 46px; height: 27px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(255,255,255,.95), rgba(255,255,255,0) 70%); transform: rotate(-18deg); pointer-events: none; z-index: 2; }
+      .ball .ball-num { background: #fff; color: #21303a; border-radius: 50%; width: 62px; height: 62px; display: flex; align-items: center; justify-content: center;
+        font-size: 2.15rem; box-shadow: inset 0 -3px 6px rgba(0,0,0,.18), 0 2px 5px rgba(0,0,0,.25); }
+      .ball.empty .ball-num { background: rgba(255,255,255,.65); box-shadow: none; }
+      .ball.c0 { background: radial-gradient(circle at 32% 28%, #ffffff 0%, #ffb3a7 30%, var(--col-c) 62%, #b73727 100%); }
+      .ball.c1 { background: radial-gradient(circle at 32% 28%, #ffffff 0%, #ffd2a1 30%, var(--col-o) 62%, #b35a12 100%); }
+      .ball.c2 { background: radial-gradient(circle at 32% 28%, #ffffff 0%, #cdb2e8 30%, var(--col-v) 62%, #54387a 100%); }
+      .ball.c3 { background: radial-gradient(circle at 32% 28%, #ffffff 0%, #a5e3da 30%, var(--col-e) 62%, #17685c 100%); }
+      .ball.c4 { background: radial-gradient(circle at 32% 28%, #ffffff 0%, #a9cfe4 30%, var(--col-s) 62%, #174f6b 100%); }
+      .ball.c0 .ball-letter, .ball.c1 .ball-letter, .ball.c2 .ball-letter, .ball.c3 .ball-letter, .ball.c4 .ball-letter { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.45); z-index: 2; }
+      .chip { width: 42px; height: 42px; padding: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+        font-size: .8rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.35); border: 2px solid rgba(255,255,255,.8);
+        box-shadow: inset 0 -4px 7px rgba(0,0,0,.28), 0 3px 6px rgba(4,40,56,.3); }
+      .chip.c0 { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 46%), var(--col-c); }
+      .chip.c1 { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 46%), var(--col-o); }
+      .chip.c2 { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 46%), var(--col-v); }
+      .chip.c3 { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 46%), var(--col-e); }
+      .chip.c4 { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 46%), var(--col-s); }
+      .cell.daubed { background: radial-gradient(circle at 34% 28%, #fff3c4 0%, #ffe08a 30%, var(--gold) 62%, var(--gold-deep) 100%);
+        box-shadow: inset 0 0 0 3px rgba(255,255,255,.4), inset 0 -5px 9px rgba(146,90,0,.45), 0 2px 6px rgba(146,90,0,.35); }
+      .col-head { box-shadow: inset 0 12px 13px rgba(255,255,255,.35), inset 0 -4px 7px rgba(0,0,0,.2), 0 2px 5px rgba(4,40,56,.25); }
+
       .wins-line { text-align: center; font-weight: 800; color: #0d5a74; margin-top: 6px; }
 
       /* ---------- called board ---------- */
@@ -376,7 +401,7 @@
         called[n] = true;
         calledOrder.push(n);
         var c = colOf(n);
-        ballBox.classList.remove("empty", "pop"); void ballBox.offsetWidth; ballBox.classList.add("pop");
+        ballBox.classList.remove("empty", "pop", "c0", "c1", "c2", "c3", "c4"); void ballBox.offsetWidth; ballBox.classList.add("pop", "c" + c);
         ballLetter.textContent = LETTERS[c];
         ballNum.textContent = n;
         var bn = document.getElementById("board-" + n);
@@ -471,7 +496,7 @@
         over = false;
         claimLockUntil = 0;
         claimMsg.textContent = "";
-        ballBox.classList.add("empty");
+        ballBox.classList.remove("c0", "c1", "c2", "c3", "c4"); ballBox.classList.add("empty");
         ballLetter.textContent = "READY"; ballNum.textContent = "–";
         calledCount.textContent = "0";
         timeLabel.textContent = "0:00";
