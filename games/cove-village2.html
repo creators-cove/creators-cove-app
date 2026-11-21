@@ -343,6 +343,9 @@ document.addEventListener("visibilitychange", function () {
   #toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: #17384a; color: #fff8ec; border: 1px solid #2c85a8; border-radius: 999px; padding: 10px 18px; font-size: .9rem; display: none; z-index: 99; box-shadow: 0 8px 22px rgba(0,0,0,.4); max-width: 92vw; text-align: center; }
   #lotBalance { align-self: center; color: #ffd98a; font-weight: bold; font-size: .95rem; padding: 0 4px; }
   .placeditem.moving { animation: movepulse .9s ease-in-out infinite; filter: drop-shadow(0 0 12px #ffd98a); }
+  .bub { position: absolute; border-radius: 50%; background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.95), rgba(173,216,255,.35) 55%, rgba(173,216,255,.10)); border: 1px solid rgba(255,255,255,.6); animation: bubfloat 3.8s ease-in infinite; pointer-events: none; }
+  @keyframes bubfloat { 0% { transform: translateY(0) scale(.55); opacity: 0; } 16% { opacity: .95; } 100% { transform: translateY(-260%) scale(1.05); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .bub { animation: none; opacity: .45; } }
   @keyframes movepulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
   .spotmark.target { border-color: #ffd98a; background: rgba(232,163,61,.6); box-shadow: 0 0 10px rgba(255,217,138,.8); }
   .movechip { position: absolute; transform: translateX(-50%); background: #17384a; color: #fff8ec; border: 1px solid #ffd98a; border-radius: 999px; padding: 8px 14px; font-size: .85rem; font-weight: bold; cursor: pointer; z-index: 9; }
@@ -513,6 +516,7 @@ var ITEMS = {
   surfrack:{ name: "Surfboard Rack", emoji: "🏄", price: 400, size: "small", img: "item-surfrack.png", blurb: "Three surfboards, racked and ready. Somebody here is braver than the rest of us." },
   gnome:   { name: "Garden Gnome", emoji: "🍄", price: 325, size: "small", img: "item-gnome.png", blurb: "A garden gnome with a watering can and strong opinions about your flower beds." },
   picnic:  { name: "Picnic Table", emoji: "🧺", price: 550, size: "med", img: "item-picnic.png", blurb: "A picnic table with a checkered cloth. Seats the whole crew, plus one small robot." },
+  bubbles: { name: "Bubble Pup Fountain", emoji: "🫧", price: 1200, size: "med", img: "item-bubbles.png", blurb: "A paw-shaped bubble pool with its own bubble-blowing pup. It bubbles all day long — every dog in the neighborhood approves." },
   cherry:  { name: "Cherry Blossom Tree", emoji: "🌸", price: 900, size: "med", img: "item-cherry.png", blurb: "A cloud of pink blossoms on a twisted trunk. Spring, whenever you want it." },
   willow:  { name: "Weeping Willow", emoji: "🌿", price: 1600, size: "big", img: "item-willow.png", blurb: "Long green curtains of leaves. The shadiest, dreamiest corner of any lot." },
   dogwood: { name: "Dogwood Tree", emoji: "🌼", price: 750, size: "med", img: "item-dogwood.png", blurb: "Covered in white blossoms — Virginia's own, and she shows it." },
@@ -967,13 +971,7 @@ function renderVisit() {
   free.forEach(function (entry) {
     var it = ITEMS[entry.i];
     if (!it) return;
-    var img = document.createElement("img");
-    img.src = "village2/" + it.img;
-    img.alt = it.name;
-    img.className = "placeditem";
-    img.style.left = entry.x + "%"; img.style.bottom = entry.y + "%";
-    img.style.width = (WIDTHS[it.size] || 15) + "%";
-    img.style.zIndex = Math.round(100 - entry.y);
+    var img = makeItemEl(entry);
     img.addEventListener("click", function () { toast(visitMode.name + "'s " + it.name + " " + it.emoji); });
     layer.appendChild(img);
   });
@@ -1059,6 +1057,38 @@ function fetchTownGifts() {
   }).catch(function () {});
 }
 
+function makeItemEl(entry) {
+  var it = ITEMS[entry.i];
+  var el;
+  if (entry.i === "bubbles") {
+    el = document.createElement("div");
+    el.className = "placeditem";
+    var im = document.createElement("img");
+    im.src = "village2/" + it.img; im.alt = it.name;
+    im.style.width = "100%"; im.style.display = "block";
+    el.appendChild(im);
+    for (var k = 0; k < 6; k++) {
+      var b = document.createElement("span");
+      b.className = "bub";
+      var sz = 10 + (k * 7) % 11;
+      b.style.width = sz + "%"; b.style.paddingTop = sz + "%";
+      b.style.left = (30 + (k * 11) % 34) + "%";
+      b.style.bottom = (56 + (k * 8) % 24) + "%";
+      b.style.animationDelay = (k * 0.63) + "s";
+      b.style.animationDuration = (3.3 + (k % 3) * 0.7) + "s";
+      el.appendChild(b);
+    }
+  } else {
+    el = document.createElement("img");
+    el.src = "village2/" + it.img;
+    el.alt = it.name;
+    el.className = "placeditem";
+  }
+  el.style.left = entry.x + "%"; el.style.bottom = entry.y + "%";
+  el.style.width = (WIDTHS[it.size] || 15) + "%";
+  el.style.zIndex = Math.round(100 - entry.y);
+  return el;
+}
 function renderLot() {
   if (visitMode) { renderVisit(); return; }
   normLots();
@@ -1076,13 +1106,8 @@ function renderLot() {
   arr.forEach(function (entry, idx) {
     var it = ITEMS[entry.i];
     if (!it) return;
-    var img = document.createElement("img");
-    img.src = "village2/" + it.img;
-    img.alt = it.name;
-    img.className = "placeditem" + (moveIdx === idx ? " moving" : "");
-    img.style.left = entry.x + "%"; img.style.bottom = entry.y + "%";
-    img.style.width = (WIDTHS[it.size] || 15) + "%";
-    img.style.zIndex = Math.round(100 - entry.y);
+    var img = makeItemEl(entry);
+    if (moveIdx === idx) img.className += " moving";
     if (moveIdx === idx) attachDrag(img, idx);
     else img.addEventListener("click", function () { startMusic(); openItemMenu(idx); });
     layer.appendChild(img);
