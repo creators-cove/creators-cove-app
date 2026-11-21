@@ -343,6 +343,10 @@ document.addEventListener("visibilitychange", function () {
   #toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: #17384a; color: #fff8ec; border: 1px solid #2c85a8; border-radius: 999px; padding: 10px 18px; font-size: .9rem; display: none; z-index: 99; box-shadow: 0 8px 22px rgba(0,0,0,.4); max-width: 92vw; text-align: center; }
   #lotBalance { align-self: center; color: #ffd98a; font-weight: bold; font-size: .95rem; padding: 0 4px; }
   .placeditem.moving { animation: movepulse .9s ease-in-out infinite; filter: drop-shadow(0 0 12px #ffd98a); }
+  .placeditem.readyglow { filter: drop-shadow(0 0 7px rgba(255,190,40,.95)) drop-shadow(0 5px 5px rgba(0,0,0,.3)); }
+  .harvestbadge { position: absolute; width: 30px; height: 30px; margin-left: -15px; transform: translateY(50%); background: #fff8ec; border: 2.5px solid #ffb347; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px; box-shadow: 0 2px 7px rgba(0,0,0,.35); cursor: pointer; animation: bobble 1.6s ease-in-out infinite; }
+  @keyframes bobble { 0%, 100% { margin-bottom: 0; } 50% { margin-bottom: 5px; } }
+  @media (prefers-reduced-motion: reduce) { .harvestbadge { animation: none; } }
   .bub { position: absolute; border-radius: 50%; background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.95), rgba(173,216,255,.35) 55%, rgba(173,216,255,.10)); border: 1px solid rgba(255,255,255,.6); animation: bubfloat 3.8s ease-in infinite; pointer-events: none; }
   @keyframes bubfloat { 0% { transform: translateY(0) scale(.55); opacity: 0; } 16% { opacity: .95; } 100% { transform: translateY(-260%) scale(1.05); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .bub { animation: none; opacity: .45; } }
@@ -522,7 +526,7 @@ var ITEMS = {
   dogwood: { name: "Dogwood Tree", emoji: "🌼", price: 750, size: "med", img: "item-dogwood.png", blurb: "Covered in white blossoms — Virginia's own, and she shows it." },
   maple:   { name: "Autumn Maple", emoji: "🍁", price: 800, size: "med", img: "item-maple.png", blurb: "Orange and red all year round. Fall never leaves." },
   snowpine:{ name: "Snowy Pine", emoji: "❄️", price: 650, size: "med", img: "item-snowpine.png", blurb: "A pine with snow on every branch, even in July. Especially in July." },
-  orange:  { name: "Orange Tree", emoji: "🍊", price: 700, size: "med", img: "item-orange.png", blurb: "Glossy leaves and oranges that never need picking. The Cove runs on sunshine." }
+  orange:  { name: "Orange Tree", emoji: "🍊", price: 700, size: "med", img: "item-orange.png", blurb: "Glossy leaves, and oranges ripening for the picking. The Cove runs on sunshine." }
 };
 var SPOTS = {
   hill:   { left: 31, bottom: 63, w: 21, sizes: ["big", "med"], acre: true },
@@ -584,10 +588,37 @@ function normLots() {
   if (!town.placed2) town.placed2 = {};
   if (!town.placed3) town.placed3 = {};
 }
+var TREE_CROPS = {
+  palm: { crop: "Coconuts", emoji: "\uD83E\uDD65", shells: 60, hours: 6 },
+  cherry: { crop: "Cherry Blossoms", emoji: "\uD83C\uDF38", shells: 95, hours: 8 },
+  willow: { crop: "Willow Baskets", emoji: "\uD83E\uDDFA", shells: 170, hours: 12 },
+  dogwood: { crop: "Dogwood Blooms", emoji: "\uD83C\uDF3C", shells: 80, hours: 6 },
+  maple: { crop: "Maple Syrup", emoji: "\uD83C\uDF6F", shells: 85, hours: 8 },
+  snowpine: { crop: "Pinecones", emoji: "\uD83C\uDF32", shells: 70, hours: 6 },
+  orange: { crop: "Oranges", emoji: "\uD83C\uDF4A", shells: 75, hours: 5 }
+};
+function treeReady(entry) { return !!(entry && TREE_CROPS[entry.i] && entry.readyAt && Date.now() >= entry.readyAt); }
+function seedTreeTimers() {
+  if (typeof TREE_CROPS === "undefined" || !town.free) return;
+  [1, 2, 3].forEach(function (n) { (town.free[n] || []).forEach(function (e) { if (TREE_CROPS[e.i] && !e.readyAt) e.readyAt = Date.now(); }); });
+}
+function fmtWait(ms) { var m = Math.max(1, Math.round(ms / 60000)); if (m < 60) return m + "m"; var h = Math.floor(m / 60), r = m % 60; return r ? h + "h " + r + "m" : h + "h"; }
+function tryHarvest(idx) {
+  var entry = curFree()[idx];
+  if (!entry || !TREE_CROPS[entry.i] || !treeReady(entry)) return false;
+  var c = TREE_CROPS[entry.i];
+  var pay = c.shells, bumper = Math.random() < 0.15;
+  if (bumper) pay *= 2;
+  if (!addShells(pay)) { toast("Start your Farm & Village first \u2014 harvest shells go to your farm."); return true; }
+  entry.readyAt = Date.now() + c.hours * 3600000;
+  saveTown(); renderLot();
+  toast((bumper ? "\uD83C\uDF89 Bumper crop! " : "\uD83C\uDF3F ") + "Harvested " + c.emoji + " " + c.crop + " \u00B7 +\uD83D\uDC1A " + pay.toLocaleString());
+  return true;
+}
 var WIDTHS = { big: 24, med: 16, small: 11, any: 15 };
 var ACRE_LINE = 45;
 function normFree() {
-  if (town.free && typeof town.free === "object") { [1, 2, 3].forEach(function (n) { if (!Array.isArray(town.free[n])) town.free[n] = []; }); return; }
+  if (town.free && typeof town.free === "object") { [1, 2, 3].forEach(function (n) { if (!Array.isArray(town.free[n])) town.free[n] = []; }); seedTreeTimers(); return; }
   town.free = { 1: [], 2: [], 3: [] };
   var src = { 1: town.placedAll || {}, 2: town.placed2 || {}, 3: town.placed3 || {} };
   [1, 2, 3].forEach(function (n) {
@@ -596,6 +627,7 @@ function normFree() {
       if (sp && ITEMS[id]) town.free[n].push({ i: id, x: sp.left, y: sp.bottom });
     });
   });
+  seedTreeTimers();
 }
 function curFree() { normFree(); return town.free[town.curLot]; }
 function curMap() { return town.curLot === 2 ? town.placed2 : town.curLot === 3 ? town.placed3 : (town.placedAll || {}); }
@@ -1087,6 +1119,7 @@ function makeItemEl(entry) {
   el.style.left = entry.x + "%"; el.style.bottom = entry.y + "%";
   el.style.width = (WIDTHS[it.size] || 15) + "%";
   el.style.zIndex = Math.round(100 - entry.y);
+  if (treeReady(entry)) el.className += " readyglow";
   return el;
 }
 function renderLot() {
@@ -1109,8 +1142,18 @@ function renderLot() {
     var img = makeItemEl(entry);
     if (moveIdx === idx) img.className += " moving";
     if (moveIdx === idx) attachDrag(img, idx);
-    else img.addEventListener("click", function () { startMusic(); openItemMenu(idx); });
+    else img.addEventListener("click", function () { startMusic(); if (!tryHarvest(idx)) openItemMenu(idx); });
     layer.appendChild(img);
+    if (moveIdx !== idx && treeReady(entry)) {
+      var bd = document.createElement("div");
+      bd.className = "harvestbadge";
+      bd.textContent = TREE_CROPS[entry.i].emoji;
+      bd.style.left = (entry.x + (WIDTHS[it.size] || 15) / 2) + "%";
+      bd.style.bottom = (entry.y + 17) + "%";
+      bd.style.zIndex = Math.round(101 - entry.y);
+      bd.addEventListener("click", function () { startMusic(); tryHarvest(idx); });
+      layer.appendChild(bd);
+    }
   });
   if (!arr.length) {
     var hint = document.createElement("div");
@@ -1187,7 +1230,8 @@ function openCatalog() {
     else btn = '<button disabled>🐚 ' + it.price.toLocaleString() + ' — not yet</button>';
     card.innerHTML = '<img src="village2/' + it.img + '" alt="">' +
       '<div class="nm">' + it.emoji + " " + it.name + "</div>" +
-      '<div class="pr">' + (avail > 0 ? "In your shed" : "🐚 " + it.price.toLocaleString()) + "</div>" + btn;
+      '<div class="pr">' + (avail > 0 ? "In your shed" : "🐚 " + it.price.toLocaleString()) + "</div>" +
+      (TREE_CROPS[id] ? '<div class="pr">\uD83C\uDF3F Harvest ' + TREE_CROPS[id].emoji + " " + TREE_CROPS[id].crop + " \u00B7 \uD83D\uDC1A " + TREE_CROPS[id].shells + " every " + TREE_CROPS[id].hours + "h</div>" : "") + btn;
     card.querySelectorAll("button").forEach(function (b) {
       if (b.disabled) return;
       if (b.dataset.act === "sell") b.addEventListener("click", function () { sellShed(id); });
@@ -1203,13 +1247,21 @@ function placeItem(id) {
   else if (!spendShells(ITEMS[id].price)) { toast("Not enough shells — your farm has 🐚 " + shells().toLocaleString()); return; }
   else town.inv[id] = (town.inv[id] || 0) + 1;
   var arr = curFree();
-  arr.push({ i: id, x: 40, y: 24 });
+  var ne = { i: id, x: 40, y: 24 };
+  if (TREE_CROPS[id]) ne.readyAt = Date.now() + TREE_CROPS[id].hours * 3600000;
+  arr.push(ne);
   saveTown();
   var opened = newlyOpened(before);
   enterMove(arr.length - 1, true, opened
     ? ("🎉 You opened " + opened + "! Now drag your " + ITEMS[id].name + " where you want it, then tap ✓ Done.")
     : ("Drag your " + ITEMS[id].name + " where you want it, then tap ✓ Done."));
 }
+
+setInterval(function () {
+  if (document.hidden || visitMode || moveIdx != null || curSceneName !== "lot") return;
+  var arr = curFree();
+  for (var i = 0; i < arr.length; i++) if (treeReady(arr[i])) { renderLot(); return; }
+}, 45000);
 
 var menuIdx = null;
 function openItemMenu(idx) {
@@ -1220,6 +1272,12 @@ function openItemMenu(idx) {
   if (!it) return;
   document.getElementById("itemMenuTitle").textContent = it.emoji + " " + it.name;
   document.getElementById("itemMenuText").textContent = it.blurb;
+  var crop = TREE_CROPS[entry.i];
+  if (crop) {
+    document.getElementById("itemMenuText").textContent = it.blurb + (treeReady(entry)
+      ? " " + crop.emoji + " Ready to harvest: " + crop.crop + " \u00B7 \uD83D\uDC1A " + crop.shells + " \u2014 tap the tree to pick!"
+      : " \uD83C\uDF31 Next " + crop.crop.toLowerCase() + " in about " + fmtWait((entry.readyAt || Date.now()) - Date.now()) + ".");
+  }
   document.getElementById("sellBtn").textContent = "💰 Sell it back · 🐚 " + sellPrice(it).toLocaleString();
   openPanel("itemMenu");
 }
