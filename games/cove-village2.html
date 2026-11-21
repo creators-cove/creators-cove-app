@@ -129,6 +129,9 @@
     <button id="lotHintBtn">🛒 Build &amp; Decorate</button>
     <span id="lotBalance">🐚 —</span>
   </div>
+  <div class="row" id="lotRow" style="display:none"></div>
+  <div class="row" id="moveBar" style="display:none"><button class="movechip" id="moveDone">✓ Done</button><button class="movechip" id="moveCancel">✖ Cancel</button></div>
+  <div class="row" id="acreRow" style="display:none"><button id="acreBtn">🔓 Open the back half · 🐚 7,500</button></div>
   <div class="row" id="dirBoard" style="display:none">
     <button data-place="pier">🎣 The Fishing Pier</button>
     <button data-place="stand">🍦 The Ice Cream Stand</button>
@@ -209,6 +212,7 @@ function setScene(name) {
   document.getElementById("dirTown").style.display = townS ? "flex" : "none";
   document.getElementById("dirStreet").style.display = street ? "flex" : "none";
   document.getElementById("dirLot").style.display = lot ? "flex" : "none";
+  if (typeof paintLotChrome === "function") paintLotChrome(lot);
   document.getElementById("dirBoard").style.display = board ? "flex" : "none";
   document.getElementById("tabTown").classList.toggle("active", townS);
   document.getElementById("tabStreet").classList.toggle("active", street);
@@ -350,10 +354,11 @@ document.addEventListener("visibilitychange", function () {
   .wlabel { position: absolute; left: 50%; top: 50%; width: 44px; margin-left: -22px; margin-top: -10px; text-align: center; font-size: .85rem; font-weight: bold; }
   .bigbtn { background: #e8a33d; color: #17384a; font-weight: bold; border: none; border-radius: 999px; padding: 9px 20px; font-size: .92rem; cursor: pointer; font-family: inherit; }
   .bigbtn:disabled { background: #b9c4c7; color: #fff8ec; cursor: default; }
-  .lotrow { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 9; max-width: 96%; }
+  #moveBar .movechip { position: static; transform: none; }
+  #acreBtn { background: linear-gradient(180deg, #ffdf8e, #f4b942); color: #4a2f00; font-weight: bold; }
   .lotchip { background: rgba(23,56,74,.88); color: #fff8ec; border: 1px solid #2c85a8; border-radius: 999px; padding: 7px 12px; font-size: .82rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
   .lotchip.cur { background: #ffd98a; color: #17384a; border-color: #ffd98a; font-weight: bold; }
-  .lockband { position: absolute; left: 0; right: 0; top: 0; bottom: 45%; background: rgba(11,61,84,.20); border-bottom: 2px dashed rgba(255,217,138,.9); z-index: 4; display: flex; align-items: flex-start; justify-content: center; padding-top: 54px; }
+  .lockband { position: absolute; left: 0; right: 0; top: 0; bottom: 45%; background: rgba(11,61,84,.16); border-bottom: 2px dashed rgba(255,217,138,.9); z-index: 4; pointer-events: none; }
   .lothint { position: absolute; left: 50%; top: 46%; transform: translateX(-50%); background: rgba(23,56,74,.88); color: #fff8ec; border: 1px dashed #ffd98a; border-radius: 12px; padding: 10px 14px; font-size: .88rem; z-index: 6; text-align: center; max-width: 84%; }
   .moverow { position: absolute; top: 54px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; }
   .moverow .movechip { position: static; transform: none; }
@@ -727,6 +732,12 @@ function attachDrag(img, idx) {
   img.addEventListener("pointercancel", function () { dragState = null; });
 }
 
+function paintLotChrome(onLot) {
+  var show = onLot !== undefined ? onLot : (document.getElementById("dirLot").style.display !== "none");
+  document.getElementById("lotRow").style.display = show ? "flex" : "none";
+  document.getElementById("moveBar").style.display = (show && moveIdx != null) ? "flex" : "none";
+  document.getElementById("acreRow").style.display = (show && town.curLot === 1 && !town.expanded) ? "flex" : "none";
+}
 function renderLot() {
   normLots();
   normFree();
@@ -738,11 +749,6 @@ function renderLot() {
   if (town.curLot === 1 && !town.expanded) {
     var band = document.createElement("div");
     band.className = "lockband";
-    var lk = document.createElement("button");
-    lk.className = "lotchip";
-    lk.textContent = "🔒 The back half · 🐚 " + ACRE_PRICE.toLocaleString() + " to open";
-    lk.addEventListener("click", function () { startMusic(); if (moveIdx != null) { toast("Finish your move first."); return; } tryUnlock(); });
-    band.appendChild(lk);
     layer.appendChild(band);
   }
   arr.forEach(function (entry, idx) {
@@ -765,8 +771,8 @@ function renderLot() {
     hint.textContent = "Nothing here yet — tap 🛒 Build & Decorate below and put things wherever you like.";
     layer.appendChild(hint);
   }
-  var lotRow = document.createElement("div");
-  lotRow.className = "lotrow";
+  var lotRow = document.getElementById("lotRow");
+  lotRow.innerHTML = "";
   LOT_DEFS.forEach(function (d) {
     var lchip = document.createElement("button");
     var owned = d.n <= (town.lots || 1);
@@ -781,19 +787,6 @@ function renderLot() {
     });
     lotRow.appendChild(lchip);
   });
-  layer.appendChild(lotRow);
-  if (moveIdx != null) {
-    var mrow = document.createElement("div");
-    mrow.className = "moverow";
-    var done = document.createElement("button");
-    done.className = "movechip"; done.textContent = "✓ Done";
-    done.addEventListener("click", function () { exitMove(true); });
-    var canc = document.createElement("button");
-    canc.className = "movechip"; canc.textContent = "✖ Cancel";
-    canc.addEventListener("click", function () { exitMove(false); });
-    mrow.appendChild(done); mrow.appendChild(canc);
-    layer.appendChild(mrow);
-  }
   if (town.avatar) {
     var av = document.createElement("img");
     av.src = "village2/" + town.avatar + ".png";
@@ -809,6 +802,7 @@ function renderLot() {
     pick.addEventListener("click", function () { startMusic(); openPicker(); });
     layer.appendChild(pick);
   }
+  paintLotChrome();
   paintLadder();
   paintFun();
 }
@@ -924,6 +918,13 @@ function openPicker() {
   openPanel("picker");
 }
 document.getElementById("pickAvatarBtn").addEventListener("click", function () { startMusic(); openPicker(); });
+document.getElementById("moveDone").addEventListener("click", function () { exitMove(true); });
+document.getElementById("moveCancel").addEventListener("click", function () { exitMove(false); });
+document.getElementById("acreBtn").addEventListener("click", function () {
+  startMusic();
+  if (moveIdx != null) { toast("Finish your move first."); return; }
+  tryUnlock();
+});
 document.getElementById("lotHintBtn").addEventListener("click", function () {
   startMusic();
   if (moveIdx != null) { toast("Finish your move first."); return; }
