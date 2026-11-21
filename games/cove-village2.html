@@ -315,6 +315,7 @@ document.addEventListener("visibilitychange", function () {
   .shopcard .pr { font-size: .8rem; color: #7a5b12; margin-bottom: 6px; }
   .shopcard button { background: #14607f; color: #fff8ec; border: none; border-radius: 999px; padding: 6px 10px; font-size: .8rem; cursor: pointer; width: 100%; }
   .shopcard button:disabled { background: #b9c4c7; cursor: default; }
+  .shopcard button.sell { background: transparent; color: #ffd98a; border: 1px dashed rgba(255,217,138,.65); font-size: .8rem; padding: 6px; margin-top: 6px; }
   .shopcard.picked { border-color: #e8a33d; box-shadow: 0 0 0 3px rgba(232,163,61,.35); }
   .closebtn { margin-top: 12px; background: #14607f; color: #fff8ec; border: none; border-radius: 999px; padding: 8px 16px; font-size: .88rem; cursor: pointer; }
   .closebtn.alt { background: #e8a33d; color: #17384a; font-weight: bold; }
@@ -377,6 +378,7 @@ document.addEventListener("visibilitychange", function () {
   <h2 id="itemMenuTitle"></h2>
   <p id="itemMenuText"></p>
   <button class="closebtn alt" id="moveBtn">🔀 Drag it somewhere else</button>
+  <button class="closebtn alt" id="sellBtn">💰 Sell it back</button>
   <button class="closebtn" id="putAwayBtn">↩️ Put it away</button>
   <button class="closebtn" id="itemMenuClose">Keep it there</button>
 </div></div>
@@ -665,6 +667,7 @@ function placedCount(itemId) {
   return n;
 }
 function available(itemId) { return (town.inv[itemId] || 0) - placedCount(itemId); }
+function sellPrice(it) { return Math.floor(it.price / 2); }
 
 var moveIdx = null, moveOrig = null, moveIsNew = false, dragState = null;
 function enterMove(idx, isNew, msg) {
@@ -816,6 +819,15 @@ function tryUnlock() {
   if (newlyOpened(before)) toast("🔓 The whole property is yours — and ✨ Town Features are unlocked!");
   else toast("🔓 The whole property is yours — the back half is open!");
 }
+function sellShed(id) {
+  var it = ITEMS[id];
+  if (available(id) <= 0) return;
+  if (!confirm("Sell one " + it.name + " from your shed back for 🐚 " + sellPrice(it).toLocaleString() + "? You paid 🐚 " + it.price.toLocaleString() + " for it.")) return;
+  if (!addShells(sellPrice(it))) { toast("Start your Farm & Village first — your lot spends farm shells."); return; }
+  town.inv[id] = (town.inv[id] || 0) - 1;
+  saveTown(); renderLot(); openCatalog();
+  toast("💰 Sold back for 🐚 " + sellPrice(it).toLocaleString() + ".");
+}
 function openCatalog() {
   var bal = shells();
   document.getElementById("catalogTitle").textContent = "🛒 Build & Decorate";
@@ -829,14 +841,17 @@ function openCatalog() {
     card.className = "shopcard";
     var avail = available(id);
     var btn;
-    if (avail > 0) btn = '<button data-act="place">Place — you own one</button>';
+    if (avail > 0) btn = '<button data-act="place">Place — you own one</button><button data-act="sell" class="sell">Sell one back · 🐚 ' + sellPrice(it).toLocaleString() + '</button>';
     else if (bal >= it.price) btn = '<button data-act="buy">Buy &amp; place · 🐚 ' + it.price.toLocaleString() + '</button>';
     else btn = '<button disabled>🐚 ' + it.price.toLocaleString() + ' — not yet</button>';
     card.innerHTML = '<img src="village2/' + it.img + '" alt="">' +
       '<div class="nm">' + it.emoji + " " + it.name + "</div>" +
       '<div class="pr">' + (avail > 0 ? "In your shed" : "🐚 " + it.price.toLocaleString()) + "</div>" + btn;
-    var b = card.querySelector("button");
-    if (b && !b.disabled) b.addEventListener("click", function () { placeItem(id); });
+    card.querySelectorAll("button").forEach(function (b) {
+      if (b.disabled) return;
+      if (b.dataset.act === "sell") b.addEventListener("click", function () { sellShed(id); });
+      else b.addEventListener("click", function () { placeItem(id); });
+    });
     grid.appendChild(card);
   });
   openPanel("catalog");
@@ -864,6 +879,7 @@ function openItemMenu(idx) {
   if (!it) return;
   document.getElementById("itemMenuTitle").textContent = it.emoji + " " + it.name;
   document.getElementById("itemMenuText").textContent = it.blurb;
+  document.getElementById("sellBtn").textContent = "💰 Sell it back · 🐚 " + sellPrice(it).toLocaleString();
   openPanel("itemMenu");
 }
 document.getElementById("moveBtn").addEventListener("click", function () {
@@ -873,6 +889,19 @@ document.getElementById("moveBtn").addEventListener("click", function () {
 document.getElementById("putAwayBtn").addEventListener("click", function () {
   if (menuIdx != null) { curFree().splice(menuIdx, 1); menuIdx = null; saveTown(); renderLot(); }
   closePanels(); toast("Back in the shed — place it again anytime.");
+});
+document.getElementById("sellBtn").addEventListener("click", function () {
+  if (menuIdx == null) return;
+  var entry = curFree()[menuIdx];
+  if (!entry) { closePanels(); return; }
+  var it = ITEMS[entry.i];
+  if (!confirm("Sell your " + it.name + " back for 🐚 " + sellPrice(it).toLocaleString() + "? You paid 🐚 " + it.price.toLocaleString() + " for it.")) return;
+  if (!addShells(sellPrice(it))) { toast("Start your Farm & Village first — your lot spends farm shells."); closePanels(); return; }
+  town.inv[entry.i] = (town.inv[entry.i] || 0) - 1;
+  curFree().splice(menuIdx, 1);
+  menuIdx = null;
+  saveTown(); renderLot(); closePanels();
+  toast("💰 Sold back for 🐚 " + sellPrice(it).toLocaleString() + " — the shells are back in your farm.");
 });
 document.getElementById("itemMenuClose").addEventListener("click", closePanels);
 document.getElementById("catalogClose").addEventListener("click", closePanels);
