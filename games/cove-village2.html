@@ -61,7 +61,7 @@
   <button id="tabLot">🏡 My Lot</button>
   <button id="tabBoard">🎡 The Boardwalk</button>
 </div>
-<div id="ladderStrip"><button id="ladderBtn">🪜 Town Ladder</button></div>
+<div id="ladderStrip"><button id="ladderBtn">🪜 Town Ladder</button><button id="funBtn">🎁 Town Fun</button></div>
 <div id="scene">
   <img class="town" id="bgTown" src="village2/town.jpg" alt="A cheerful beach town with cottages, a bakery, a fountain plaza and a lighthouse">
   <img class="town" id="bgStreet" src="village2/street.jpg" alt="Main Street at sunset: the Salty Canvas storefront, a signpost, and the lighthouse over the sea" style="display:none">
@@ -91,6 +91,7 @@
   <button class="zone" style="left:38%;top:62%;width:30%;height:30%" data-place="railing" aria-label="The railing"></button>
   </div>
   <div id="lotLayer" style="display:none; position:absolute; inset:0;"></div>
+  <div id="huntLayer"></div>
   <img class="sprite" id="sp-kim" src="village2/kim.png" alt="Kim" style="left:6%;bottom:27%;height:32%;animation-delay:.1s">
   <img class="sprite" id="sp-trish" src="village2/trish.png" alt="Trish" style="left:32%;bottom:28%;height:31%;animation-delay:.7s">
   <img class="sprite" id="sp-sandy" src="village2/sandy.png" alt="Sandy" style="left:52%;bottom:27%;height:31%;animation-delay:1.3s">
@@ -102,7 +103,7 @@
 <div id="card"><div class="inner">
   <h2 id="cardTitle"></h2>
   <p id="cardText"></p>
-  <p class="soon">Village 2 is growing — climb your 🪜 Town Ladder to open new places. The Treasure Hunt and Lucky Lighthouse are on the way.</p>
+  <p class="soon">Village 2 is growing — climb your 🪜 Town Ladder to open new places.</p>
 </div></div>
 
 <div class="directory">
@@ -229,6 +230,7 @@ function setScene(name) {
   document.getElementById("card").style.display = "none";
   if (typeof closePanels === "function") closePanels();
   if (lot && typeof renderLot === "function") renderLot();
+  if (typeof onScene === "function") onScene(name);
 }
 document.getElementById("tabTown").addEventListener("click", function () { if (!sceneUnlocked("town")) { lockedTap("town"); return; } setScene("town"); });
 document.getElementById("tabStreet").addEventListener("click", function () { startMusic(); if (!sceneUnlocked("street")) { lockedTap("street"); return; } setScene("street"); });
@@ -334,6 +336,20 @@ document.addEventListener("visibilitychange", function () {
   .rung .nm { font-weight: bold; font-size: .95rem; }
   .rung .nd { font-size: .86rem; opacity: .85; }
   .rung .pg { font-size: .8rem; color: #7a5b12; margin-top: 2px; }
+  #ladderStrip { display: flex; gap: 8px; }
+  #ladderStrip button { flex: 1; width: auto; }
+  #huntLayer { position: absolute; inset: 0; pointer-events: none; z-index: 7; }
+  .huntitem { position: absolute; width: 7.5%; transform: translateX(-50%); cursor: pointer; pointer-events: auto; filter: drop-shadow(0 0 10px rgba(255,217,138,.95)); animation: twinkle 1.6s ease-in-out infinite; }
+  @keyframes twinkle { 0%, 100% { transform: translateX(-50%) scale(1) rotate(-4deg); } 50% { transform: translateX(-50%) scale(1.13) rotate(4deg); } }
+  .funsec { border-top: 1px solid #e5d9bd; padding: 10px 0 2px; margin-top: 10px; }
+  .funsec.first { border-top: none; margin-top: 2px; padding-top: 2px; }
+  #wheelWrap { position: relative; width: 230px; height: 230px; margin: 12px auto 4px; }
+  #wheel { width: 100%; height: 100%; border-radius: 50%; border: 6px solid #17384a; box-shadow: 0 6px 18px rgba(0,0,0,.3); transition: transform 4.4s cubic-bezier(.12,.8,.16,1); position: relative; overflow: hidden; }
+  #wheelPin { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 1.5rem; color: #b3541e; z-index: 3; text-shadow: 0 2px 3px rgba(0,0,0,.35); }
+  .wlabel { position: absolute; left: 50%; top: 50%; width: 44px; margin-left: -22px; margin-top: -10px; text-align: center; font-size: .85rem; font-weight: bold; }
+  .bigbtn { background: #e8a33d; color: #17384a; font-weight: bold; border: none; border-radius: 999px; padding: 9px 20px; font-size: .92rem; cursor: pointer; font-family: inherit; }
+  .bigbtn:disabled { background: #b9c4c7; color: #fff8ec; cursor: default; }
+  @media (prefers-reduced-motion: reduce) { .huntitem { animation: none; } #wheel { transition: none; } }
 </style>
 
 <div id="catalog" class="panel"><div class="inner">
@@ -363,6 +379,33 @@ document.addEventListener("visibilitychange", function () {
   <p id="ladderIntro"></p>
   <div id="ladderRows"></div>
   <button class="closebtn" id="ladderClose">Done</button>
+</div></div>
+
+<div id="funPanel" class="panel"><div class="inner">
+  <h2>🎁 Town Fun</h2>
+  <div class="funsec first">
+    <p><b>🔍 Today's Treasure Hunt</b></p>
+    <p id="funHuntText"></p>
+    <p id="funHuntScenes" style="font-size:.84rem;color:#7a5b12"></p>
+  </div>
+  <div class="funsec">
+    <p><b>🗼 Lucky Lighthouse</b></p>
+    <div id="wheelWrap"><div id="wheel"></div><div id="wheelPin">▼</div></div>
+    <p style="text-align:center"><button class="bigbtn" id="wheelBtn">Spin</button></p>
+    <p id="wheelNote" style="text-align:center;font-size:.84rem;color:#7a5b12"></p>
+  </div>
+  <div class="funsec">
+    <p><b>🕵️ The Mystery Shop</b></p>
+    <p>One surprise item a day, sold only here — for your lot. When it's gone, it's gone.</p>
+    <div class="shopcard" style="max-width:230px;margin:10px auto 0">
+      <img id="mystImg" alt="">
+      <div class="nm" id="mystName"></div>
+      <div class="pr" id="mystPrice"></div>
+      <button id="mystBuyBtn">Buy</button>
+    </div>
+    <p id="mystText" style="font-size:.86rem;margin-top:8px"></p>
+  </div>
+  <button class="closebtn" id="funClose">Done</button>
 </div></div>
 
 <div id="toast"></div>
@@ -402,7 +445,10 @@ var ITEMS = {
   gazebo:  { name: "Gazebo", emoji: "🏛️", price: 3000, size: "med", img: "item-gazebo.png", blurb: "A white gazebo with a blue roof and a flower vine. Shade, breeze, and the best seat on the property." },
   palm:    { name: "Palm Tree", emoji: "🌴", price: 600, size: "med", img: "item-palm.png", blurb: "A potted palm. Instant beach, anywhere you set it down." },
   lantern: { name: "Lantern Post", emoji: "🏮", price: 350, size: "small", img: "item-lantern.png", blurb: "A wooden post with a warm glowing lantern. The lot looks twice as cozy after dark." },
-  birdbath:{ name: "Bird Bath", emoji: "🐦", price: 275, size: "small", img: "item-birdbath.png", blurb: "A stone bird bath, already popular with the local birds." }
+  birdbath:{ name: "Bird Bath", emoji: "🐦", price: 275, size: "small", img: "item-birdbath.png", blurb: "A stone bird bath, already popular with the local birds." },
+  flamingo:{ name: "Lawn Flamingo", emoji: "🦩", price: 450, size: "small", img: "item-flamingo.png", myst: true, blurb: "A pink lawn flamingo, standing on one leg like it owns the place. Around here, it does." },
+  mermaid: { name: "Mermaid Statue", emoji: "🧜", price: 1800, size: "med", img: "item-mermaid.png", myst: true, blurb: "A stone mermaid for the garden. She has watched over the Cove from somebody's yard for years." },
+  anchor:  { name: "Old Anchor", emoji: "⚓", price: 900, size: "med", img: "item-anchor.png", myst: true, blurb: "A rusty ship's anchor, heavy with stories. Every beach property needs one." }
 };
 var SPOTS = {
   hill:   { left: 31, bottom: 63, w: 21, sizes: ["big", "med"], acre: true },
@@ -432,7 +478,7 @@ var AVATARS = [
 ];
 
 var TOWN_KEY = "cove-village2-v1";
-var town = { avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false };
+var town = { avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false, fun: null };
 try {
   var savedTown = JSON.parse(localStorage.getItem(TOWN_KEY));
   if (savedTown && typeof savedTown === "object") { town = Object.assign(town, savedTown); town.veteran = true; }
@@ -479,7 +525,7 @@ window.addEventListener("pagehide", function () {
     if (!r) return;
     try {
       var t = JSON.parse(r);
-      if (t && typeof t === "object") { town = Object.assign({ avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false }, t); town.veteran = true; migrateTown(); localStorage.setItem(TOWN_KEY, JSON.stringify(town)); renderLot(); paintLadder(); setScene("town"); }
+      if (t && typeof t === "object") { town = Object.assign({ avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false, fun: null }, t); town.veteran = true; migrateTown(); localStorage.setItem(TOWN_KEY, JSON.stringify(town)); renderLot(); paintLadder(); setScene("town"); }
     } catch (e) {}
   }).catch(function () {});
 })();
@@ -494,6 +540,25 @@ function spendShells(n) {
   return true;
 }
 
+function addShells(n) {
+  var f = farmState();
+  if (!f) return false;
+  f.shells = (parseInt(f.shells, 10) || 0) + n;
+  try { localStorage.setItem("cove-farm-village-v1", JSON.stringify(f)); } catch (e) { return false; }
+  return true;
+}
+function featuresOpen() { return town.veteran ? true : !!town.expanded; }
+function todayStr() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function seedRand(seed) {
+  var h = 2166136261;
+  for (var i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return function () {
+    h = Math.imul(h ^ (h >>> 15), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  };
+}
 var toastTimer = null;
 function toast(msg) {
   var t = document.getElementById("toast");
@@ -502,7 +567,7 @@ function toast(msg) {
   toastTimer = setTimeout(function () { t.style.display = "none"; }, 3200);
 }
 function closePanels() {
-  ["catalog", "picker", "itemMenu", "ladderPanel"].forEach(function (id) { document.getElementById(id).style.display = "none"; });
+  ["catalog", "picker", "itemMenu", "ladderPanel", "funPanel"].forEach(function (id) { document.getElementById(id).style.display = "none"; });
 }
 function openPanel(id) {
   closePanels();
@@ -577,6 +642,7 @@ function renderLot() {
     layer.appendChild(pick);
   }
   paintLadder();
+  paintFun();
 }
 function tryUnlock() {
   if (!spendShells(ACRE_PRICE)) { toast("The back half costs 🐚 " + ACRE_PRICE.toLocaleString() + " to open — your farm has 🐚 " + shells().toLocaleString()); return; }
@@ -595,6 +661,7 @@ function openCatalog(spotId) {
   grid.innerHTML = "";
   Object.keys(ITEMS).forEach(function (id) {
     var it = ITEMS[id];
+    if (it.myst && available(id) <= 0) return;
     if (spot.sizes.indexOf(it.size) < 0 && it.size !== "any") return;
     if (it.size === "any" && spot.sizes.indexOf("any") < 0 && spot.sizes.indexOf("med") < 0 && spot.sizes.indexOf("small") < 0) return;
     var card = document.createElement("div");
@@ -687,7 +754,7 @@ function ladderState() {
   return { placed: placed, rungs: [
     { key: "town", icon: "🏘️", name: "Town Square", need: "Place 3 things on your lot", prog: Math.min(placed, 3), goal: 3, done: placed >= 3 },
     { key: "street", icon: "🌅", name: "Main Street", need: "Place a cottage or a craft shop on your lot", prog: hasBuilding ? 1 : 0, goal: 1, done: hasBuilding },
-    { key: "features", icon: "✨", name: "Town Features", need: "Open the Back Acre", prog: town.expanded ? 1 : 0, goal: 1, done: !!town.expanded, note: "The Treasure Hunt, Lucky Lighthouse and Mystery Shop will open here." },
+    { key: "features", icon: "✨", name: "Town Features", need: "Open the Back Acre", prog: town.expanded ? 1 : 0, goal: 1, done: !!town.expanded, note: "The Treasure Hunt, Lucky Lighthouse and Mystery Shop — tap 🎁 Town Fun up top." },
     { key: "board", icon: "🎡", name: "The Boardwalk", need: "Fill 8 spots on your property", prog: Math.min(placed, 8), goal: 8, done: placed >= 8 }
   ]};
 }
@@ -741,8 +808,197 @@ function paintLadder() {
 }
 document.getElementById("ladderBtn").addEventListener("click", function () { startMusic(); openLadder(); });
 document.getElementById("ladderClose").addEventListener("click", closePanels);
+
+/* ---- Town Fun: Treasure Hunt, Lucky Lighthouse, Mystery Shop ---- */
+var MYSTERY_IDS = ["flamingo", "mermaid", "anchor"];
+function mysteryFor(ds) { var rnd = seedRand("myst:" + ds); return MYSTERY_IDS[Math.floor(rnd() * MYSTERY_IDS.length)]; }
+function mysteryPrice(it) { return Math.round(it.price * 0.8 / 5) * 5; }
+function funDefault() { return { huntDate: "", huntFound: [], huntEarned: 0, huntBonus: false, wheelDate: "", wheelSpins: 0, mystDate: "", mystItem: "", mystBought: false }; }
+function funState() {
+  if (!town.fun || typeof town.fun !== "object") town.fun = funDefault();
+  var f = town.fun, t = todayStr(), dirty = false;
+  if (f.huntDate !== t) { f.huntDate = t; f.huntFound = []; f.huntEarned = 0; f.huntBonus = false; dirty = true; }
+  if (f.wheelDate !== t) { f.wheelDate = t; f.wheelSpins = 0; dirty = true; }
+  if (f.mystDate !== t) { f.mystDate = t; f.mystItem = mysteryFor(t); f.mystBought = false; dirty = true; }
+  if (!f.mystItem || !ITEMS[f.mystItem]) { f.mystItem = mysteryFor(t); dirty = true; }
+  if (dirty) saveTown();
+  return f;
+}
+
+var HUNT_TYPES = {
+  star:  { img: "hunt-star.png",  name: "a Starfish",       val: 15 },
+  shell: { img: "hunt-shell.png", name: "a Conch Shell",    val: 20 },
+  chest: { img: "hunt-chest.png", name: "a Treasure Chest", val: 60 }
+};
+var HUNT_DEFS = [
+  { scene: "town",   type: "star"  }, { scene: "town",   type: "chest" },
+  { scene: "street", type: "shell" }, { scene: "street", type: "star"  },
+  { scene: "board",  type: "shell" }, { scene: "board",  type: "star"  }
+];
+var HUNT_SPOTS = {
+  town:   [[16, 36], [45, 40], [66, 32], [88, 42], [30, 58]],
+  street: [[12, 44], [38, 30], [58, 48], [84, 44], [70, 24]],
+  board:  [[12, 40], [33, 52], [55, 38], [78, 48], [90, 58]]
+};
+function huntLayout() {
+  var rnd = seedRand("hunt:" + todayStr());
+  var used = {}, out = [];
+  HUNT_DEFS.forEach(function (d, i) {
+    var spots = HUNT_SPOTS[d.scene], k = Math.floor(rnd() * spots.length), guard = 0;
+    while (used[d.scene + ":" + k] && guard++ < 9) k = (k + 1) % spots.length;
+    used[d.scene + ":" + k] = true;
+    out.push({ id: i, scene: d.scene, type: d.type, left: spots[k][0], bottom: spots[k][1] });
+  });
+  return out;
+}
+var curSceneName = "town";
+function onScene(name) { curSceneName = name; renderHunt(); }
+function renderHunt() {
+  var layer = document.getElementById("huntLayer");
+  if (!layer) return;
+  layer.innerHTML = "";
+  if (!featuresOpen() || curSceneName === "lot") return;
+  var f = funState();
+  huntLayout().forEach(function (h) {
+    if (h.scene !== curSceneName) return;
+    if (f.huntFound.indexOf(h.id) >= 0) return;
+    var img = document.createElement("img");
+    img.src = "village2/" + HUNT_TYPES[h.type].img;
+    img.alt = HUNT_TYPES[h.type].name;
+    img.className = "huntitem";
+    img.style.left = h.left + "%";
+    img.style.bottom = h.bottom + "%";
+    img.addEventListener("click", function () { startMusic(); collectHunt(h); });
+    layer.appendChild(img);
+  });
+}
+function collectHunt(h) {
+  var f = funState();
+  if (f.huntFound.indexOf(h.id) >= 0) return;
+  if (!farmState()) { toast("🐚 Start your Farm & Village first — that's where found shells get banked. Your treasure stays buried till then."); return; }
+  var def = HUNT_TYPES[h.type];
+  addShells(def.val);
+  f.huntFound.push(h.id);
+  f.huntEarned += def.val;
+  var msg = "🔍 You found " + def.name + "! +🐚 " + def.val + " (" + f.huntFound.length + " of 6 today)";
+  if (f.huntFound.length >= 6 && !f.huntBonus) {
+    f.huntBonus = true;
+    f.huntEarned += 75;
+    addShells(75);
+    msg = "🎉 That's ALL SIX treasures! Bonus +🐚 75 — the Cove is officially swept clean.";
+  }
+  saveTown();
+  renderHunt();
+  paintFun();
+  toast(msg);
+}
+
+var WHEEL_SEGS = [10, 30, 5, 50, 15, 150, 20, 75];
+var WHEEL_COLORS = ["#ffd98a", "#14607f", "#fff8ec", "#e2703a"];
+var wheelRot = 0, wheelBusy = false;
+function buildWheel() {
+  var w = document.getElementById("wheel");
+  if (!w) return;
+  var parts = [];
+  for (var i = 0; i < 8; i++) parts.push(WHEEL_COLORS[i % 4] + " " + (i * 45) + "deg " + ((i + 1) * 45) + "deg");
+  w.style.background = "conic-gradient(from -22.5deg, " + parts.join(", ") + ")";
+  for (var j = 0; j < 8; j++) {
+    var lab = document.createElement("div");
+    lab.className = "wlabel";
+    lab.textContent = WHEEL_SEGS[j];
+    lab.style.transform = "rotate(" + (j * 45) + "deg) translateY(-88px)";
+    lab.style.color = (j % 4 === 1 || j % 4 === 3) ? "#fff8ec" : "#17384a";
+    w.appendChild(lab);
+  }
+}
+function spinWheel() {
+  if (wheelBusy) return;
+  var f = funState();
+  if (f.wheelSpins >= 4) { toast("The lighthouse light has spun its last for today — more tomorrow."); return; }
+  if (!farmState()) { toast("🐚 Start your Farm & Village first — that's where your shells live."); return; }
+  var cost = f.wheelSpins === 0 ? 0 : 50;
+  if (cost > 0 && !spendShells(cost)) { toast("Extra spins cost 🐚 50 — your farm has 🐚 " + shells().toLocaleString()); return; }
+  wheelBusy = true;
+  f.wheelSpins++;
+  saveTown();
+  paintFun();
+  var k = Math.floor(Math.random() * 8);
+  var cur = ((wheelRot % 360) + 360) % 360;
+  var want = ((-(k * 45)) % 360 + 360) % 360;
+  var delta = ((want - cur) + 360) % 360 + 360 * 6 + (Math.random() * 26 - 13);
+  wheelRot += delta;
+  var w = document.getElementById("wheel");
+  w.style.transform = "rotate(" + wheelRot + "deg)";
+  setTimeout(function () {
+    wheelBusy = false;
+    addShells(WHEEL_SEGS[k]);
+    saveTown();
+    paintFun();
+    toast("🗼 The light lands on 🐚 " + WHEEL_SEGS[k] + "!");
+  }, 4700);
+}
+
+function buyMystery() {
+  var f = funState();
+  var it = ITEMS[f.mystItem];
+  if (!it || f.mystBought) return;
+  var price = mysteryPrice(it);
+  if (!spendShells(price)) { toast("The " + it.name + " costs 🐚 " + price.toLocaleString() + " today — your farm has 🐚 " + shells().toLocaleString()); return; }
+  town.inv[f.mystItem] = (town.inv[f.mystItem] || 0) + 1;
+  f.mystBought = true;
+  saveTown();
+  paintFun();
+  toast("🕵️ The " + it.name + " is yours — it's in your shed on My Lot, under Build & Decorate.");
+}
+
+function paintFun() {
+  var btn = document.getElementById("funBtn");
+  if (!btn) return;
+  var f = funState();
+  btn.textContent = !featuresOpen() ? "🔒 🎁 Town Fun"
+    : "🎁 Town Fun · 🔍 " + f.huntFound.length + "/6" + (f.wheelSpins === 0 ? " · 🗼 free spin" : "");
+  var left = 6 - f.huntFound.length;
+  document.getElementById("funHuntText").textContent = f.huntFound.length >= 6
+    ? "You found every treasure today — 🐚 " + f.huntEarned + " earned, bonus included. New hiding spots tomorrow."
+    : "Six treasures hide around town every day. You have found " + f.huntFound.length + " of 6 — 🐚 " + f.huntEarned + " earned so far, " + left + " still hiding.";
+  var scenesLeft = {}, names = { town: "Town Square", street: "Main Street", board: "The Boardwalk" };
+  huntLayout().forEach(function (h) { if (f.huntFound.indexOf(h.id) < 0) scenesLeft[h.scene] = true; });
+  var sl = Object.keys(scenesLeft).map(function (k2) { return names[k2]; });
+  document.getElementById("funHuntScenes").textContent = sl.length ? "Still hiding around: " + sl.join(" · ") : "";
+  var wb = document.getElementById("wheelBtn");
+  if (wheelBusy) { wb.disabled = true; wb.textContent = "Spinning…"; }
+  else if (f.wheelSpins >= 4) { wb.disabled = true; wb.textContent = "More spins tomorrow"; }
+  else if (f.wheelSpins === 0) { wb.disabled = false; wb.textContent = "Spin — today's first is FREE"; }
+  else { wb.disabled = false; wb.textContent = "Spin · 🐚 50"; }
+  document.getElementById("wheelNote").textContent = f.wheelSpins === 0
+    ? "One free spin every day. Extra spins 🐚 50, up to 3 more."
+    : (f.wheelSpins >= 4 ? "The light has spun its last for today." : "Spins used today: " + f.wheelSpins + " of 4. Your shells: 🐚 " + shells().toLocaleString());
+  var it = ITEMS[f.mystItem];
+  if (it) {
+    document.getElementById("mystImg").src = "village2/" + it.img;
+    document.getElementById("mystName").textContent = it.emoji + " " + it.name;
+    document.getElementById("mystPrice").textContent = "Today only · 🐚 " + mysteryPrice(it).toLocaleString() + " (list 🐚 " + it.price.toLocaleString() + ")";
+    document.getElementById("mystText").textContent = it.blurb;
+    var mb = document.getElementById("mystBuyBtn");
+    if (f.mystBought) { mb.disabled = true; mb.textContent = "In your shed ✓"; }
+    else { mb.disabled = false; mb.textContent = "Buy · 🐚 " + mysteryPrice(it).toLocaleString(); }
+  }
+}
+document.getElementById("funBtn").addEventListener("click", function () {
+  startMusic();
+  if (!featuresOpen()) { lockedTap("features"); return; }
+  paintFun();
+  openPanel("funPanel");
+});
+document.getElementById("funClose").addEventListener("click", closePanels);
+document.getElementById("wheelBtn").addEventListener("click", function () { startMusic(); spinWheel(); });
+document.getElementById("mystBuyBtn").addEventListener("click", function () { startMusic(); buyMystery(); });
+
 renderLot();
 paintLadder();
+buildWheel();
+paintFun();
+renderHunt();
 if (!town.veteran && !sceneUnlocked("town")) setScene("lot");
 </script>
 
