@@ -47,6 +47,9 @@
   .choiceopt:active { transform: scale(.97); }
   .choiceopt:disabled { opacity: .5; cursor: default; }
   .choice.locked { background: rgba(255,248,236,.75); color: #47626e; font-size: 13.5px; font-weight: 600; }
+  #epChoice .choice { border: 2px solid #eed9ae; box-shadow: none; margin-top: 14px; }
+  #epChoice .picked { display: flex; gap: 10px; align-items: center; }
+  #epChoice .picked .oi { font-size: 30px; }
   .secttl { color: #ffd98a; font-weight: 800; font-size: 15px; margin: 10px 2px 6px; }
   #orders { display: flex; flex-direction: column; gap: 8px; }
   .order { background: #fff8ec; border-radius: 16px; padding: 9px 11px; display: flex; gap: 10px; align-items: center; box-shadow: 0 3px 0 rgba(0,0,0,.18); border: 3px solid transparent; }
@@ -151,6 +154,7 @@
     <div class="eptag" id="epTag">Episode 1</div>
     <h2 id="epTitle"></h2>
     <div id="epBeats"></div>
+    <div id="epChoice"></div>
     <button class="bigbtn" id="epClose">▶ Back to the studio</button>
   </div>
 </div>
@@ -383,9 +387,11 @@ function faceHTML(who, cls) {
   if (who === "sprocket") return '<div class="' + cls + '"><div class="bot">🤖</div></div>';
   return '<div class="' + cls + '"><img src="' + FACES[PEOPLE[who].face] + '" alt=""></div>';
 }
+var currentEp = -1;
 function showEpisode(i) {
   var ep = EPISODES[i];
   if (!ep) return;
+  currentEp = i;
   document.getElementById("epTag").textContent = "Drama Cove · Episode " + (i + 1) + " of " + EPISODES.length;
   document.getElementById("epTitle").textContent = ep.title;
   var html = "";
@@ -395,8 +401,34 @@ function showEpisode(i) {
     else html += '<div class="beat">' + faceHTML(who, "face") + '<div class="line"><b>' + PEOPLE[who].name + "</b><span>" + line + "</span></div></div>";
   }
   document.getElementById("epBeats").innerHTML = html;
+  renderEpisodeChoice(i);
   document.getElementById("epOverlay").className = "overlay open";
   sndSting();
+}
+function taskForEpisode(ep) {
+  for (var i = 0; i < BUILD_TASKS.length; i++) if (BUILD_TASKS[i].ep === ep) return BUILD_TASKS[i];
+  return null;
+}
+function renderEpisodeChoice(ep) {
+  var box = document.getElementById("epChoice");
+  if (!box) return;
+  var task = taskForEpisode(ep);
+  if (!task) { box.innerHTML = ""; return; }
+  var chosen = state.studio[task.slot] ? taskOption(task, state.studio[task.slot]) : null;
+  if (chosen) {
+    box.innerHTML = '<div class="choice"><div class="picked"><span class="oi">' + chosen[1] + '</span><div><div class="ct">🏠 Your studio pick: ' + chosen[2] + '</div><div class="cp">It is already up at your studio — head back and take a look.</div></div></div></div>';
+    return;
+  }
+  var afford = state.stars >= task.cost;
+  var html = '<div class="choice"><div class="chead">' + faceHTML(task.who, "face") + '<div><div class="ct">🎬 Before you go — ' + PEOPLE[task.who].name + " needs your pick: " + task.title + '</div><div class="cp">' + task.prompt + '</div><div class="cost">Costs ⭐ ' + task.cost + " · you have ⭐ " + state.stars + (afford ? "" : " — not enough stars yet; you can also pick it later under your studio") + '</div></div></div><div class="opts">';
+  for (var j = 0; j < task.options.length; j++) {
+    var op = task.options[j];
+    html += '<button class="choiceopt" data-ep="' + task.ep + '" data-op="' + op[0] + '"' + (afford ? "" : " disabled") + '><span class="oi">' + op[1] + '</span><span class="on2">' + op[2] + "</span></button>";
+  }
+  html += "</div></div>";
+  box.innerHTML = html;
+  var btns = box.querySelectorAll(".choiceopt");
+  for (var k = 0; k < btns.length; k++) btns[k].addEventListener("click", function () { chooseDecor(parseInt(this.getAttribute("data-ep"), 10), this.getAttribute("data-op")); });
 }
 function closeEpisode() {
   document.getElementById("epOverlay").className = "overlay";
@@ -486,13 +518,14 @@ function renderStudio() {
 function chooseDecor(ep, opId) {
   var task = null;
   for (var i = 0; i < BUILD_TASKS.length; i++) if (BUILD_TASKS[i].ep === ep) task = BUILD_TASKS[i];
-  if (!task || state.studio[task.slot] || state.epSeen <= task.ep) return;
+  if (!task || state.studio[task.slot] || task.ep >= unlockedEpisodes()) return;
   var op = taskOption(task, opId);
   if (!op) return;
   if (state.stars < task.cost) { toast("Not enough stars yet — that pick costs ⭐ " + task.cost); return; }
   state.stars -= task.cost;
   state.studio[task.slot] = opId;
   save(); renderAll();
+  if (document.getElementById("epOverlay").className === "overlay open" && currentEp === ep) renderEpisodeChoice(ep);
   sndDeliver();
   toast("🏠 " + op[2] + " is up! Your studio, your pick.");
 }
