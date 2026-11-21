@@ -27,6 +27,21 @@
   .sprite { position: absolute; cursor: pointer; -webkit-tap-highlight-color: transparent; filter: drop-shadow(0 6px 5px rgba(0,0,0,.35)); animation: bob 2.8s ease-in-out infinite; }
   @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.2%); } }
   .sprite.wiggle { animation: wig .55s ease-in-out; }
+  .sprite.walking { animation: walkbob .34s ease-in-out infinite; }
+  @keyframes walkbob { 0%,100% { transform: translateY(0) rotate(-1.6deg); } 50% { transform: translateY(-4px) rotate(1.6deg); } }
+  .sprite.busy { animation: busybob .7s ease-in-out infinite; }
+  @keyframes busybob { 0%,100% { transform: rotate(-1.3deg); } 50% { transform: rotate(1.3deg) translateY(-2px); } }
+  .actbadge { position: absolute; transform: translateX(-50%); background: #fff8ec; border: 2px solid #eed9ae; color: #17384a; font-size: .78rem; font-weight: 700; border-radius: 999px; padding: 3px 10px; display: none; z-index: 26; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,.3); white-space: nowrap; }
+  #beam { position: absolute; width: 52%; height: 17%; background: linear-gradient(90deg, rgba(255,241,190,.55), rgba(255,241,190,0) 78%); clip-path: polygon(0 44%, 100% 2%, 100% 98%, 0 56%); transform-origin: 0 50%; animation: beamsweep 6.5s ease-in-out infinite alternate; mix-blend-mode: screen; pointer-events: none; display: none; z-index: 3; }
+  @keyframes beamsweep { from { transform: rotate(-13deg); } to { transform: rotate(11deg); } }
+  #winGlow { position: absolute; left: 2%; top: 33%; width: 35%; height: 31%; background: radial-gradient(ellipse at 45% 55%, rgba(255,176,84,.5), rgba(255,176,84,0) 68%); mix-blend-mode: screen; animation: glowflicker 3.6s ease-in-out infinite; pointer-events: none; display: none; z-index: 3; }
+  @keyframes glowflicker { 0%,100% { opacity: .5; } 45% { opacity: .95; } 70% { opacity: .7; } }
+  #gull { position: absolute; top: 8%; left: -12%; width: 54px; opacity: 0; pointer-events: none; z-index: 15; }
+  #gull.fly { animation: gullfly 15s linear forwards; opacity: .9; }
+  @keyframes gullfly { from { left: -12%; top: 9%; } to { left: 104%; top: 4%; } }
+  #gull svg { animation: gullbob .45s ease-in-out infinite alternate; transform-origin: center; display: block; }
+  @keyframes gullbob { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+  @media (prefers-reduced-motion: reduce) { #beam, #gull { display: none !important; } .sprite.walking, .sprite.busy { animation: none; } }
   @keyframes wig { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-4deg) translateY(-2%); } 60% { transform: rotate(4deg); } }
   @media (prefers-reduced-motion: reduce) { .sprite { animation: none; } }
   #bubble { position: absolute; max-width: 62%; background: #fff8ec; color: #17384a; border-radius: 14px; padding: 8px 12px; font-size: .86rem; line-height: 1.35; box-shadow: 0 6px 18px rgba(0,0,0,.35); display: none; z-index: 30; }
@@ -70,6 +85,8 @@
   <img class="town" id="bgBoard" src="village2/boardwalk.jpg" alt="The boardwalk: a wooden pier over the sea with string lights, a little shuttered stand and a ferris wheel in the distance" style="display:none">
   <img class="town" id="bgLane" src="village2/lane.jpg" alt="Neighbor Lane: a cobblestone lane between beach cottages with mailboxes and bunting, running down to the sea" style="display:none">
   <div id="dusk"></div>
+  <div id="beam"></div>
+  <div id="winGlow"></div>
   <div class="zones" id="zonesTown">
   <button class="zone" style="left:3%;top:5%;width:23%;height:29%" data-place="canvas" aria-label="The Salty Canvas"></button>
   <button class="zone" style="left:37%;top:1%;width:21%;height:26%" data-place="bakery" aria-label="Boardwalk Bakery"></button>
@@ -100,6 +117,7 @@
   <img class="sprite" id="sp-sandy" src="village2/sandy.png" alt="Sandy" style="left:52%;bottom:27%;height:31%;animation-delay:1.3s">
   <img class="sprite" id="sp-gladys" src="village2/gladys.png" alt="Gladys" style="left:71%;bottom:28%;height:31%;animation-delay:.4s">
   <img class="sprite" id="sp-sprocket" src="village2/sprocket.png" alt="Sprocket" style="left:86%;bottom:28%;height:16%;animation-delay:1s">
+  <div id="gull"><svg viewBox="0 0 40 18" width="54" height="24"><path d="M2 13 Q10 3 20 11 Q30 3 38 13" stroke="#ffffff" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg></div>
   <div id="bubble"></div>
 </div>
 
@@ -271,6 +289,7 @@ document.querySelectorAll(".sprite").forEach(function (el) {
   el.addEventListener("click", function () {
     startMusic();
     var who = el.id.replace("sp-", "");
+    if (window.lifeTap) lifeTap(who);
     var lines = LINES[who];
     var line = lines[lineIdx[who] % lines.length]; lineIdx[who]++;
     bubble.innerHTML = "<b>" + NAMES[who] + ":</b> " + line;
@@ -287,6 +306,123 @@ document.querySelectorAll(".sprite").forEach(function (el) {
     bubbleTimer = setTimeout(function () { bubble.style.display = "none"; }, 3400);
   });
 });
+/* ===== Town life: the crew strolls, works, and greets on the public scenes ===== */
+var LIFE_ON = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var ACTS = {
+  town:   { kim: [10, 27, "\uD83C\uDFA8", "painting"], trish: [24, 28, "\uD83D\uDCD6", "reading on the porch"], sandy: [45, 26, "\uD83C\uDF38", "by the fountain flowers"], gladys: [63, 27, "\uD83D\uDCA7", "watering the flower boxes"], sprocket: [68, 27, "\uD83C\uDF81", "delivering a present"] },
+  street: { kim: [30, 1, "\uD83C\uDFA8", "painting at the easel"], gladys: [7, 1, "\uD83D\uDCA7", "watering the sunflowers"], trish: [44, 2, "\uD83D\uDCD6", "reading on the bench"], sandy: [79, 2, "\uD83D\uDCF8", "taking pictures by the bike"], sprocket: [58, 2, "\uD83C\uDF81", "delivering a present"] },
+  board:  { kim: [45, 5, "\uD83C\uDFA8", "painting the sea"], sandy: [55, 5, "\uD83D\uDCF8", "taking pictures at the railing"], trish: [88, 4, "\uD83C\uDFA1", "watching the ferris wheel"], gladys: [24, 4, "\uD83E\uDDF6", "knitting by the stand"], sprocket: [68, 6, "\uD83C\uDF81", "delivering a present"] }
+};
+var BEAMS = { town: [88.5, 8], street: [66, 27] };
+var agents = {}, lifeScene = "__boot__", gullIn = 6, lastFrame = 0;
+["kim", "trish", "sandy", "gladys", "sprocket"].forEach(function (who) {
+  var badge = document.createElement("div");
+  badge.className = "actbadge"; badge.id = "act-" + who;
+  document.getElementById("scene").appendChild(badge);
+  agents[who] = { who: who, el: document.getElementById("sp-" + who), badge: badge,
+    x: 0, y: 0, baseY: 0, baseH: 30, state: "idle", t: 1 + Math.random() * 4, tx: 0, ty: 0, mode: "pause", li: 0,
+    speed: who === "sprocket" ? 4.6 : 2.0 + Math.random() * 0.6 };
+});
+function lifeSync(scene) {
+  lifeScene = scene;
+  var beam = document.getElementById("beam"), glow = document.getElementById("winGlow");
+  var duskOn = document.getElementById("dusk").style.display === "block";
+  if (BEAMS[scene] && (scene === "street" || duskOn)) {
+    beam.style.left = BEAMS[scene][0] + "%"; beam.style.top = BEAMS[scene][1] + "%"; beam.style.display = "block";
+  } else beam.style.display = "none";
+  glow.style.display = scene === "street" ? "block" : "none";
+  Object.keys(agents).forEach(function (who) {
+    var a = agents[who];
+    a.x = parseFloat(a.el.style.left) || 0; a.y = parseFloat(a.el.style.bottom) || 0;
+    a.baseY = a.y; a.baseH = parseFloat(a.el.style.height) || 30;
+    a.state = "idle"; a.t = 0.5 + Math.random() * 4;
+    a.el.classList.remove("walking", "busy"); a.badge.style.display = "none";
+  });
+}
+function lifeTap(who) {
+  var a = agents[who]; if (!a || !LIFE_ON) return;
+  a.state = "greet"; a.t = 3.4;
+  a.el.classList.remove("walking", "busy"); a.badge.style.display = "none";
+}
+window.lifeTap = lifeTap;
+function lifeSpeech(a) {
+  var lines = LINES[a.who]; if (!lines) return;
+  var line = lines[a.li % lines.length]; a.li++;
+  bubble.innerHTML = "<b>" + NAMES[a.who] + ":</b> " + line;
+  var scene = document.getElementById("scene").getBoundingClientRect();
+  var r = a.el.getBoundingClientRect();
+  bubble.style.display = "block";
+  var bw = bubble.offsetWidth;
+  var left = (r.left - scene.left) + r.width / 2 - bw / 2;
+  bubble.style.left = Math.max(4, Math.min(left, scene.width - bw - 4)) + "px";
+  bubble.style.top = Math.max(2, (r.top - scene.top) - bubble.offsetHeight - 14) + "px";
+  clearTimeout(bubbleTimer);
+  bubbleTimer = setTimeout(function () { bubble.style.display = "none"; }, 3400);
+}
+function lifeDecide(a, scene) {
+  var act = ACTS[scene] && ACTS[scene][a.who];
+  if (act && Math.random() < 0.45) { a.tx = act[0]; a.ty = act[1]; a.mode = "act"; }
+  else { a.tx = 2 + Math.random() * 82; a.ty = Math.max(0, a.baseY + (Math.random() * 4.4 - 2.2)); a.mode = "pause"; }
+  a.state = "walk"; a.el.classList.add("walking");
+}
+function lifeStep(a, dt, scene) {
+  if (a.state === "greet" || a.state === "idle") {
+    a.t -= dt;
+    if (a.t <= 0) { a.state = "idle"; lifeDecide(a, scene); }
+    return;
+  }
+  if (a.state === "walk") {
+    var dx = a.tx - a.x, dy = a.ty - a.y, dist = Math.sqrt(dx * dx + dy * dy);
+    var step = a.speed * dt;
+    if (dist <= step || dist < 0.15) {
+      a.x = a.tx; a.y = a.ty; a.el.classList.remove("walking");
+      if (a.mode === "act") {
+        var act = ACTS[scene][a.who];
+        a.state = "act"; a.t = 5.5 + Math.random() * 3;
+        a.el.classList.add("busy");
+        a.badge.textContent = act[2] + " " + act[3];
+        a.badge.style.display = "block";
+        if (Math.random() < 0.45) lifeSpeech(a);
+      } else { a.state = "idle"; a.t = 1.2 + Math.random() * 3.5; }
+    } else { a.x += dx / dist * step; a.y += dy / dist * step; }
+    return;
+  }
+  if (a.state === "act") {
+    a.t -= dt;
+    if (a.t <= 0) { a.state = "idle"; a.t = 0.4; a.el.classList.remove("busy"); a.badge.style.display = "none"; }
+  }
+}
+function lifeFrame(ts) {
+  requestAnimationFrame(lifeFrame);
+  if (!LIFE_ON) return;
+  var dt = Math.min(0.05, (ts - lastFrame) / 1000 || 0.016); lastFrame = ts;
+  var scene = (typeof curSceneName === "string") ? curSceneName : null;
+  if (scene !== lifeScene) lifeSync(scene);
+  var pub = scene === "town" || scene === "street" || scene === "board";
+  if (!pub || document.hidden) return;
+  var sceneEl = document.getElementById("scene");
+  var sr = sceneEl.getBoundingClientRect();
+  Object.keys(agents).forEach(function (who) {
+    var a = agents[who];
+    lifeStep(a, dt, scene);
+    a.el.style.left = a.x + "%";
+    a.el.style.bottom = a.y + "%";
+    a.el.style.height = (a.baseH * (1 + (a.baseY - a.y) * 0.012)) + "%";
+    if (a.badge.style.display === "block") {
+      var r = a.el.getBoundingClientRect();
+      a.badge.style.left = ((r.left - sr.left) + r.width / 2) + "px";
+      a.badge.style.top = Math.max(2, (r.top - sr.top) - 34) + "px";
+    }
+  });
+  gullIn -= dt;
+  if (gullIn <= 0) {
+    gullIn = 26 + Math.random() * 22;
+    var g = document.getElementById("gull");
+    g.classList.remove("fly"); void g.offsetWidth; g.classList.add("fly");
+  }
+}
+requestAnimationFrame(lifeFrame);
+
 
 var bgAudio = null, musicMuted = false;
 function startMusic() {
