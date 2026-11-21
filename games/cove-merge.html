@@ -48,9 +48,26 @@
   .choiceopt:disabled { opacity: .5; cursor: default; }
   .choice.locked { background: rgba(255,248,236,.75); color: #47626e; font-size: 13.5px; font-weight: 600; }
   #epChoice .choice { border: 2px solid #eed9ae; box-shadow: none; margin-top: 14px; }
-  #epVideo video { width: 100%; border-radius: 14px; display: block; margin-bottom: 8px; background: #0b2836; box-shadow: 0 3px 10px rgba(0,0,0,.25); }
   #epChoice .picked { display: flex; gap: 10px; align-items: center; }
   #epChoice .picked .oi { font-size: 30px; }
+  /* ---------- Story stage: episode video inside the studio box ---------- */
+  #studio { position: relative; }
+  #stage { position: absolute; inset: 0; display: none; z-index: 6; border-radius: 18px; overflow: hidden; background: #0b2836; }
+  #stage.open { display: block; }
+  #stage video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #stage .stag { position: absolute; z-index: 3; top: 8px; left: 10px; background: rgba(11,40,54,.78); color: #ffe9bd; font-size: 12px; font-weight: 800; border-radius: 99px; padding: 4px 10px; }
+  #stage .sclose { position: absolute; z-index: 3; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; border: 2px solid #ffd98a; background: rgba(11,40,54,.82); color: #ffe9bd; font-weight: 800; cursor: pointer; font-family: inherit; line-height: 1; }
+  #stageOpts { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; padding: 24px 10px 10px; background: linear-gradient(180deg, transparent, rgba(11,40,54,.9) 45%); display: none; pointer-events: none; }
+  #stageOpts.open { display: block; }
+  #stageOpts .sp { color: #fff; font-weight: 800; font-size: 13.5px; text-align: center; text-shadow: 0 1px 3px rgba(0,0,0,.65); }
+  #stageOpts .srow { display: flex; gap: 8px; margin-top: 7px; }
+  .stageopt { pointer-events: auto; flex: 1; background: #fff8ec; border: 3px solid #ffb347; border-radius: 14px; padding: 8px 4px; cursor: pointer; font-family: inherit; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+  .stageopt .oi { font-size: 26px; display: block; }
+  .stageopt .on2 { font-size: 12.5px; font-weight: 800; color: #12303e; display: block; margin-top: 2px; line-height: 1.2; }
+  .stageopt:active { transform: scale(.97); }
+  .stageopt:disabled { opacity: .55; cursor: default; }
+  .stageopt.mine { border-color: #58b26a; background: #eaffea; opacity: 1; }
+  #stageBtn { position: absolute; right: 10px; bottom: 10px; z-index: 5; background: #ffd98a; color: #5a3b12; border: 3px solid #a97c3f; border-radius: 999px; font-weight: 800; font-size: 12.5px; padding: 6px 12px; cursor: pointer; font-family: inherit; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
   .secttl { color: #ffd98a; font-weight: 800; font-size: 15px; margin: 10px 2px 6px; }
   #orders { display: flex; flex-direction: column; gap: 8px; }
   .order { background: #fff8ec; border-radius: 16px; padding: 9px 11px; display: flex; gap: 10px; align-items: center; box-shadow: 0 3px 0 rgba(0,0,0,.18); border: 3px solid transparent; }
@@ -135,7 +152,7 @@
   </div>
 
   <div class="secttl">🏠 Your Salty Canvas Studio — your picks stay up for good</div>
-  <div id="studio"></div>
+  <div id="studio"><div id="sceneBox"></div><div id="stage"></div><button id="stageBtn" type="button" style="display:none"></button></div>
   <div id="choicePanel"></div>
 
   <div class="secttl">📋 Orders from the girls</div>
@@ -147,14 +164,13 @@
 
   <div id="gens"></div>
 
-  <p class="howto">How it works: tap a supply box and supplies pop onto the board. Tap any item, then tap an identical one to merge them into the next tier up. Fill the girls' orders to earn shells and ⭐ stars — stars unlock the next episode of the drama. Top-tier items sell for a nice pile of shells. Watching episodes unlocks studio picks — spend stars to choose the sign, the awning and more, and every pick stays up for good. Your studio will look like nobody else's.</p>
+  <p class="howto">How it works: tap a supply box and supplies pop onto the board. Tap any item, then tap an identical one to merge them into the next tier up. Fill the girls' orders to earn shells and ⭐ stars — stars unlock the next episode of the drama. Top-tier items sell for a nice pile of shells. New episodes play right in the studio box up top — tap the video, choose between the two options, and your pick goes straight up in the studio for good. Your studio will look like nobody else's.</p>
 </div>
 
 <div class="overlay" id="epOverlay">
   <div class="sheet">
     <div class="eptag" id="epTag">Episode 1</div>
     <h2 id="epTitle"></h2>
-    <div id="epVideo"></div>
     <div id="epBeats"></div>
     <div id="epChoice"></div>
     <button class="bigbtn" id="epClose">▶ Back to the studio</button>
@@ -205,7 +221,7 @@ var GOSSIP = {
   sprocket: ["WRAPPING EMERGENCY. THIS IS NOT A DRILL.", "SUPPLIES REQUIRED. PLEASE AND THANK YOU."]
 };
 var BUILD_TASKS = [
-  { ep: 0, slot: "sign", who: "sandy", title: "The Studio Sign", cost: 1, ph: "🪧", prompt: "Every great studio needs a sign, and Sandy gets to pick this one. No pressure. (There is pressure.)", options: [
+  { ep: 0, slot: "sign", who: "sandy", title: "The Studio Sign", cost: 1, videoOpts: ["wave", "shell"], ph: "🪧", prompt: "Every great studio needs a sign, and Sandy gets to pick this one. No pressure. (There is pressure.)", options: [
     ["wave", "🌊", "Wave Sign"], ["shell", "🐚", "Shell Sign"], ["star", "⭐", "Starfish Sign"] ] },
   { ep: 1, slot: "awning", who: "kim", title: "The Front Awning", cost: 2, ph: "⛱️", prompt: "Kim's call: what shades the studio door? Pick the awning and it goes up today.", options: [
     ["sunset", "🌅", "Sunset Awning"], ["leafy", "🌿", "Leafy Awning"], ["purple", "💜", "Purple Awning"] ] },
@@ -376,7 +392,7 @@ function deliver(idx) {
   sndDeliver();
   toast("Order delivered! +🐚 " + o.reward + " · +⭐ " + o.stars);
   var unlocked = unlockedEpisodes();
-  if (state.epSeen < unlocked) setTimeout(function () { showEpisode(state.epSeen); }, 900);
+  if (state.epSeen < unlocked) { var nep = state.epSeen; setTimeout(function () { openEpisodeSmart(nep); }, 900); }
 }
 
 /* ============ EPISODES ============ */
@@ -403,7 +419,6 @@ function showEpisode(i) {
     else html += '<div class="beat">' + faceHTML(who, "face") + '<div class="line"><b>' + PEOPLE[who].name + "</b><span>" + line + "</span></div></div>";
   }
   document.getElementById("epBeats").innerHTML = html;
-  document.getElementById("epVideo").innerHTML = ep.video ? '<video src="' + ep.video + '" poster="' + (ep.poster || "") + '" autoplay muted loop playsinline controls></video>' : "";
   renderEpisodeChoice(i);
   document.getElementById("epOverlay").className = "overlay open";
   sndSting();
@@ -435,7 +450,6 @@ function renderEpisodeChoice(ep) {
 }
 function closeEpisode() {
   document.getElementById("epOverlay").className = "overlay";
-  document.getElementById("epVideo").innerHTML = "";
   var unlocked = unlockedEpisodes();
   var seen = 0;
   var tag = document.getElementById("epTag").textContent;
@@ -489,7 +503,7 @@ function nextChoice() {
   return null;
 }
 function renderStudio() {
-  var wrap = document.getElementById("studio");
+  var wrap = document.getElementById("sceneBox");
   if (!wrap) return;
   var html = '<div class="scene"><div class="sun">☀️</div><div class="shopfront"><div class="win l"></div><div class="win r"></div><div class="door"></div></div>';
   for (var i = 0; i < BUILD_TASKS.length; i++) {
@@ -519,6 +533,79 @@ function renderStudio() {
       : '<div class="choice locked">🔒 The next studio pick unlocks after Episode ' + (nextEp + 1) + ". Keep filling orders and watching the drama!</div>";
   }
 }
+/* ============ STORY STAGE (episode video inside the studio box) ============ */
+var stageEp = -1;
+function stageTask() {
+  for (var i = 0; i < BUILD_TASKS.length; i++) {
+    var t = BUILD_TASKS[i];
+    if (EPISODES[t.ep] && EPISODES[t.ep].video && t.videoOpts) return t;
+  }
+  return null;
+}
+function renderStageBtn() {
+  var b = document.getElementById("stageBtn");
+  if (!b) return;
+  var t = stageTask();
+  var st = document.getElementById("stage");
+  if (!t || (st && st.className === "stage open") || t.ep >= unlockedEpisodes()) { b.style.display = "none"; return; }
+  b.style.display = "";
+  b.textContent = state.studio[t.slot] ? "\uD83C\uDFAC Watch Episode " + (t.ep + 1) : "\uD83C\uDFAC Story Moment \u2014 " + PEOPLE[t.who].name + "'s pick!";
+}
+function openEpisodeSmart(i) {
+  if (EPISODES[i] && EPISODES[i].video) openStage(i); else showEpisode(i);
+}
+function openStage(ep) {
+  var task = null;
+  for (var i = 0; i < BUILD_TASKS.length; i++) if (BUILD_TASKS[i].ep === ep) task = BUILD_TASKS[i];
+  var e = EPISODES[ep];
+  if (!task || !e || !e.video || !task.videoOpts) { showEpisode(ep); return; }
+  stageEp = ep;
+  var st = document.getElementById("stage");
+  st.innerHTML = '<video id="stageVideo" src="' + e.video + '" poster="' + (e.poster || "") + '" autoplay muted playsinline></video>'
+    + '<div class="stag">\uD83C\uDFAD Episode ' + (ep + 1) + " \u2014 " + e.title + '</div>'
+    + '<button class="sclose" id="stageClose" type="button">\u2716</button>'
+    + '<div id="stageOpts"></div>';
+  st.className = "stage open";
+  renderStageOpts();
+  renderStageBtn();
+  var v = document.getElementById("stageVideo");
+  v.addEventListener("click", showStageOpts);
+  v.addEventListener("ended", showStageOpts);
+  document.getElementById("stageClose").addEventListener("click", closeStage);
+}
+function renderStageOpts() {
+  var box = document.getElementById("stageOpts");
+  if (!box || stageEp < 0) return;
+  var task = null;
+  for (var i = 0; i < BUILD_TASKS.length; i++) if (BUILD_TASKS[i].ep === stageEp) task = BUILD_TASKS[i];
+  if (!task) return;
+  var mine = state.studio[task.slot] ? taskOption(task, state.studio[task.slot]) : null;
+  var afford = state.stars >= task.cost;
+  var html = '<div class="sp">' + (mine ? "Your pick is already up: " + mine[2] : PEOPLE[task.who].name + " needs your pick \u2014 " + task.title + " (\u2B50 " + task.cost + ")") + '</div><div class="srow">';
+  for (var j = 0; j < task.videoOpts.length; j++) {
+    var op = taskOption(task, task.videoOpts[j]);
+    if (!op) continue;
+    var isMine = !!(mine && mine[0] === op[0]);
+    html += '<button class="stageopt' + (isMine ? " mine" : "") + '" data-op="' + op[0] + '"' + (mine || !afford ? " disabled" : "") + '><span class="oi">' + op[1] + '</span><span class="on2">' + op[2] + (isMine ? " \u2714" : "") + "</span></button>";
+  }
+  html += "</div>";
+  if (!mine && !afford) html += '<div class="sp" style="margin-top:6px">Not enough stars yet \u2014 fill orders to earn \u2B50. The pick will wait right here.</div>';
+  box.innerHTML = html;
+  var btns = box.querySelectorAll(".stageopt");
+  for (var k = 0; k < btns.length; k++) btns[k].addEventListener("click", function () { chooseDecor(stageEp, this.getAttribute("data-op")); });
+}
+function showStageOpts() {
+  var box = document.getElementById("stageOpts");
+  if (box) box.className = "open";
+}
+function closeStage() {
+  var st = document.getElementById("stage");
+  if (st) { st.innerHTML = ""; st.className = "stage"; }
+  if (stageEp >= 0 && stageEp + 1 > state.epSeen) state.epSeen = stageEp + 1;
+  stageEp = -1;
+  save(); renderAll();
+}
+
 function chooseDecor(ep, opId) {
   var task = null;
   for (var i = 0; i < BUILD_TASKS.length; i++) if (BUILD_TASKS[i].ep === ep) task = BUILD_TASKS[i];
@@ -532,6 +619,7 @@ function chooseDecor(ep, opId) {
   if (document.getElementById("epOverlay").className === "overlay open" && currentEp === ep) renderEpisodeChoice(ep);
   sndDeliver();
   toast("🏠 " + op[2] + " is up! Your studio, your pick.");
+  if (stageEp === ep) closeStage();
 }
 
 /* ============ BOARD ============ */
@@ -661,7 +749,7 @@ function tapGen(gi, btn) {
   sndSpawn();
   save(); renderAll();
 }
-function renderAll() { renderHUD(); renderStudio(); renderOrders(); renderBoard(); renderInfo(); }
+function renderAll() { renderHUD(); renderStudio(); renderOrders(); renderBoard(); renderInfo(); renderStageBtn(); }
 
 /* ============ BOOT ============ */
 loadState();
@@ -671,12 +759,13 @@ renderGens();
 renderAll();
 document.getElementById("muteBtn").addEventListener("click", function () { state.muted = !state.muted; save(); renderHUD(); });
 document.getElementById("episodesBtn").addEventListener("click", openList);
+document.getElementById("stageBtn").addEventListener("click", function () { var t = stageTask(); if (t) openStage(t.ep); });
 document.getElementById("listClose").addEventListener("click", function () { document.getElementById("listOverlay").className = "overlay"; });
 document.getElementById("epClose").addEventListener("click", closeEpisode);
 save();
 if (!state.started) {
   state.started = true; save();
-  setTimeout(function () { if (state.epSeen === 0) showEpisode(0); }, 700);
+  setTimeout(function () { if (state.epSeen === 0) openEpisodeSmart(0); }, 700);
 }
 try {
   var day = new Date().toISOString().slice(0, 10);
