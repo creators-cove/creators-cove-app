@@ -25,6 +25,10 @@
   .boardwrap { position: relative; }
   .board { display: grid; gap: 3px; background: #21303a; padding: 3px; border-radius: 14px; box-shadow: 0 8px 24px rgba(31,64,84,.28); }
   .tile { aspect-ratio: 1/1; border-radius: 6px; cursor: pointer; background-repeat: no-repeat; }
+  /* ---------- Pixar-3D gloss pass: a real gallery frame (Kim's paintings untouched) ---------- */
+  .board { background: #3a2a18; padding: 10px; border: 4px solid #8a6420; border-radius: 10px; box-shadow: inset 0 0 0 3px #f4d98a, inset 0 0 0 6px #5d4213, 0 14px 32px rgba(31,64,84,.4); }
+  .pick img { border: 3px solid #8a6420; box-shadow: 0 3px 9px rgba(31,64,84,.35); }
+  .pick.on img { border-color: #f4a93b; box-shadow: 0 0 0 3px rgba(244,169,59,.5), 0 3px 9px rgba(31,64,84,.35); }
   .tile.sel { outline: 4px solid #ffd166; outline-offset: -4px; filter: brightness(1.12); }
   .tile.home { box-shadow: inset 0 0 0 2px rgba(255,255,255,.35); }
   .peek { position: absolute; inset: 3px; border-radius: 12px; background-size: cover; background-position: center; display: none; z-index: 5; }
