@@ -155,7 +155,10 @@
   .care-btn { font-size:1.05rem; padding:12px 16px; border-radius:14px; }
   .care-btn.done { opacity:.45; }
   .pick-row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:12px 0; }
-  .pick { font-size:2.6rem; background:#fff; border:3px solid #bcd9e4; border-radius:16px; padding:8px 14px; cursor:pointer; }
+  .pick { font-size:2.6rem; background:#fff; border:3px solid #bcd9e4; border-radius:16px; padding:6px; cursor:pointer; width:76px; height:76px; }
+  .pick img { width:100%; height:100%; object-fit:cover; border-radius:11px; display:block; }
+  #petFace img.petimg { width:1em; height:1em; object-fit:cover; border-radius:24%; display:block; box-shadow:0 4px 14px rgba(4,40,56,.3); }
+  .shell-btn img.shellimg { width:2.6rem; height:2.6rem; object-fit:cover; border-radius:12px; display:block; margin:0 auto; }
   .pick.sel { border-color:#ffc93c; background:#fff6d8; }
   input[type="text"] { padding:11px; border-radius:10px; border:2px solid #bcd9e4; font:inherit; }
   .card2 { background:#fff; border-radius:16px; padding:16px; margin:14px 0; box-shadow:0 4px 14px rgba(4,40,56,.12); }
@@ -232,12 +235,12 @@
 
   <script>
     var PETS = {
-      kitten: { emoji: "\uD83D\uDC31", label: "Kitten" },
-      puppy: { emoji: "\uD83D\uDC36", label: "Puppy" },
-      bunny: { emoji: "\uD83D\uDC30", label: "Bunny" },
-      chick: { emoji: "\uD83D\uDC25", label: "Chick" },
-      turtle: { emoji: "\uD83D\uDC22", label: "Turtle" },
-      moose: { emoji: "\uD83E\uDECE", label: "Christmas Moose" }
+      kitten: { emoji: "\uD83D\uDC31", label: "Kitten", img: "pets3d/kitten.jpg" },
+      puppy: { emoji: "\uD83D\uDC36", label: "Puppy", img: "pets3d/puppy.jpg" },
+      bunny: { emoji: "\uD83D\uDC30", label: "Bunny", img: "pets3d/bunny.jpg" },
+      chick: { emoji: "\uD83D\uDC25", label: "Chick", img: "pets3d/chick.jpg" },
+      turtle: { emoji: "\uD83D\uDC22", label: "Turtle", img: "pets3d/turtle.jpg" },
+      moose: { emoji: "\uD83E\uDECE", label: "Christmas Moose", img: "pets3d/moose.jpg" }
     };
     var STAGES = [
       { min: 0, name: "Baby", size: "4.2rem" },
@@ -297,12 +300,12 @@
       adopt.style.display = "none"; box.style.display = "block";
       var def = PETS[pet.type], st = stage();
       var face = document.getElementById("petFace");
-      face.textContent = def.emoji;
+      face.innerHTML = '<img class="petimg" src="' + def.img + '" alt="' + def.label + '">';
       face.style.fontSize = st.size;
       var wrap = document.getElementById("petWrap");
       wrap.style.fontSize = st.size;
       var hat = document.getElementById("accHat"), side = document.getElementById("accSide"), spark = document.getElementById("accSparkle");
-      hat.style.display = pet.type === "moose" ? "block" : "none";
+      hat.style.display = "none"; /* the 3D moose portrait already wears his Santa hat */
       var accEmoji = st.name === "Grown" || st.name === "Best Friend" ? "\uD83E\uDDE3" : st.name === "Young" ? "\uD83C\uDFA8" : "";
       side.textContent = accEmoji;
       side.style.display = accEmoji ? "block" : "none";
@@ -362,7 +365,7 @@
         var b = document.createElement("button");
         b.type = "button";
         b.className = "pick" + (k === chosen ? " sel" : "");
-        b.textContent = PETS[k].emoji;
+        b.innerHTML = '<img src="' + PETS[k].img + '" alt="' + PETS[k].label + '">';
         b.setAttribute("aria-label", PETS[k].label);
         b.addEventListener("click", function () { chosen = k; renderPicks(); });
         row.appendChild(b);
@@ -441,7 +444,7 @@
         var b = document.createElement("button");
         b.type = "button";
         b.className = "shell-btn shuffle";
-        b.innerHTML = "\uD83D\uDC1A<span class=\"under\"></span>";
+        b.innerHTML = '<img class="shellimg" src="pets3d/shell.jpg" alt="shell"><span class="under"></span>';
         b.setAttribute("aria-label", "Shell " + (i + 1));
         (function (idx, btn) { btn.addEventListener("click", function () { pickShell(idx); }); })(i, b);
         row.appendChild(b);
