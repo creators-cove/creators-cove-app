@@ -719,7 +719,8 @@ function renderHUD() {
   } else {
     var cur = EPISODES[unlocked - 1] ? EPISODES[unlocked - 1].at : 0;
     var next = EPISODES[unlocked];
-    label.textContent = "🎭 " + state.epSeen + " of " + EPISODES.length + " episodes · next at ⭐" + next.at;
+    var left = next.at - (state.totalStars || 0);
+    label.textContent = "🎭 " + left + " ⭐ to Episode " + (unlocked + 1) + " · unlocks at ⭐" + next.at;
     fill.style.width = Math.round(100 * ((state.totalStars || 0) - cur) / (next.at - cur)) + "%";
   }
   document.getElementById("muteBtn").textContent = state.muted ? "🔇" : "🔊";
