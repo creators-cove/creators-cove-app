@@ -26,6 +26,9 @@
   .present.plain { filter: saturate(.3) brightness(1.18); }
   .present.bounce { transform: scale(1.18) rotate(-4deg); }
   .present.done { transform: translateY(-46px) scale(.55) rotate(8deg); opacity: 0; }
+  /* ---------- Pixar-3D gloss pass ---------- */
+  .present img.giftimg { width: 62px; height: 62px; object-fit: cover; border-radius: 10px; display: block; box-shadow: 0 4px 9px rgba(0,0,0,.35); }
+  .pile .icons img.pileimg { width: 22px; height: 22px; object-fit: cover; border-radius: 5px; margin-right: 2px; vertical-align: middle; }
   .spark { position: absolute; font-size: 18px; z-index: 6; pointer-events: none; animation: sparkfly .5s ease-out forwards; }
   @keyframes sparkfly { from { transform: translate(0, 0) scale(1); opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; } }
   #sprocket { position: absolute; left: 10px; bottom: 6px; height: 66px; z-index: 5; filter: drop-shadow(0 4px 4px rgba(0,0,0,.3)); }
@@ -90,6 +93,8 @@
 <script>
 "use strict";
 var TOYS = ["🧸", "🚀", "🪁", "🧩", "📚", "🎨", "🪀", "🚂", "🎺", "⚽"];
+var GIFT_COLORS = ["red", "teal", "purple"];
+function giftImg(stage, v) { return '<img class="giftimg" src="giftwrap3d/' + (stage === 0 ? "box" : (stage === 1 ? "paper-" : "bow-") + v) + '.jpg" alt="">'; }
 var station = document.getElementById("station");
 var scoreNo = document.getElementById("scoreNo");
 var streakNo = document.getElementById("streakNo");
@@ -168,11 +173,12 @@ function spawnPresent() {
   el.className = "present";
   el.setAttribute("role", "button");
   var toy = TOYS[Math.floor(Math.random() * TOYS.length)];
-  el.innerHTML = "📦<span class=\"badge\">" + toy + "</span>";
+  var v = GIFT_COLORS[Math.floor(Math.random() * GIFT_COLORS.length)];
+  el.innerHTML = giftImg(0, v) + "<span class=\"badge\">" + toy + "</span>";
   el.style.bottom = "118px";
   el.style.left = "-70px";
   station.appendChild(el);
-  var p = { el: el, x: -70, stage: 0, toy: toy, dead: false };
+  var p = { el: el, x: -70, stage: 0, toy: toy, v: v, dead: false };
   el.addEventListener("click", function () { tapPresent(p); });
   state.presents.push(p);
 }
@@ -194,6 +200,7 @@ function sparks(x, y) {
 function finishPresent(p) {
   if (p.dead) return;
   p.dead = true;
+  p.el.innerHTML = giftImg(2, p.v);
   p.el.classList.add("done");
   sparks(p.x + 30, 118);
   setTimeout(function () { p.el.remove(); }, 320);
@@ -204,8 +211,8 @@ function finishPresent(p) {
     state.score += 25;
     toast("🔥 " + state.streak + " in a row! +25 bonus");
   }
-  pileIcons.textContent += "🎁";
-  if (pileIcons.textContent.length > 24) pileIcons.textContent = pileIcons.textContent.slice(-24);
+  pileIcons.innerHTML += '<img class="pileimg" src="giftwrap3d/bow-' + p.v + '.jpg" alt="">';
+  while (pileIcons.children.length > 12) pileIcons.removeChild(pileIcons.firstChild);
   Sfx.chime();
   paintHud();
 }
@@ -214,8 +221,8 @@ function tapPresent(p) {
   if (!state.playing || p.dead) return;
   if (p.stage === 0) {
     p.stage = 1;
-    p.el.innerHTML = "🎁";
-    p.el.classList.add("plain", "bounce");
+    p.el.innerHTML = giftImg(1, p.v);
+    p.el.classList.add("bounce");
     setTimeout(function () { p.el.classList.remove("bounce"); }, 130);
     Sfx.pop();
   } else {
@@ -257,7 +264,7 @@ function sprocketAct() {
     }
     if (target) {
       target.stage = 1;
-      target.el.innerHTML = "🎁";
+      target.el.innerHTML = giftImg(2, target.v);
       target.el.classList.remove("plain");
       finishPresent(target);
       sprocketSay("Sprocket wrapped one for you!");
