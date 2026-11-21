@@ -214,7 +214,7 @@ function setScene(name) {
   document.getElementById("tabStreet").classList.toggle("active", street);
   document.getElementById("tabLot").classList.toggle("active", lot);
   document.getElementById("tabBoard").classList.toggle("active", board);
-  document.getElementById("dirTitle").textContent = lot ? "🏡 Your Lots — tap a chip up top to switch lots, ＋ to build; tap your things to put them away" : "📍 Around Town — tap a place, or tap the girls in the picture";
+  document.getElementById("dirTitle").textContent = lot ? "🏡 Your Lots — tap a chip up top to switch lots; drag your things wherever you want them" : "📍 Around Town — tap a place, or tap the girls in the picture";
   if (street) document.getElementById("dusk").style.display = "none"; else applyDusk();
   if (!townNameSet) document.getElementById("townSub").textContent = SUBS[name];
   document.querySelectorAll(".sprite").forEach(function (el) { el.style.display = lot ? "none" : "block"; });
@@ -225,7 +225,7 @@ function setScene(name) {
       el.style.left = p[0] + "%"; el.style.bottom = p[1] + "%"; el.style.height = p[2] + "%";
     });
   }
-  if (typeof movingSpot !== "undefined") movingSpot = null;
+  if (typeof cancelMoveSilent === "function") cancelMoveSilent();
   document.getElementById("bubble").style.display = "none";
   document.getElementById("card").style.display = "none";
   if (typeof closePanels === "function") closePanels();
@@ -352,6 +352,10 @@ document.addEventListener("visibilitychange", function () {
   .lotrow { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 9; max-width: 96%; }
   .lotchip { background: rgba(23,56,74,.88); color: #fff8ec; border: 1px solid #2c85a8; border-radius: 999px; padding: 7px 12px; font-size: .82rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
   .lotchip.cur { background: #ffd98a; color: #17384a; border-color: #ffd98a; font-weight: bold; }
+  .lockband { position: absolute; left: 0; right: 0; top: 0; bottom: 45%; background: rgba(11,61,84,.20); border-bottom: 2px dashed rgba(255,217,138,.9); z-index: 4; display: flex; align-items: flex-start; justify-content: center; padding-top: 54px; }
+  .lothint { position: absolute; left: 50%; top: 46%; transform: translateX(-50%); background: rgba(23,56,74,.88); color: #fff8ec; border: 1px dashed #ffd98a; border-radius: 12px; padding: 10px 14px; font-size: .88rem; z-index: 6; text-align: center; max-width: 84%; }
+  .moverow { position: absolute; top: 54px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; }
+  .moverow .movechip { position: static; transform: none; }
   @media (prefers-reduced-motion: reduce) { .huntitem { animation: none; } #wheel { transition: none; } }
 </style>
 
@@ -372,7 +376,7 @@ document.addEventListener("visibilitychange", function () {
 <div id="itemMenu" class="panel"><div class="inner">
   <h2 id="itemMenuTitle"></h2>
   <p id="itemMenuText"></p>
-  <button class="closebtn alt" id="moveBtn">🔀 Move it</button>
+  <button class="closebtn alt" id="moveBtn">🔀 Drag it somewhere else</button>
   <button class="closebtn" id="putAwayBtn">↩️ Put it away</button>
   <button class="closebtn" id="itemMenuClose">Keep it there</button>
 </div></div>
@@ -487,7 +491,6 @@ var SPOTS = {
   front2: { left: 30, bottom: 17, w: 14, sizes: ["small", "any"] }
 };
 var ACRE_PRICE = 7500;
-var movingSpot = null;
 function fits(itemId, spot) {
   var size = ITEMS[itemId].size;
   if (spot.sizes.indexOf(size) >= 0) return true;
@@ -507,6 +510,7 @@ try {
 } catch (e) {}
 migrateTown();
 normLots();
+normFree();
 try { localStorage.setItem(TOWN_KEY, JSON.stringify(town)); } catch (e) {}
 
 function migrateTown() {
@@ -529,9 +533,23 @@ function normLots() {
   if (!town.placed2) town.placed2 = {};
   if (!town.placed3) town.placed3 = {};
 }
+var WIDTHS = { big: 24, med: 16, small: 11, any: 15 };
+var ACRE_LINE = 45;
+function normFree() {
+  if (town.free && typeof town.free === "object") { [1, 2, 3].forEach(function (n) { if (!Array.isArray(town.free[n])) town.free[n] = []; }); return; }
+  town.free = { 1: [], 2: [], 3: [] };
+  var src = { 1: town.placedAll || {}, 2: town.placed2 || {}, 3: town.placed3 || {} };
+  [1, 2, 3].forEach(function (n) {
+    Object.keys(src[n]).forEach(function (spotId) {
+      var sp = SPOTS[spotId], id = src[n][spotId];
+      if (sp && ITEMS[id]) town.free[n].push({ i: id, x: sp.left, y: sp.bottom });
+    });
+  });
+}
+function curFree() { normFree(); return town.free[town.curLot]; }
 function curMap() { return town.curLot === 2 ? town.placed2 : town.curLot === 3 ? town.placed3 : (town.placedAll || {}); }
 function allMaps() { return [town.placedAll || {}, town.placed2 || {}, town.placed3 || {}]; }
-function totalPlaced() { var n = 0; allMaps().forEach(function (m) { n += Object.keys(m).length; }); return n; }
+function totalPlaced() { normFree(); var n = 0; [1, 2, 3].forEach(function (k) { n += town.free[k].length; }); return n; }
 var buyLotN = null;
 function openLotBuy(n) {
   buyLotN = n;
@@ -588,7 +606,7 @@ window.addEventListener("pagehide", function () {
     if (!r) return;
     try {
       var t = JSON.parse(r);
-      if (t && typeof t === "object") { town = Object.assign({ avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false, fun: null, lots: 1, curLot: 1, placed2: {}, placed3: {} }, t); town.veteran = true; migrateTown(); normLots(); localStorage.setItem(TOWN_KEY, JSON.stringify(town)); renderLot(); paintLadder(); setScene("town"); }
+      if (t && typeof t === "object") { town = Object.assign({ avatar: null, inv: {}, placed: {}, placedB: {}, placedAll: {}, expanded: false, fun: null, lots: 1, curLot: 1, placed2: {}, placed3: {} }, t); town.veteran = true; migrateTown(); normLots(); normFree(); localStorage.setItem(TOWN_KEY, JSON.stringify(town)); renderLot(); paintLadder(); setScene("town"); }
     } catch (e) {}
   }).catch(function () {});
 })();
@@ -641,49 +659,109 @@ function openPanel(id) {
 }
 
 function placedCount(itemId) {
+  normFree();
   var n = 0;
-  allMaps().forEach(function (m) { Object.keys(m).forEach(function (s) { if (m[s] === itemId) n++; }); });
+  [1, 2, 3].forEach(function (k) { town.free[k].forEach(function (e) { if (e.i === itemId) n++; }); });
   return n;
 }
 function available(itemId) { return (town.inv[itemId] || 0) - placedCount(itemId); }
 
+var moveIdx = null, moveOrig = null, moveIsNew = false, dragState = null;
+function enterMove(idx, isNew, msg) {
+  moveIdx = idx; moveIsNew = !!isNew;
+  var e = curFree()[idx];
+  if (!e) { moveIdx = null; return; }
+  moveOrig = { x: e.x, y: e.y };
+  closePanels();
+  renderLot();
+  toast(msg || ("Drag your " + ITEMS[e.i].name + " where you want it, then tap ✓ Done."));
+}
+function exitMove(commit) {
+  if (moveIdx == null) return;
+  var arr = curFree();
+  if (!commit) {
+    if (moveIsNew) arr.splice(moveIdx, 1);
+    else if (arr[moveIdx] && moveOrig) { arr[moveIdx].x = moveOrig.x; arr[moveIdx].y = moveOrig.y; }
+    toast(moveIsNew ? "Back in the shed — place it again anytime." : "Move cancelled.");
+  } else {
+    toast("✓ Right where you want it.");
+  }
+  moveIdx = null; moveOrig = null; moveIsNew = false; dragState = null;
+  saveTown(); renderLot();
+}
+function cancelMoveSilent() {
+  if (moveIdx == null) return;
+  var arr = curFree();
+  if (moveIsNew) arr.splice(moveIdx, 1);
+  else if (arr[moveIdx] && moveOrig) { arr[moveIdx].x = moveOrig.x; arr[moveIdx].y = moveOrig.y; }
+  moveIdx = null; moveOrig = null; moveIsNew = false; dragState = null;
+}
+function attachDrag(img, idx) {
+  img.style.touchAction = "none";
+  img.addEventListener("pointerdown", function (ev) {
+    ev.preventDefault();
+    var entry = curFree()[idx];
+    if (!entry) return;
+    var scene = document.getElementById("scene").getBoundingClientRect();
+    dragState = { dx: (ev.clientX - scene.left) / scene.width * 100 - entry.x, dy: (scene.bottom - ev.clientY) / scene.height * 100 - entry.y };
+    try { img.setPointerCapture(ev.pointerId); } catch (e) {}
+  });
+  img.addEventListener("pointermove", function (ev) {
+    if (!dragState) return;
+    var entry = curFree()[idx];
+    if (!entry) return;
+    var scene = document.getElementById("scene").getBoundingClientRect();
+    var w = WIDTHS[ITEMS[entry.i].size] || 15;
+    var nx = (ev.clientX - scene.left) / scene.width * 100 - dragState.dx;
+    var ny = (scene.bottom - ev.clientY) / scene.height * 100 - dragState.dy;
+    entry.x = Math.max(0, Math.min(100 - w, nx));
+    entry.y = Math.max(0, Math.min(88, ny));
+    if (town.curLot === 1 && !town.expanded) entry.y = Math.min(entry.y, ACRE_LINE);
+    img.style.left = entry.x + "%"; img.style.bottom = entry.y + "%";
+    img.style.zIndex = Math.round(100 - entry.y);
+  });
+  img.addEventListener("pointerup", function () { dragState = null; });
+  img.addEventListener("pointercancel", function () { dragState = null; });
+}
+
 function renderLot() {
   normLots();
+  normFree();
   document.getElementById("bgLot").src = "village2/" + LOT_DEFS[town.curLot - 1].img;
   document.getElementById("lotBalance").textContent = "🐚 " + shells().toLocaleString();
   var layer = document.getElementById("lotLayer");
   layer.innerHTML = "";
-  var order = Object.keys(SPOTS).sort(function (a, b) { return SPOTS[b].bottom - SPOTS[a].bottom; });
-  order.forEach(function (spotId) {
-    var spot = SPOTS[spotId], itemId = curMap()[spotId];
-    if (itemId && ITEMS[itemId]) {
-      var img = document.createElement("img");
-      img.src = "village2/" + ITEMS[itemId].img;
-      img.alt = ITEMS[itemId].name;
-      img.className = "placeditem";
-      img.style.left = spot.left + "%"; img.style.bottom = spot.bottom + "%"; img.style.width = spot.w + "%";
-      if (movingSpot === spotId) img.className += " moving";
-      img.addEventListener("click", function () {
-        startMusic();
-        if (movingSpot) { var was = movingSpot; movingSpot = null; if (was !== spotId) { openItemMenu(spotId); } renderLot(); if (was === spotId) toast("Move cancelled."); return; }
-        openItemMenu(spotId);
-      });
-      layer.appendChild(img);
-    } else if (spot.acre && !town.expanded && town.curLot === 1) {
-      var lock = document.createElement("button");
-      lock.className = "spotmark"; lock.textContent = "🔒"; lock.setAttribute("aria-label", "Open the back half of the property");
-      lock.style.left = (spot.left + spot.w / 2) + "%"; lock.style.bottom = (spot.bottom + 2) + "%";
-      lock.addEventListener("click", function () { startMusic(); if (movingSpot) { toast("That half is still locked — finish your move first."); return; } tryUnlock(); });
-      layer.appendChild(lock);
-    } else {
-      var b = document.createElement("button");
-      b.className = "spotmark" + (movingSpot && fits(curMap()[movingSpot], spot) ? " target" : "");
-      b.textContent = "＋"; b.setAttribute("aria-label", "Build on this spot");
-      b.style.left = (spot.left + spot.w / 2) + "%"; b.style.bottom = (spot.bottom + 2) + "%";
-      b.addEventListener("click", function () { startMusic(); if (movingSpot) attemptMove(spotId); else openCatalog(spotId); });
-      layer.appendChild(b);
-    }
+  var arr = curFree();
+  if (town.curLot === 1 && !town.expanded) {
+    var band = document.createElement("div");
+    band.className = "lockband";
+    var lk = document.createElement("button");
+    lk.className = "lotchip";
+    lk.textContent = "🔒 The back half · 🐚 " + ACRE_PRICE.toLocaleString() + " to open";
+    lk.addEventListener("click", function () { startMusic(); if (moveIdx != null) { toast("Finish your move first."); return; } tryUnlock(); });
+    band.appendChild(lk);
+    layer.appendChild(band);
+  }
+  arr.forEach(function (entry, idx) {
+    var it = ITEMS[entry.i];
+    if (!it) return;
+    var img = document.createElement("img");
+    img.src = "village2/" + it.img;
+    img.alt = it.name;
+    img.className = "placeditem" + (moveIdx === idx ? " moving" : "");
+    img.style.left = entry.x + "%"; img.style.bottom = entry.y + "%";
+    img.style.width = (WIDTHS[it.size] || 15) + "%";
+    img.style.zIndex = Math.round(100 - entry.y);
+    if (moveIdx === idx) attachDrag(img, idx);
+    else img.addEventListener("click", function () { startMusic(); openItemMenu(idx); });
+    layer.appendChild(img);
   });
+  if (!arr.length) {
+    var hint = document.createElement("div");
+    hint.className = "lothint";
+    hint.textContent = "Nothing here yet — tap 🛒 Build & Decorate below and put things wherever you like.";
+    layer.appendChild(hint);
+  }
   var lotRow = document.createElement("div");
   lotRow.className = "lotrow";
   LOT_DEFS.forEach(function (d) {
@@ -693,7 +771,7 @@ function renderLot() {
     lchip.textContent = owned ? (d.n === 1 ? "🏡 Lot 1" : d.n === 2 ? "🌴 Lot 2" : "🌼 Lot 3") : "🔒 " + (d.n === 2 ? "Lot 2" : "Lot 3") + " · 🐚 " + d.price.toLocaleString();
     lchip.addEventListener("click", function () {
       startMusic();
-      if (movingSpot) { toast("Finish your move first."); return; }
+      if (moveIdx != null) { toast("Finish your move first."); return; }
       if (d.n <= (town.lots || 1)) {
         if (town.curLot !== d.n) { town.curLot = d.n; saveTown(); renderLot(); toast("🏡 " + d.name + " — make it yours."); }
       } else openLotBuy(d.n);
@@ -701,12 +779,17 @@ function renderLot() {
     lotRow.appendChild(lchip);
   });
   layer.appendChild(lotRow);
-  if (movingSpot) {
-    var chip = document.createElement("button");
-    chip.className = "movechip"; chip.textContent = "✖ Cancel move";
-    chip.style.left = "50%"; chip.style.top = "54px";
-    chip.addEventListener("click", function () { movingSpot = null; renderLot(); toast("Move cancelled."); });
-    layer.appendChild(chip);
+  if (moveIdx != null) {
+    var mrow = document.createElement("div");
+    mrow.className = "moverow";
+    var done = document.createElement("button");
+    done.className = "movechip"; done.textContent = "✓ Done";
+    done.addEventListener("click", function () { exitMove(true); });
+    var canc = document.createElement("button");
+    canc.className = "movechip"; canc.textContent = "✖ Cancel";
+    canc.addEventListener("click", function () { exitMove(false); });
+    mrow.appendChild(done); mrow.appendChild(canc);
+    layer.appendChild(mrow);
   }
   if (town.avatar) {
     var av = document.createElement("img");
@@ -733,19 +816,15 @@ function tryUnlock() {
   if (newlyOpened(before)) toast("🔓 The whole property is yours — and ✨ Town Features are unlocked!");
   else toast("🔓 The whole property is yours — the back half is open!");
 }
-var placingSpot = null;
-function openCatalog(spotId) {
-  placingSpot = spotId;
-  var spot = SPOTS[spotId], bal = shells();
+function openCatalog() {
+  var bal = shells();
   document.getElementById("catalogTitle").textContent = "🛒 Build & Decorate";
-  document.getElementById("catalogHint").innerHTML = "Your farm shells: <b>🐚 " + bal.toLocaleString() + "</b>" + (farmState() ? "" : " — start a farm to earn shells for your lot.");
+  document.getElementById("catalogHint").innerHTML = "Your farm shells: <b>🐚 " + bal.toLocaleString() + "</b>" + (farmState() ? "" : " — start a farm to earn shells for your lot.") + "<br>Pick something, then drag it wherever you want it.";
   var grid = document.getElementById("catalogGrid");
   grid.innerHTML = "";
   Object.keys(ITEMS).forEach(function (id) {
     var it = ITEMS[id];
     if (it.myst && available(id) <= 0) return;
-    if (spot.sizes.indexOf(it.size) < 0 && it.size !== "any") return;
-    if (it.size === "any" && spot.sizes.indexOf("any") < 0 && spot.sizes.indexOf("med") < 0 && spot.sizes.indexOf("small") < 0) return;
     var card = document.createElement("div");
     card.className = "shopcard";
     var avail = available(id);
@@ -757,51 +836,42 @@ function openCatalog(spotId) {
       '<div class="nm">' + it.emoji + " " + it.name + "</div>" +
       '<div class="pr">' + (avail > 0 ? "In your shed" : "🐚 " + it.price.toLocaleString()) + "</div>" + btn;
     var b = card.querySelector("button");
-    if (b && !b.disabled) b.addEventListener("click", function () { placeItem(spotId, id); });
+    if (b && !b.disabled) b.addEventListener("click", function () { placeItem(id); });
     grid.appendChild(card);
   });
-  if (!grid.children.length) document.getElementById("catalogHint").textContent = "Nothing fits this spot yet.";
   openPanel("catalog");
 }
-function placeItem(spotId, id) {
+function placeItem(id) {
   var before = ladderSig();
   if (available(id) > 0) { /* already owned */ }
   else if (!spendShells(ITEMS[id].price)) { toast("Not enough shells — your farm has 🐚 " + shells().toLocaleString()); return; }
   else town.inv[id] = (town.inv[id] || 0) + 1;
-  curMap()[spotId] = id;
-  saveTown(); renderLot(); closePanels();
+  var arr = curFree();
+  arr.push({ i: id, x: 40, y: 24 });
+  saveTown();
   var opened = newlyOpened(before);
-  if (opened) toast("🎉 You opened " + opened + "! Look up top.");
-  else toast(ITEMS[id].emoji + " " + ITEMS[id].name + " placed. Looking good.");
+  enterMove(arr.length - 1, true, opened
+    ? ("🎉 You opened " + opened + "! Now drag your " + ITEMS[id].name + " where you want it, then tap ✓ Done.")
+    : ("Drag your " + ITEMS[id].name + " where you want it, then tap ✓ Done."));
 }
 
-function attemptMove(spotId) {
-  var itemId = curMap()[movingSpot];
-  if (!itemId) { movingSpot = null; renderLot(); return; }
-  if (!fits(itemId, SPOTS[spotId])) { toast("Too big for that spot — try a glowing one."); return; }
-  curMap()[spotId] = itemId;
-  delete curMap()[movingSpot];
-  movingSpot = null;
-  saveTown(); renderLot();
-  toast("🔀 Moved your " + ITEMS[itemId].name + ".");
-}
-var menuSpot = null;
-function openItemMenu(spotId) {
-  menuSpot = spotId;
-  var it = ITEMS[curMap()[spotId]];
+var menuIdx = null;
+function openItemMenu(idx) {
+  menuIdx = idx;
+  var entry = curFree()[idx];
+  if (!entry) return;
+  var it = ITEMS[entry.i];
   if (!it) return;
   document.getElementById("itemMenuTitle").textContent = it.emoji + " " + it.name;
   document.getElementById("itemMenuText").textContent = it.blurb;
   openPanel("itemMenu");
 }
 document.getElementById("moveBtn").addEventListener("click", function () {
-  if (!menuSpot) return;
-  movingSpot = menuSpot;
-  closePanels(); renderLot();
-  toast("Tap a glowing spot to move your " + ITEMS[curMap()[movingSpot]].name + " there.");
+  if (menuIdx == null) return;
+  enterMove(menuIdx, false);
 });
 document.getElementById("putAwayBtn").addEventListener("click", function () {
-  if (menuSpot) { delete curMap()[menuSpot]; saveTown(); renderLot(); }
+  if (menuIdx != null) { curFree().splice(menuIdx, 1); menuIdx = null; saveTown(); renderLot(); }
   closePanels(); toast("Back in the shed — place it again anytime.");
 });
 document.getElementById("itemMenuClose").addEventListener("click", closePanels);
@@ -827,17 +897,18 @@ function openPicker() {
 document.getElementById("pickAvatarBtn").addEventListener("click", function () { startMusic(); openPicker(); });
 document.getElementById("lotHintBtn").addEventListener("click", function () {
   startMusic();
-  document.getElementById("scene").scrollIntoView({ behavior: "smooth" });
-  toast("Tap a ＋ spot on your lot to build there.");
+  if (moveIdx != null) { toast("Finish your move first."); return; }
+  openCatalog();
 });
 function ladderState() {
+  normFree();
   var placed = totalPlaced();
-  var hasBuilding = allMaps().some(function (m) { return Object.keys(m).some(function (sp) { return m[sp] === "cottage" || m[sp] === "shop"; }); });
+  var hasBuilding = [1, 2, 3].some(function (k) { return town.free[k].some(function (e) { return e.i === "cottage" || e.i === "shop"; }); });
   return { placed: placed, rungs: [
     { key: "town", icon: "🏘️", name: "Town Square", need: "Place 3 things on your lot", prog: Math.min(placed, 3), goal: 3, done: placed >= 3 },
     { key: "street", icon: "🌅", name: "Main Street", need: "Place a cottage or a craft shop on your lot", prog: hasBuilding ? 1 : 0, goal: 1, done: hasBuilding },
     { key: "features", icon: "✨", name: "Town Features", need: "Open the Back Acre", prog: town.expanded ? 1 : 0, goal: 1, done: !!town.expanded, note: "The Treasure Hunt, Lucky Lighthouse and Mystery Shop — tap 🎁 Town Fun up top." },
-    { key: "board", icon: "🎡", name: "The Boardwalk", need: "Fill 8 spots on your property", prog: Math.min(placed, 8), goal: 8, done: placed >= 8 }
+    { key: "board", icon: "🎡", name: "The Boardwalk", need: "Place 8 things across your lots", prog: Math.min(placed, 8), goal: 8, done: placed >= 8 }
   ]};
 }
 function sceneUnlocked(name) {
