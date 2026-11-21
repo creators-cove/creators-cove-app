@@ -59,6 +59,7 @@
   <button id="tabTown" class="active">🏘️ Town Square</button>
   <button id="tabStreet">🌅 Main Street</button>
   <button id="tabLot">🏡 My Lot</button>
+  <button id="tabLane">🔒 Neighbor Lane</button>
   <button id="tabBoard">🎡 The Boardwalk</button>
 </div>
 <div id="ladderStrip"><button id="ladderBtn">🪜 Town Ladder</button><button id="funBtn">🎁 Town Fun</button></div>
@@ -67,6 +68,7 @@
   <img class="town" id="bgStreet" src="village2/street.jpg" alt="Main Street at sunset: the Salty Canvas storefront, a signpost, and the lighthouse over the sea" style="display:none">
   <img class="town" id="bgLot" src="village2/lotfull.jpg" alt="Your whole beach property in one picture: two building pads, a hill, a lily pond, a garden patch and the beach" style="display:none">
   <img class="town" id="bgBoard" src="village2/boardwalk.jpg" alt="The boardwalk: a wooden pier over the sea with string lights, a little shuttered stand and a ferris wheel in the distance" style="display:none">
+  <img class="town" id="bgLane" src="village2/lane.jpg" alt="Neighbor Lane: a cobblestone lane between beach cottages with mailboxes and bunting, running down to the sea" style="display:none">
   <div id="dusk"></div>
   <div class="zones" id="zonesTown">
   <button class="zone" style="left:3%;top:5%;width:23%;height:29%" data-place="canvas" aria-label="The Salty Canvas"></button>
@@ -91,6 +93,7 @@
   <button class="zone" style="left:38%;top:62%;width:30%;height:30%" data-place="railing" aria-label="The railing"></button>
   </div>
   <div id="lotLayer" style="display:none; position:absolute; inset:0;"></div>
+  <div id="laneLayer" style="display:none; position:absolute; inset:0;"></div>
   <div id="huntLayer"></div>
   <img class="sprite" id="sp-kim" src="village2/kim.png" alt="Kim" style="left:6%;bottom:27%;height:32%;animation-delay:.1s">
   <img class="sprite" id="sp-trish" src="village2/trish.png" alt="Trish" style="left:32%;bottom:28%;height:31%;animation-delay:.7s">
@@ -132,12 +135,14 @@
   <div class="row" id="lotRow" style="display:none"></div>
   <div class="row" id="moveBar" style="display:none"><button class="movechip" id="moveDone">✓ Done</button><button class="movechip" id="moveCancel">✖ Cancel</button></div>
   <div class="row" id="acreRow" style="display:none"><button id="acreBtn">🔓 Open the back half · 🐚 7,500</button></div>
+  <div class="row" id="dirVisit" style="display:none"><span id="visitTitle" style="font-weight:bold"></span><button id="giftBtn">🎁 Leave a gift</button><button id="exitVisitBtn">🏠 Back to my lot</button></div>
   <div class="row" id="dirBoard" style="display:none">
     <button data-place="pier">🎣 The Fishing Pier</button>
     <button data-place="stand">🍦 The Ice Cream Stand</button>
     <button data-place="wheel">🎡 The Ferris Wheel</button>
     <button data-place="railing">🌊 The Railing</button>
   </div>
+  <div id="dirLane" style="display:none"><div id="laneDirInner"></div></div>
 </div>
 
 <footer>Village 2 shares your farm's name and code — your neighbors here are your farm neighbors.<br>The town tune is the same soft one from the farm. First tap starts the music.</footer>
@@ -195,34 +200,40 @@ var SUBS = {
   town: "The crew's new neighborhood by the sea",
   street: "Main Street at sunset",
   lot: "Your own little piece of the Cove",
-  board: "The Boardwalk — sea air and string lights"
+  board: "The Boardwalk — sea air and string lights",
+  lane: "Neighbor Lane — your neighbors live here"
 };
 var townNameSet = !!document.getElementById("townSub").textContent.match(/COVE-/);
 function setScene(name) {
-  var street = name === "street", lot = name === "lot", board = name === "board", townS = name === "town";
+  var street = name === "street", lot = name === "lot", board = name === "board", townS = name === "town", lane = name === "lane";
   document.getElementById("scene").classList.toggle("street", street);
   document.getElementById("bgTown").style.display = townS ? "block" : "none";
   document.getElementById("bgStreet").style.display = street ? "block" : "none";
   document.getElementById("bgLot").style.display = lot ? "block" : "none";
   document.getElementById("bgBoard").style.display = board ? "block" : "none";
+  document.getElementById("bgLane").style.display = lane ? "block" : "none";
   document.getElementById("zonesTown").style.display = townS ? "block" : "none";
   document.getElementById("zonesStreet").style.display = street ? "block" : "none";
   document.getElementById("zonesBoard").style.display = board ? "block" : "none";
   document.getElementById("lotLayer").style.display = lot ? "block" : "none";
+  document.getElementById("laneLayer").style.display = lane ? "block" : "none";
   document.getElementById("dirTown").style.display = townS ? "flex" : "none";
   document.getElementById("dirStreet").style.display = street ? "flex" : "none";
   document.getElementById("dirLot").style.display = lot ? "flex" : "none";
   if (typeof paintLotChrome === "function") paintLotChrome(lot);
   document.getElementById("dirBoard").style.display = board ? "flex" : "none";
+  document.getElementById("dirLane").style.display = lane ? "block" : "none";
   document.getElementById("tabTown").classList.toggle("active", townS);
   document.getElementById("tabStreet").classList.toggle("active", street);
   document.getElementById("tabLot").classList.toggle("active", lot);
   document.getElementById("tabBoard").classList.toggle("active", board);
-  document.getElementById("dirTitle").textContent = lot ? "🏡 Your Lots — tap a chip up top to switch lots; drag your things wherever you want them" : "📍 Around Town — tap a place, or tap the girls in the picture";
+  document.getElementById("tabLane").classList.toggle("active", lane);
+  document.getElementById("dirTitle").textContent = lot ? "🏡 Your Lots — tap a chip below the picture to switch lots; drag your things wherever you want them" : "📍 Around Town — tap a place, or tap the girls in the picture";
+  if (lane) document.getElementById("dirTitle").textContent = "🛤️ Neighbor Lane — tap a neighbor in the picture to visit their lots";
   if (street) document.getElementById("dusk").style.display = "none"; else applyDusk();
   if (!townNameSet) document.getElementById("townSub").textContent = SUBS[name];
-  document.querySelectorAll(".sprite").forEach(function (el) { el.style.display = lot ? "none" : "block"; });
-  if (!lot) {
+  document.querySelectorAll(".sprite").forEach(function (el) { el.style.display = (lot || lane) ? "none" : "block"; });
+  if (!lot && !lane) {
     var pos = POS[name];
     Object.keys(pos).forEach(function (who) {
       var el = document.getElementById("sp-" + who), p = pos[who];
@@ -234,12 +245,14 @@ function setScene(name) {
   document.getElementById("card").style.display = "none";
   if (typeof closePanels === "function") closePanels();
   if (lot && typeof renderLot === "function") renderLot();
+  if (lane && typeof renderLane === "function") renderLane();
   if (typeof onScene === "function") onScene(name);
 }
 document.getElementById("tabTown").addEventListener("click", function () { if (!sceneUnlocked("town")) { lockedTap("town"); return; } setScene("town"); });
 document.getElementById("tabStreet").addEventListener("click", function () { startMusic(); if (!sceneUnlocked("street")) { lockedTap("street"); return; } setScene("street"); });
 document.getElementById("tabLot").addEventListener("click", function () { startMusic(); setScene("lot"); });
 document.getElementById("tabBoard").addEventListener("click", function () { startMusic(); if (!sceneUnlocked("board")) { lockedTap("board"); return; } setScene("board"); });
+document.getElementById("tabLane").addEventListener("click", function () { startMusic(); if (typeof neighborCount === "function" && neighborCount() >= 3) setScene("lane"); else if (typeof openLanePanel === "function") openLanePanel(); });
 
 function showPlace(key) {
   var p = PLACES[key]; if (!p) return;
@@ -356,6 +369,15 @@ document.addEventListener("visibilitychange", function () {
   .bigbtn:disabled { background: #b9c4c7; color: #fff8ec; cursor: default; }
   #moveBar .movechip { position: static; transform: none; }
   #acreBtn { background: linear-gradient(180deg, #ffdf8e, #f4b942); color: #4a2f00; font-weight: bold; }
+  .lanefig { position: absolute; cursor: pointer; z-index: 5; filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
+  .lanename { position: absolute; transform: translateX(-50%); background: rgba(23,56,74,.88); color: #fff8ec; font-size: .7rem; padding: 2px 9px; border-radius: 999px; white-space: nowrap; z-index: 6; cursor: pointer; }
+  .panel input[type="text"] { font: inherit; padding: 9px 12px; border-radius: 10px; border: 2px solid #bcd9e4; width: 170px; text-transform: uppercase; }
+  #dirLane input[type="text"] { font: inherit; padding: 7px 10px; border-radius: 10px; border: 2px solid #bcd9e4; width: 150px; text-transform: uppercase; }
+  .nbcard { background: #fff8ec; border: 2px solid #e5d9bd; border-radius: 12px; padding: 8px 10px; margin: 6px 0; display: flex; align-items: center; gap: 8px; }
+  .nbcard img { height: 44px; }
+  .nbcard .grow { flex: 1; text-align: left; }
+  .chalbar { height: 12px; background: #dcebf0; border-radius: 999px; overflow: hidden; }
+  .chalbar > div { height: 100%; background: linear-gradient(90deg, #ffd98a, #f4b942); transition: width .6s; }
   .lotchip { background: rgba(23,56,74,.88); color: #fff8ec; border: 1px solid #2c85a8; border-radius: 999px; padding: 7px 12px; font-size: .82rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
   .lotchip.cur { background: #ffd98a; color: #17384a; border-color: #ffd98a; font-weight: bold; }
   .lockband { position: absolute; left: 0; right: 0; top: 0; bottom: 45%; background: rgba(11,61,84,.16); border-bottom: 2px dashed rgba(255,217,138,.9); z-index: 4; pointer-events: none; }
@@ -427,6 +449,21 @@ document.addEventListener("visibilitychange", function () {
   <p id="lotBuyText"></p>
   <button class="closebtn alt" id="lotBuyBtn"></button>
   <button class="closebtn" id="lotBuyClose">Not yet</button>
+</div></div>
+
+<div id="lanePanel" class="panel"><div class="inner">
+  <h2>🛤️ Neighbor Lane</h2>
+  <p id="laneLockText"></p>
+  <p>Ask in the group for farm codes — everybody's sharing theirs. Add three neighbors and the Lane opens: their lots, gifts, and town challenges together.</p>
+  <div class="btnrow"><input id="laneAddCode" type="text" placeholder="COVE-XXXXXX" maxlength="11"><button class="closebtn alt" id="laneAddBtn">➕ Add neighbor</button></div>
+  <button class="closebtn" id="lanePanelClose">Close</button>
+</div></div>
+
+<div id="giftPanel" class="panel"><div class="inner">
+  <h2>🎁 Leave a gift</h2>
+  <p id="giftText"></p>
+  <div id="giftInner"></div>
+  <button class="closebtn" id="giftClose">Close</button>
 </div></div>
 
 <div id="toast"></div>
@@ -519,6 +556,9 @@ migrateTown();
 normLots();
 normFree();
 try { localStorage.setItem(TOWN_KEY, JSON.stringify(town)); } catch (e) {}
+paintLaneTab();
+fetchTownGifts();
+publishTown();
 
 function migrateTown() {
   if (!town.placedAll) town.placedAll = {};
@@ -593,6 +633,7 @@ function saveTown() {
   backupTimer = setTimeout(flushTownBackup, 2500);
 }
 function flushTownBackup() {
+  publishTown();
   var code = saveCode();
   if (!code || !townDirty) return;
   townDirty = false;
@@ -655,7 +696,7 @@ function toast(msg) {
   toastTimer = setTimeout(function () { t.style.display = "none"; }, 3200);
 }
 function closePanels() {
-  ["catalog", "picker", "itemMenu", "ladderPanel", "funPanel", "lotPanel"].forEach(function (id) { document.getElementById(id).style.display = "none"; });
+  ["catalog", "picker", "itemMenu", "ladderPanel", "funPanel", "lotPanel", "lanePanel", "giftPanel"].forEach(function (id) { document.getElementById(id).style.display = "none"; });
 }
 function openPanel(id) {
   closePanels();
@@ -733,12 +774,293 @@ function attachDrag(img, idx) {
 }
 
 function paintLotChrome(onLot) {
-  var show = onLot !== undefined ? onLot : (document.getElementById("dirLot").style.display !== "none");
+  var show = onLot !== undefined ? onLot : (typeof curSceneName !== "undefined" && curSceneName === "lot");
+  if (visitMode) {
+    document.getElementById("lotRow").style.display = show ? "flex" : "none";
+    document.getElementById("moveBar").style.display = "none";
+    document.getElementById("acreRow").style.display = "none";
+    document.getElementById("dirLot").style.display = "none";
+    document.getElementById("dirVisit").style.display = show ? "flex" : "none";
+    return;
+  }
+  document.getElementById("dirVisit").style.display = "none";
   document.getElementById("lotRow").style.display = show ? "flex" : "none";
   document.getElementById("moveBar").style.display = (show && moveIdx != null) ? "flex" : "none";
   document.getElementById("acreRow").style.display = (show && town.curLot === 1 && !town.expanded) ? "flex" : "none";
 }
+/* ---------- Neighbors: the shared farm neighbor list, town snapshots, visiting, gifts ---------- */
+var visitMode = null;
+var laneSnaps = {};
+var chalTotal = null;
+function myCode() { try { return localStorage.getItem("cove-farm-code") || ""; } catch (e) { return ""; } }
+function myName() { try { return localStorage.getItem("cove-farm-name") || "A Cove Neighbor"; } catch (e) { return "A Cove Neighbor"; } }
+function loadNB() { try { var v = JSON.parse(localStorage.getItem("cove-farm-neighbors") || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+function saveNB(list) { try { localStorage.setItem("cove-farm-neighbors", JSON.stringify(list.slice(0, 24))); } catch (e) {} }
+function neighborCount() { return loadNB().length; }
+function rememberNB(code, name) {
+  if (!code || code === myCode()) return;
+  var list = loadNB().filter(function (n) { return n.code !== code; });
+  list.unshift({ code: code, name: name || "A Cove Neighbor", last: Date.now() });
+  saveNB(list);
+}
+function normCode(raw) {
+  var r = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (r.indexOf("COVE") === 0) r = r.slice(4);
+  return r.length === 6 ? "COVE-" + r : "";
+}
+function paintLaneTab() {
+  var t = document.getElementById("tabLane");
+  if (t) t.textContent = neighborCount() >= 3 ? "🛤️ Neighbor Lane" : "🔒 Neighbor Lane";
+}
+function publishTown() {
+  var code = myCode();
+  if (!code || !apiReady()) return;
+  normFree();
+  var snap = { name: myName(), code: code, avatar: town.avatar, lots: town.lots || 1, expanded: !!town.expanded, free: town.free, ts: Date.now() };
+  api(["SET", "townpub:" + code, JSON.stringify(snap)]).catch(function () {});
+}
+function addNeighborFromInput(input) {
+  var code = normCode(input.value);
+  if (!code) { toast("Type a farm code first — like COVE-AB3F9K"); return; }
+  if (code === myCode()) { toast("That's your own code, silly 😄"); return; }
+  api(["GET", "farm:" + code]).then(function (r) {
+    var name = "";
+    if (r) { try { name = JSON.parse(r).name || ""; } catch (e) {} }
+    if (name) { finishAdd(code, name, input); return; }
+    api(["GET", "townpub:" + code]).then(function (r2) {
+      var n2 = "";
+      if (r2) { try { n2 = JSON.parse(r2).name || ""; } catch (e) {} }
+      if (!n2) { toast("Hmm — no Cove farm with that code yet. Check it and try again."); return; }
+      finishAdd(code, n2, input);
+    }).catch(function () { toast("Couldn't reach the shelf — try again in a moment."); });
+  }).catch(function () { toast("Couldn't reach the shelf — try again in a moment."); });
+}
+function finishAdd(code, name, input) {
+  rememberNB(code, name);
+  input.value = "";
+  paintLaneTab();
+  var n = neighborCount();
+  toast("🤝 " + name + " is your neighbor now — " + n + " of 3 for Neighbor Lane" + (n >= 3 ? ". The Lane is OPEN! 🛤️" : "."));
+  if (document.getElementById("lanePanel").style.display === "block") paintLanePanel();
+  if (typeof curSceneName !== "undefined" && curSceneName === "lane") renderLane();
+}
+function openLanePanel() { paintLanePanel(); openPanel("lanePanel"); }
+function paintLanePanel() {
+  var n = neighborCount();
+  document.getElementById("laneLockText").innerHTML = "Neighbor Lane opens when you've added <b>3 neighbors</b> — you have <b>" + n + " of 3</b>. Adding a neighbor is the key to the whole street: visit their lots, leave them gifts, and light the lighthouse together.";
+}
+function fetchTownSnap(code) {
+  if (laneSnaps[code]) return Promise.resolve(laneSnaps[code]);
+  return api(["GET", "townpub:" + code]).then(function (r) {
+    var snap = null;
+    if (r) { try { snap = JSON.parse(r); } catch (e) {} }
+    laneSnaps[code] = snap;
+    return snap;
+  }).catch(function () { laneSnaps[code] = null; return null; });
+}
+var LANE_SPOTS = [ { left: 8, bottom: 12 }, { left: 26, bottom: 32 }, { left: 44, bottom: 10 }, { left: 58, bottom: 34 }, { left: 74, bottom: 12 }, { left: 86, bottom: 30 }, { left: 15, bottom: 54 }, { left: 66, bottom: 56 } ];
+function renderLane() {
+  paintLaneTab();
+  var layer = document.getElementById("laneLayer");
+  layer.innerHTML = "";
+  var list = loadNB().slice(0, 8);
+  list.forEach(function (nb, i) {
+    var spot = LANE_SPOTS[i % LANE_SPOTS.length];
+    var fig = document.createElement("img");
+    fig.className = "lanefig";
+    fig.src = "village2/" + ((laneSnaps[nb.code] && laneSnaps[nb.code].avatar) || "av1") + ".png";
+    fig.alt = nb.name;
+    fig.style.left = spot.left + "%"; fig.style.bottom = spot.bottom + "%"; fig.style.height = "23%";
+    fig.addEventListener("click", function () { startMusic(); visitNeighbor(nb.code); });
+    layer.appendChild(fig);
+    var cap = document.createElement("div");
+    cap.className = "lanename";
+    cap.textContent = nb.name;
+    cap.style.left = (spot.left + 4) + "%"; cap.style.bottom = (spot.bottom - 1.5) + "%";
+    cap.addEventListener("click", function () { startMusic(); visitNeighbor(nb.code); });
+    layer.appendChild(cap);
+    fetchTownSnap(nb.code).then(function (snap) { if (snap && snap.avatar) fig.src = "village2/" + snap.avatar + ".png"; });
+  });
+  renderLaneDir();
+  refreshChallenge();
+}
+function renderLaneDir() {
+  var box = document.getElementById("laneDirInner");
+  var list = loadNB();
+  var html = "<h3 style='margin:4px 0 8px'>🤝 Your neighbors (" + list.length + ") — tap one in the picture, or visit from here</h3>";
+  if (!list.length) html += "<p>No neighbors yet — add one below.</p>";
+  list.forEach(function (nb) {
+    html += "<div class='nbcard'><img src='village2/" + ((laneSnaps[nb.code] && laneSnaps[nb.code].avatar) || "av1") + ".png' alt=''><div class='grow'><b>" + nb.name + "</b><br><span style='color:#5b7a87;font-size:.82rem'>" + nb.code + "</span></div><button class='closebtn alt' data-visit='" + nb.code + "'>Visit their lots</button></div>";
+  });
+  html += "<div class='nbcard' style='display:block;text-align:left'><b>🗼 Town Challenge — Light the Lighthouse, together</b><p id='chalText' style='margin:6px 0'>Counting the Cove's lot visits…</p><div class='chalbar'><div id='chalFill' style='width:0%'></div></div><div id='chalBtnRow' style='margin-top:8px'></div><p style='margin:6px 0 0;font-size:.85rem;color:#5b7a87' id='chalMine'></p></div>";
+  html += "<div class='nbcard'><div class='grow'><b>➕ Add a neighbor</b><br><span style='font-size:.85rem;color:#5b7a87'>Their farm code — ask in the group!</span></div><input id='laneDirCode' type='text' placeholder='COVE-XXXXXX' maxlength='11'><button class='closebtn alt' id='laneDirAdd'>Add</button></div>";
+  box.innerHTML = html;
+  box.querySelectorAll("[data-visit]").forEach(function (b) { b.addEventListener("click", function () { startMusic(); visitNeighbor(b.getAttribute("data-visit")); }); });
+  document.getElementById("laneDirAdd").addEventListener("click", function () { addNeighborFromInput(document.getElementById("laneDirCode")); });
+}
+var CHAL = [ { goal: 100, prize: 50 }, { goal: 250, prize: 100 }, { goal: 500, prize: 200 } ];
+function refreshChallenge() {
+  if (!apiReady()) return;
+  api(["GET", "townvisits:total"]).then(function (r) {
+    chalTotal = parseInt(r, 10) || 0;
+    paintChallenge();
+  }).catch(function () {});
+  var code = myCode();
+  if (code) api(["GET", "townvisits:" + code]).then(function (r) {
+    var el = document.getElementById("chalMine");
+    if (el) el.textContent = "Your lots have had " + (parseInt(r, 10) || 0) + " visits from neighbors.";
+  }).catch(function () {});
+}
+function paintChallenge() {
+  var t = document.getElementById("chalText"), f = document.getElementById("chalFill"), row = document.getElementById("chalBtnRow");
+  if (!t || !f || !row || chalTotal == null) return;
+  var claimed = town.chalClaimed || 0;
+  var next = null;
+  for (var i = 0; i < CHAL.length; i++) { if (CHAL[i].goal > claimed) { next = CHAL[i]; break; } }
+  if (!next) {
+    t.innerHTML = "The lighthouse is LIT — the whole Cove did that. 🗼✨ <b>" + chalTotal + "</b> lot visits and counting.";
+    f.style.width = "100%"; row.innerHTML = "";
+    return;
+  }
+  f.style.width = Math.min(100, Math.round(chalTotal / next.goal * 100)) + "%";
+  if (chalTotal >= next.goal) {
+    t.innerHTML = "🎉 The Cove reached <b>" + next.goal + " lot visits</b>! Your share of the celebration:";
+    row.innerHTML = "<button class='closebtn alt' id='chalClaim'>Claim 🐚 " + next.prize + "</button>";
+    document.getElementById("chalClaim").addEventListener("click", function () {
+      if (!addShells(next.prize)) { toast("Start your Farm & Village first — that's where shells live."); return; }
+      town.chalClaimed = next.goal; saveTown(); paintChallenge();
+      toast("🗼✨ 🐚 " + next.prize + " celebration shells — the Cove lit the lighthouse together!");
+    });
+  } else {
+    t.innerHTML = "Every neighbor-lot visit lights it a little more: <b>" + chalTotal + " of " + next.goal + "</b> visits. At " + next.goal + ", everybody can claim 🐚 " + next.prize + ".";
+    row.innerHTML = "";
+  }
+}
+function visitNeighbor(code) {
+  fetchTownSnap(code).then(function (snap) {
+    if (!snap) { toast("They haven't set up their Village 2 town yet — it appears after they open it once."); return; }
+    visitMode = { code: code, name: snap.name || "A Cove Neighbor", snap: snap, lot: 1 };
+    setScene("lot");
+    var today = todayStr();
+    town.visitDay = town.visitDay || {};
+    if (town.visitDay[code] !== today) {
+      town.visitDay[code] = today;
+      saveTown();
+      api(["INCRBY", "townvisits:total", "1"]).catch(function () {});
+      api(["INCRBY", "townvisits:" + code, "1"]).catch(function () {});
+      if (addShells(10)) toast("👋 Visiting " + visitMode.name + " — +🐚 10 for stopping by!");
+      else toast("👋 Visiting " + visitMode.name + "'s lots.");
+    } else {
+      toast("👋 Visiting " + visitMode.name + "'s lots.");
+    }
+  });
+}
+function exitVisit() { visitMode = null; setScene("lot"); toast("🏠 Back to your own lots."); }
+function renderVisit() {
+  var snap = visitMode.snap;
+  document.getElementById("bgLot").src = "village2/" + LOT_DEFS[visitMode.lot - 1].img;
+  document.getElementById("lotBalance").textContent = "🐚 " + shells().toLocaleString();
+  document.getElementById("visitTitle").textContent = "👋 Visiting " + visitMode.name + " — Lot " + visitMode.lot;
+  var layer = document.getElementById("lotLayer");
+  layer.innerHTML = "";
+  var free = (snap.free && snap.free[visitMode.lot]) || [];
+  free.forEach(function (entry) {
+    var it = ITEMS[entry.i];
+    if (!it) return;
+    var img = document.createElement("img");
+    img.src = "village2/" + it.img;
+    img.alt = it.name;
+    img.className = "placeditem";
+    img.style.left = entry.x + "%"; img.style.bottom = entry.y + "%";
+    img.style.width = (WIDTHS[it.size] || 15) + "%";
+    img.style.zIndex = Math.round(100 - entry.y);
+    img.addEventListener("click", function () { toast(visitMode.name + "'s " + it.name + " " + it.emoji); });
+    layer.appendChild(img);
+  });
+  if (snap.avatar) {
+    var av = document.createElement("img");
+    av.src = "village2/" + snap.avatar + ".png";
+    av.alt = visitMode.name;
+    av.className = "lotfig";
+    av.style.left = "43%"; av.style.bottom = "4%"; av.style.height = "29%";
+    layer.appendChild(av);
+  }
+  var lotRow = document.getElementById("lotRow");
+  lotRow.innerHTML = "";
+  LOT_DEFS.forEach(function (d) {
+    if (d.n > (snap.lots || 1)) return;
+    var chip = document.createElement("button");
+    chip.className = "lotchip" + (visitMode.lot === d.n ? " cur" : "");
+    chip.textContent = d.n === 1 ? "🏡 Lot 1" : d.n === 2 ? "🌴 Lot 2" : "🌼 Lot 3";
+    chip.addEventListener("click", function () { visitMode.lot = d.n; renderVisit(); });
+    lotRow.appendChild(chip);
+  });
+  paintLotChrome(true);
+}
+function openGiftPicker() {
+  if (!visitMode) return;
+  var today = todayStr();
+  town.giftDay = town.giftDay || {};
+  if (town.giftDay[visitMode.code] === today) { toast("You already left " + visitMode.name + " a gift today — one a day keeps it special."); return; }
+  document.getElementById("giftText").textContent = "One gift a day for " + visitMode.name + ". It lands in their town the next time they open it.";
+  var box = document.getElementById("giftInner");
+  var html = "<div class='btnrow'><button class='closebtn alt' id='giftShells'>🐚 Send 25 shells</button></div>";
+  var shed = Object.keys(ITEMS).filter(function (id) { return available(id) > 0; });
+  if (shed.length) {
+    html += "<p style='margin:10px 0 4px'>…or send something from your shed:</p><div class='grid'>";
+    shed.forEach(function (id) { html += "<div class='shopcard'><img src='village2/" + ITEMS[id].img + "' alt=''><div class='nm'>" + ITEMS[id].emoji + " " + ITEMS[id].name + "</div><button data-giftitem='" + id + "'>Send this</button></div>"; });
+    html += "</div>";
+  }
+  box.innerHTML = html;
+  var sh = document.getElementById("giftShells");
+  if (sh) sh.addEventListener("click", function () { sendGift({ kind: "shells", amount: 25 }); });
+  box.querySelectorAll("[data-giftitem]").forEach(function (b) { b.addEventListener("click", function () { sendGift({ kind: "item", item: b.getAttribute("data-giftitem") }); }); });
+  openPanel("giftPanel");
+}
+function sendGift(g) {
+  if (!visitMode) return;
+  var code = visitMode.code, name = visitMode.name;
+  if (g.kind === "shells") {
+    if (!spendShells(25)) { toast("Not enough shells — your farm has 🐚 " + shells().toLocaleString()); return; }
+  } else {
+    if (available(g.item) <= 0) return;
+    town.inv[g.item] = (town.inv[g.item] || 0) - 1;
+  }
+  g.from = myName(); g.ts = Date.now();
+  api(["LPUSH", "towngift:" + code, JSON.stringify(g)]).then(function () {
+    town.giftDay = town.giftDay || {};
+    town.giftDay[code] = todayStr();
+    saveTown(); closePanels();
+    toast("🎁 Gift left for " + name + " — it'll be waiting in their town.");
+  }).catch(function () {
+    if (g.kind === "shells") addShells(25);
+    else town.inv[g.item] = (town.inv[g.item] || 0) + 1;
+    toast("The gift didn't make it — connection hiccup. Nothing was sent.");
+  });
+}
+function fetchTownGifts() {
+  var code = myCode();
+  if (!code || !apiReady()) return;
+  api(["LRANGE", "towngift:" + code, "0", "-1"]).then(function (r) {
+    if (!r || !r.length) return;
+    var got = [];
+    r.forEach(function (raw) {
+      var g = null;
+      try { g = JSON.parse(raw); } catch (e) {}
+      if (!g) return;
+      if (g.kind === "shells" && g.amount) { if (addShells(g.amount)) got.push("🐚 " + g.amount + " shells from " + (g.from || "a neighbor")); }
+      else if (g.kind === "item" && ITEMS[g.item]) { town.inv[g.item] = (town.inv[g.item] || 0) + 1; got.push(ITEMS[g.item].emoji + " " + ITEMS[g.item].name + " from " + (g.from || "a neighbor")); }
+    });
+    if (got.length) {
+      api(["DEL", "towngift:" + code]).catch(function () {});
+      saveTown();
+      toast("🎁 Gifts were waiting for you: " + got.join(" · "));
+    }
+  }).catch(function () {});
+}
+
 function renderLot() {
+  if (visitMode) { renderVisit(); return; }
   normLots();
   normFree();
   document.getElementById("bgLot").src = "village2/" + LOT_DEFS[town.curLot - 1].img;
@@ -918,6 +1240,11 @@ function openPicker() {
   openPanel("picker");
 }
 document.getElementById("pickAvatarBtn").addEventListener("click", function () { startMusic(); openPicker(); });
+document.getElementById("laneAddBtn").addEventListener("click", function () { addNeighborFromInput(document.getElementById("laneAddCode")); });
+document.getElementById("lanePanelClose").addEventListener("click", closePanels);
+document.getElementById("giftBtn").addEventListener("click", function () { startMusic(); openGiftPicker(); });
+document.getElementById("giftClose").addEventListener("click", closePanels);
+document.getElementById("exitVisitBtn").addEventListener("click", function () { exitVisit(); });
 document.getElementById("moveDone").addEventListener("click", function () { exitMove(true); });
 document.getElementById("moveCancel").addEventListener("click", function () { exitMove(false); });
 document.getElementById("acreBtn").addEventListener("click", function () {
