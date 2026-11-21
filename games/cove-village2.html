@@ -410,7 +410,8 @@ function lifeFrame(ts) {
     a.el.style.height = (a.baseH * (1 + (a.baseY - a.y) * 0.012)) + "%";
     if (a.badge.style.display === "block") {
       var r = a.el.getBoundingClientRect();
-      a.badge.style.left = ((r.left - sr.left) + r.width / 2) + "px";
+      var bx = (r.left - sr.left) + r.width / 2, bw2 = a.badge.offsetWidth;
+      a.badge.style.left = Math.max(bw2 / 2 + 4, Math.min(bx, sr.width - bw2 / 2 - 4)) + "px";
       a.badge.style.top = Math.max(2, (r.top - sr.top) - 34) + "px";
     }
   });
