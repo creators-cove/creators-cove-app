@@ -458,6 +458,15 @@
       portraits[c.id] = im;
     });
 
+    /* ---------- Pixar-3D sprites (obstacles + pickups) ---------- */
+    var SPR = {};
+    ["snowman", "tree", "gift", "candy", "tube", "pip"].forEach(function (k) {
+      var im = new Image();
+      im.src = "runner3d/" + k + ".png";
+      SPR[k] = im;
+    });
+    function sprReady(k) { var im = SPR[k]; return !!(im && im.complete && im.naturalWidth > 0); }
+
     /* ---------- Audio (tiny WebAudio jingles) ---------- */
     var audioCtx = null, soundOn = true;
     function ensureAudio() {
@@ -785,6 +794,7 @@
     /* ---------- Obstacles ---------- */
     function drawSnowman(o) {
       var y = GROUND;
+      if (sprReady("snowman")) { ctx.drawImage(SPR.snowman, o.x - 28, y - 80, 56, 80); return; }
       circle(o.x, y - 16, 17); ctx.fillStyle = "#ffffff"; ctx.fill();
       circle(o.x, y - 44, 12.5); ctx.fill();
       ctx.strokeStyle = "#dde8f2"; ctx.lineWidth = 1.5;
@@ -809,6 +819,7 @@
     }
     function drawTree(o) {
       var y = GROUND, cx = o.x;
+      if (sprReady("tree")) { ctx.drawImage(SPR.tree, cx - 37, y - 100, 73, 100); return; }
       ctx.fillStyle = "#5b3a22";
       ctx.fillRect(cx - 4, y - 14, 8, 14);
       // stacked triangle tiers
@@ -835,6 +846,7 @@
     }
     function drawGiftStack(o) {
       var y = GROUND;
+      if (sprReady("gift")) { ctx.drawImage(SPR.gift, o.x - 23, y - 50, 46, 50); ctx.drawImage(SPR.gift, o.x - 16, y - 78, 32, 34); return; }
       // bottom box
       ctx.fillStyle = "#2e7d9e"; ctx.fillRect(o.x - 24, y - 30, 48, 30);
       ctx.fillStyle = "#f2b134"; ctx.fillRect(o.x - 3, y - 30, 6, 30);
@@ -884,6 +896,7 @@
       var y = p.y + bob;
       ctx.save();
       ctx.translate(p.x, y);
+      if (sprReady("gift")) { ctx.drawImage(SPR.gift, -17, -18, 34, 37); ctx.restore(); return; }
       ctx.fillStyle = p.color;
       rr(-13, -11, 26, 22, 3); ctx.fill();
       ctx.fillStyle = "rgba(255,255,255,.9)";
@@ -900,6 +913,7 @@
       ctx.save();
       ctx.translate(p.x, p.y + bob);
       ctx.rotate(0.5);
+      if (sprReady("candy")) { ctx.drawImage(SPR.candy, -13, -20, 26, 42); ctx.restore(); return; }
       ctx.strokeStyle = "#e8ecf2"; ctx.lineWidth = 8; ctx.lineCap = "round";
       ctx.beginPath();
       ctx.moveTo(0, 14); ctx.lineTo(0, -6);
@@ -919,6 +933,7 @@
       ctx.save();
       ctx.translate(p.x, p.y + bob);
       ctx.rotate(-0.35);
+      if (sprReady("tube")) { ctx.drawImage(SPR.tube, -10, -20, 20, 39); ctx.restore(); return; }
       // tube body
       ctx.fillStyle = "#eef1f5";
       ctx.beginPath();
@@ -940,6 +955,7 @@
       var bob = Math.sin(t / 300 + p.phase) * 3;
       ctx.save();
       ctx.translate(p.x, p.y + bob);
+      if (sprReady("pip")) { ctx.drawImage(SPR.pip, -24, -20, 48, 46); ctx.restore(); return; }
       // branch + leaf
       ctx.strokeStyle = "#6b4423"; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(-18, 12); ctx.quadraticCurveTo(0, 7, 18, 12); ctx.stroke();
