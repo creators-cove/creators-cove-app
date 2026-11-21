@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Drama Cove — a Salty Canvas merge story</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; background: #123a4d; color: #12303e; min-height: 100vh; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 10px 10px 30px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .back { color: #bfe8f5; text-decoration: none; font-weight: 700; font-size: 15px; }
+  .mute { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 5px 12px; font-size: 15px; cursor: pointer; }
+  h1 { text-align: center; color: #ffd98a; font-size: 30px; letter-spacing: .5px; text-shadow: 0 2px 0 rgba(0,0,0,.25); }
+  .sub { text-align: center; color: #bfe8f5; font-size: 13.5px; margin: 2px 0 10px; }
+  .hud { display: flex; gap: 8px; margin-bottom: 10px; }
+  .hud .pill { flex: 1; background: #fff8ec; border-radius: 14px; padding: 7px 10px; text-align: center; font-weight: 800; font-size: 15px; box-shadow: 0 2px 0 rgba(0,0,0,.18); }
+  .hud .pill small { display: block; font-weight: 600; font-size: 11px; color: #5b7a86; }
+  .epbar { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 14px; padding: 8px 12px; margin-bottom: 10px; color: #eaf7fb; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .epbar .track { flex: 1; height: 10px; background: rgba(0,0,0,.3); border-radius: 99px; overflow: hidden; }
+  .epbar .fill { height: 100%; background: linear-gradient(90deg, #ffd98a, #ffb347); width: 0%; transition: width .5s; }
+  .epbar button { background: #ffd98a; color: #5a3b12; border: none; border-radius: 999px; font-weight: 800; padding: 6px 12px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+  .secttl { color: #ffd98a; font-weight: 800; font-size: 15px; margin: 10px 2px 6px; }
+  #orders { display: flex; flex-direction: column; gap: 8px; }
+  .order { background: #fff8ec; border-radius: 16px; padding: 9px 11px; display: flex; gap: 10px; align-items: center; box-shadow: 0 3px 0 rgba(0,0,0,.18); border: 3px solid transparent; }
+  .order.ready { border-color: #58b26a; }
+  .order .face { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: #cfeef7; flex: none; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+  .order .face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; transform: scale(1.9) translateY(14%); }
+  .order .face .bot { font-size: 30px; text-align: center; line-height: 52px; }
+  .order .mid { flex: 1; min-width: 0; }
+  .order .who { font-weight: 800; font-size: 14.5px; }
+  .order .wants { font-size: 20px; letter-spacing: 1px; }
+  .order .wants .have { font-size: 12px; font-weight: 800; color: #58b26a; vertical-align: middle; }
+  .order .wants .lack { font-size: 12px; font-weight: 800; color: #c2543a; vertical-align: middle; }
+  .order .gossip { font-size: 12px; color: #6d8894; font-style: italic; }
+  .order .deliver { background: #58b26a; color: #fff; border: none; border-radius: 12px; font-weight: 800; font-size: 14px; padding: 10px 12px; cursor: pointer; flex: none; }
+  .order .deliver:disabled { background: #b9cdc2; cursor: default; }
+  .order .reward { font-size: 12px; font-weight: 800; color: #8a6d1f; text-align: right; }
+  #board { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background: linear-gradient(180deg, #fdf3d8, #f3dfae); border: 4px solid #a97c3f; border-radius: 18px; padding: 8px; box-shadow: inset 0 2px 10px rgba(120,80,20,.25), 0 4px 0 rgba(0,0,0,.2); }
+  .cell { aspect-ratio: 1; background: rgba(255,255,255,.55); border: 2px dashed rgba(150,110,50,.35); border-radius: 12px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; user-select: none; }
+  .cell .it { font-size: clamp(22px, 7.5vw, 34px); line-height: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,.2)); pointer-events: none; }
+  .cell .pips { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 6px; letter-spacing: 1px; color: #a97c3f; pointer-events: none; }
+  .cell.sel { border: 3px solid #e2703a; background: #fff3d6; }
+  .cell.match { border: 3px solid #58b26a; animation: wig 0.5s infinite alternate; }
+  .cell.maxed { background: linear-gradient(180deg, #fff6cf, #ffe98a); border-color: #d9a514; }
+  @keyframes wig { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+  @keyframes popin { 0% { transform: scale(.3); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  .cell.pop .it { animation: popin .28s ease-out; }
+  #infobar { min-height: 42px; margin-top: 8px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 12px; color: #eaf7fb; display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 13.5px; font-weight: 600; }
+  #infobar button { margin-left: auto; background: #ffd98a; color: #5a3b12; border: none; border-radius: 999px; font-weight: 800; padding: 6px 12px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+  #gens { display: flex; gap: 8px; margin-top: 10px; }
+  .gen { flex: 1; background: #fff8ec; border: none; border-radius: 16px; padding: 10px 4px 8px; cursor: pointer; box-shadow: 0 3px 0 rgba(0,0,0,.2); font-family: inherit; }
+  .gen:active { transform: translateY(2px); box-shadow: none; }
+  .gen .gi { font-size: 34px; }
+  .gen .gn { font-weight: 800; font-size: 13px; color: #12303e; }
+  .gen .gt { font-size: 11px; color: #6d8894; font-weight: 600; }
+  .gen:disabled { opacity: .55; }
+  .howto { color: #9fd3e4; font-size: 12.5px; text-align: center; margin-top: 12px; line-height: 1.5; }
+  /* overlays */
+  .overlay { position: fixed; inset: 0; background: rgba(8,30,42,.72); display: none; align-items: center; justify-content: center; z-index: 50; padding: 14px; }
+  .overlay.open { display: flex; }
+  .sheet { background: #fff8ec; border-radius: 20px; max-width: 480px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 18px; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
+  .sheet h2 { font-size: 20px; color: #8a4b12; margin-bottom: 4px; }
+  .sheet .eptag { font-size: 12px; font-weight: 800; letter-spacing: 1.5px; color: #c2703a; text-transform: uppercase; }
+  .beat { display: flex; gap: 10px; margin: 12px 0; align-items: flex-start; }
+  .beat .face { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: #cfeef7; flex: none; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+  .beat .face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; transform: scale(1.9) translateY(14%); }
+  .beat .face .bot { font-size: 26px; text-align: center; line-height: 46px; }
+  .beat .line b { display: block; font-size: 13px; color: #8a4b12; }
+  .beat .line span { font-size: 14.5px; line-height: 1.45; }
+  .beat.narr { background: #fdf0d5; border-radius: 12px; padding: 10px 12px; font-style: italic; font-size: 14px; color: #6d5320; }
+  .bigbtn { display: block; width: 100%; background: #e2703a; color: #fff; border: none; border-radius: 14px; font-weight: 800; font-size: 16px; padding: 13px; cursor: pointer; margin-top: 14px; font-family: inherit; }
+  .epitem { display: flex; align-items: center; gap: 10px; background: #fff; border: 2px solid #eed9ae; border-radius: 14px; padding: 10px 12px; margin: 8px 0; width: 100%; text-align: left; font-family: inherit; cursor: pointer; }
+  .epitem:disabled { opacity: .55; cursor: default; }
+  .epitem .n { font-size: 22px; }
+  .epitem .t { flex: 1; font-weight: 800; font-size: 14.5px; color: #12303e; }
+  .epitem .s { font-size: 12px; font-weight: 700; color: #8a6d1f; }
+  #toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); background: #12303e; color: #fff8ec; padding: 11px 18px; border-radius: 999px; font-weight: 700; font-size: 14.5px; opacity: 0; pointer-events: none; transition: all .3s; z-index: 80; max-width: 92vw; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,.35); }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="../index.html">← The Cove</a>
+    <button class="mute" id="muteBtn" title="Sound on or off">🔊</button>
+  </div>
+  <h1>🎭 Drama Cove</h1>
+  <p class="sub">A Salty Canvas merge story — fill the girls' orders, earn stars, and watch the soap opera unfold.</p>
+
+  <div class="hud">
+    <div class="pill">🐚 <span id="shellCount">0</span><small>shells (your farm wallet)</small></div>
+    <div class="pill">⭐ <span id="starCount">0</span><small>story stars</small></div>
+    <div class="pill">🧺 <span id="mergeCount">0</span><small>merges made</small></div>
+  </div>
+
+  <div class="epbar">
+    <span id="epLabel">🎭 Episode 1 of 6</span>
+    <div class="track"><div class="fill" id="epFill"></div></div>
+    <button id="episodesBtn">📺 Episodes</button>
+  </div>
+
+  <div class="secttl">📋 Orders from the girls</div>
+  <div id="orders"></div>
+
+  <div class="secttl">🎨 The Studio Board — tap an item, then tap its twin to merge</div>
+  <div id="board"></div>
+  <div id="infobar"><span id="infoText">Tap a supply box below to get started, then merge two of a kind.</span></div>
+
+  <div id="gens"></div>
+
+  <p class="howto">How it works: tap a supply box and supplies pop onto the board. Tap any item, then tap an identical one to merge them into the next tier up. Fill the girls' orders to earn shells and ⭐ stars — stars unlock the next episode of the drama. Top-tier items sell for a nice pile of shells.</p>
+</div>
+
+<div class="overlay" id="epOverlay">
+  <div class="sheet">
+    <div class="eptag" id="epTag">Episode 1</div>
+    <h2 id="epTitle"></h2>
+    <div id="epBeats"></div>
+    <button class="bigbtn" id="epClose">▶ Back to the studio</button>
+  </div>
+</div>
+
+<div class="overlay" id="listOverlay">
+  <div class="sheet">
+    <div class="eptag">Drama Cove</div>
+    <h2>📺 Season One</h2>
+    <div id="epList"></div>
+    <button class="bigbtn" id="listClose">Close</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ============ DATA ============ */
+var CHAINS = [
+  { id: "paint", name: "Paint", color: "#ffe3ef", items: [
+    ["🖍️", "Crayon"], ["🖌️", "Paintbrush"], ["🧪", "Paint Pot"], ["🎨", "Palette"], ["🖼️", "Framed Canvas"], ["🏆", "Masterpiece"] ] },
+  { id: "craft", name: "Craft", color: "#e7defc", items: [
+    ["✂️", "Scissors"], ["🧵", "Thread Spool"], ["🧶", "Yarn Ball"], ["🎀", "Ribbon Bow"], ["🎁", "Wrapped Gift"], ["👑", "Cove Crown"] ] },
+  { id: "treat", name: "Treat", color: "#ffefc4", items: [
+    ["🥚", "Egg"], ["🥛", "Glass of Milk"], ["🧁", "Cupcake"], ["🍰", "Cake Slice"], ["🎂", "Layer Cake"], ["🌲", "Tree Cake"] ] }
+];
+var GENS = [
+  { chain: 0, icon: "🎨", name: "Paint Box", tap: "paint supplies" },
+  { chain: 1, icon: "🧺", name: "Craft Basket", tap: "craft supplies" },
+  { chain: 2, icon: "🍰", name: "Bakery Box", tap: "baking supplies" }
+];
+var SELL = [1, 2, 4, 8, 15, 25];
+var FACES = { kim: "village2/kim.png", sandy: "village2/sandy.png", trish: "village2/trish.png", gladys: "village2/gladys.png", walter: "village2/av6.png" };
+var PEOPLE = {
+  kim:   { name: "Kim",   face: "kim" },
+  sandy: { name: "Sandy", face: "sandy" },
+  trish: { name: "Trish", face: "trish" },
+  gladys:{ name: "Gladys", face: "gladys" },
+  sprocket: { name: "Sprocket", face: null }
+};
+var GOSSIP = {
+  kim: ["Fair's coming. No pressure.", "This one's for the fair table.", "Paint first, questions later."],
+  sandy: ["It's for a friend. A friend named Me.", "Don't tell Gladys.", "For the booth. Probably."],
+  trish: ["The stars said we need this. The stars are pushy.", "I read it in the leaves. The leaves want snacks."],
+  gladys: ["For the fair booth. Label it this time!", "Sprocket keeps wrapping the supplies. Hurry."],
+  sprocket: ["WRAPPING EMERGENCY. THIS IS NOT A DRILL.", "SUPPLIES REQUIRED. PLEASE AND THANK YOU."]
+};
+var EPISODES = [
+  { at: 0, title: "Opening Day at the Salty Canvas", beats: [
+    ["kim", "The Cove Art Fair is in two weeks, girls. Our studio is entering — and we are going to win it."],
+    ["sandy", "Then explain THESE. A whole bouquet of perfect seashells, left on the studio step. No note. Third day in a row."],
+    ["trish", "A secret admirer. Or a very tidy crab. My money's on the admirer."],
+    ["gladys", "Whoever it is has excellent taste in shells and terrible timing. We have ORDERS to fill!"],
+    ["sprocket", "I HAVE WRAPPED THE CASH REGISTER. FOR SAFETY."],
+    [null, "Who is leaving shells for Sandy? And can the girls fill every order before Fair Day? To be continued…"] ] },
+  { at: 8, title: "The Admirer's Second Move", beats: [
+    ["sandy", "A POEM this time. 'Your hair is like a sunset, your laugh is like the sea' — it rhymes 'sea' with 'sea' four times."],
+    ["trish", "Terrible poetry. Wonderful effort. Ten out of ten."],
+    ["kim", "Turn it over. That's not notebook paper — that's the back of an old Art Fair entry form. From YEARS ago."],
+    ["gladys", "So our admirer entered this fair before. Which means… he's coming back."],
+    [null, "An old entry form. A returning admirer. And the fair is one week away…"] ] },
+  { at: 20, title: "The Missing Masterpiece", beats: [
+    ["kim", "It's GONE. My fair painting was on that easel last night, and now — glitter. Just glitter."],
+    ["sandy", "Don't look at me! I shed glitter emotionally, not literally."],
+    ["gladys", "Nobody panics. We follow the glitter trail. Glitter never lies."],
+    ["trish", "It leads… toward the supply closet. And it stops at Sprocket."],
+    ["sprocket", "I DO NOT KNOW ANYTHING ABOUT ANYTHING. THIS IS MY STORY."],
+    [null, "The trail ends at Sprocket — who is acting extremely normal. To be continued…"] ] },
+  { at: 35, title: "Glitter Never Lies", beats: [
+    ["gladys", "Sprocket. Open the closet. Slowly."],
+    ["sprocket", "…I WRAPPED THE PAINTING. FOR SAFETY. THEN I FILED IT. UNDER 'DONE'."],
+    ["kim", "It's PERFECT. Not a scratch. Sprocket, you beautiful little vault."],
+    ["sandy", "And there's a note stuck to the wrapping — 'For the fair. From the lighthouse.' THE LIGHTHOUSE!"],
+    [null, "The painting is safe. The admirer is at the lighthouse. And Fair Day is tomorrow…"] ] },
+  { at: 55, title: "Fair Day", beats: [
+    ["kim", "Deep breaths. The judges are coming. And Walter from the lighthouse just arrived carrying a whole BUCKET of shells."],
+    ["sandy", "Years of bad poetry and perfect shells. Walter. You ridiculous, wonderful man."],
+    ["trish", "The judges are at our table. They're looking at the painting. They're… nodding."],
+    ["gladys", "THAT'S A BLUE RIBBON. THE SALTY CANVAS TAKES THE FAIR!"],
+    [null, "A ribbon, a reunion, and a studio full of confetti that Sprocket will absolutely wrap."] ] },
+  { at: 80, title: "Next Season at the Cove", beats: [
+    ["kim", "Fair's won, orders are filled, and Sandy finally has a boyfriend with a shell collection."],
+    ["sandy", "He alphabetized it. ALPHABETIZED."],
+    ["gladys", "Girls. A new entry form just arrived for NEXT year's fair. Signed with one letter."],
+    ["trish", "Just… 'G'."],
+    ["sprocket", "I HAVE ALREADY WRAPPED IT. FOR SAFETY."],
+    [null, "Who is G? Find out next season… on Drama Cove. 🎭"] ] }
+];
+</script>
+<script>
+"use strict";
+/* ============ STATE ============ */
+var SAVE_KEY = "cove-drama-v1";
+var state = null;
+function defaultState() {
+  return { board: [], stars: 0, merges: 0, epSeen: 0, orders: [], bank: 0, muted: false, started: false };
+}
+function loadState() {
+  try { state = JSON.parse(localStorage.getItem(SAVE_KEY)) || defaultState(); }
+  catch (e) { state = defaultState(); }
+  if (!Array.isArray(state.board) || state.board.length !== 28) {
+    var old = Array.isArray(state.board) ? state.board : [];
+    state.board = []; for (var i = 0; i < 28; i++) state.board.push(old[i] || null);
+  }
+  if (!Array.isArray(state.orders)) state.orders = [];
+}
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {} }
+
+/* ============ SHELLS WALLET (shared with the farm) ============ */
+function farmState() { try { return JSON.parse(localStorage.getItem("cove-farm-village-v1")); } catch (e) { return null; } }
+function shells() { var f = farmState(); return f ? (parseInt(f.shells, 10) || 0) : state.bank || 0; }
+function addShells(n) {
+  var f = farmState();
+  if (f) {
+    f.shells = (parseInt(f.shells, 10) || 0) + n;
+    try { localStorage.setItem("cove-farm-village-v1", JSON.stringify(f)); } catch (e) {}
+  } else { state.bank = (state.bank || 0) + n; }
+}
+function claimBank() {
+  if (state.bank > 0 && farmState()) { var b = state.bank; state.bank = 0; addShells(b); toast("🐚 " + b + " banked shells moved into your farm wallet!"); }
+}
+
+/* ============ SOUND ============ */
+var AC = null;
+function beep(freq, dur, type, vol, when) {
+  if (state.muted) return;
+  try {
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+    var t = AC.currentTime + (when || 0);
+    var o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || "sine"; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(t); o.stop(t + dur);
+  } catch (e) {}
+}
+function sndSpawn() { beep(520, 0.09, "triangle", 0.10); }
+function sndMerge(tier) { beep(380 + tier * 70, 0.12, "triangle", 0.13); beep(560 + tier * 70, 0.14, "sine", 0.10, 0.06); }
+function sndDeliver() { beep(660, 0.12, "sine", 0.12); beep(880, 0.16, "sine", 0.12, 0.09); }
+function sndSting() { beep(392, 0.16, "triangle", 0.12); beep(523, 0.16, "triangle", 0.12, 0.13); beep(659, 0.26, "triangle", 0.13, 0.26); }
+
+/* ============ TOAST ============ */
+var toastTimer = null;
+function toast(msg, ms) {
+  var el = document.getElementById("toast");
+  el.textContent = msg; el.className = "show";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.className = ""; }, ms || 2600);
+}
+
+/* ============ ORDERS ============ */
+function boardCount(c, t) {
+  var n = 0;
+  for (var i = 0; i < 28; i++) { var b = state.board[i]; if (b && b.c === c && b.t === t) n++; }
+  return n;
+}
+function genOrder() {
+  var whoKeys = ["kim", "sandy", "trish", "gladys", "sprocket"];
+  var who = whoKeys[Math.floor(Math.random() * (Math.random() < 0.14 ? 5 : 4))];
+  var maxTier = state.stars < 8 ? 3 : state.stars < 20 ? 4 : state.stars < 35 ? 5 : 6;
+  var wants = [];
+  var nWants = Math.random() < 0.35 ? 2 : 1;
+  var used = {};
+  for (var k = 0; k < nWants; k++) {
+    var c = Math.floor(Math.random() * 3);
+    var t = 2 + Math.floor(Math.random() * (maxTier - 1));
+    var key = c + ":" + t;
+    if (used[key]) { k--; continue; }
+    used[key] = 1;
+    wants.push({ c: c, t: t, n: (t <= 2 && Math.random() < 0.2) ? 2 : 1 });
+  }
+  var reward = 5, stars = 1, hard = false;
+  for (var j = 0; j < wants.length; j++) { reward += SELL[wants[j].t - 1] * 4 * wants[j].n; if (wants[j].t >= 4) hard = true; }
+  if (hard) stars++;
+  if (wants.length > 1) stars++;
+  var lines = GOSSIP[who];
+  return { who: who, wants: wants, reward: reward, stars: stars, gossip: lines[Math.floor(Math.random() * lines.length)] };
+}
+function canFill(o) {
+  for (var j = 0; j < o.wants.length; j++) if (boardCount(o.wants[j].c, o.wants[j].t) < o.wants[j].n) return false;
+  return true;
+}
+function deliver(idx) {
+  var o = state.orders[idx];
+  if (!o || !canFill(o)) return;
+  for (var j = 0; j < o.wants.length; j++) {
+    var w = o.wants[j], need = w.n;
+    for (var i = 0; i < 28 && need > 0; i++) {
+      var b = state.board[i];
+      if (b && b.c === w.c && b.t === w.t) { state.board[i] = null; need--; }
+    }
+  }
+  addShells(o.reward);
+  state.stars += o.stars;
+  state.orders[idx] = genOrder();
+  sel = -1;
+  save(); renderAll();
+  sndDeliver();
+  toast("Order delivered! +🐚 " + o.reward + " · +⭐ " + o.stars);
+  var unlocked = unlockedEpisodes();
+  if (state.epSeen < unlocked) setTimeout(function () { showEpisode(state.epSeen); }, 900);
+}
+
+/* ============ EPISODES ============ */
+function unlockedEpisodes() {
+  var n = 0;
+  for (var i = 0; i < EPISODES.length; i++) if (state.stars >= EPISODES[i].at) n++;
+  return n;
+}
+function faceHTML(who, cls) {
+  if (who === "sprocket") return '<div class="' + cls + '"><div class="bot">🤖</div></div>';
+  return '<div class="' + cls + '"><img src="' + FACES[PEOPLE[who].face] + '" alt=""></div>';
+}
+function showEpisode(i) {
+  var ep = EPISODES[i];
+  if (!ep) return;
+  document.getElementById("epTag").textContent = "Drama Cove · Episode " + (i + 1) + " of " + EPISODES.length;
+  document.getElementById("epTitle").textContent = ep.title;
+  var html = "";
+  for (var j = 0; j < ep.beats.length; j++) {
+    var who = ep.beats[j][0], line = ep.beats[j][1];
+    if (!who) html += '<div class="beat narr">' + line + "</div>";
+    else html += '<div class="beat">' + faceHTML(who, "face") + '<div class="line"><b>' + PEOPLE[who].name + "</b><span>" + line + "</span></div></div>";
+  }
+  document.getElementById("epBeats").innerHTML = html;
+  document.getElementById("epOverlay").className = "overlay open";
+  sndSting();
+}
+function closeEpisode() {
+  document.getElementById("epOverlay").className = "overlay";
+  var unlocked = unlockedEpisodes();
+  var seen = 0;
+  var tag = document.getElementById("epTag").textContent;
+  var m = tag.match(/Episode (\d+)/);
+  if (m) seen = parseInt(m[1], 10);
+  if (seen > state.epSeen) state.epSeen = seen;
+  if (state.epSeen < unlocked) state.epSeen = state.epSeen; /* next one waits for next delivery or the Episodes button */
+  save(); renderHUD();
+}
+function openList() {
+  var unlocked = unlockedEpisodes();
+  var html = "";
+  for (var i = 0; i < EPISODES.length; i++) {
+    var ep = EPISODES[i], locked = i >= unlocked, isNew = i === state.epSeen && i < unlocked;
+    html += '<button class="epitem" data-ep="' + i + '"' + (locked ? " disabled" : "") + '>' +
+      '<span class="n">' + (locked ? "🔒" : isNew ? "✨" : "▶️") + "</span>" +
+      '<span class="t">Episode ' + (i + 1) + ": " + ep.title + "</span>" +
+      '<span class="s">' + (locked ? "⭐ " + ep.at + " to unlock" : isNew ? "NEW!" : "watch again") + "</span></button>";
+  }
+  document.getElementById("epList").innerHTML = html;
+  var btns = document.querySelectorAll(".epitem");
+  for (var j = 0; j < btns.length; j++) btns[j].addEventListener("click", function () {
+    document.getElementById("listOverlay").className = "overlay";
+    showEpisode(parseInt(this.getAttribute("data-ep"), 10));
+  });
+  document.getElementById("listOverlay").className = "overlay open";
+}
+
+/* ============ BOARD ============ */
+var sel = -1, popCell = -1;
+function itemOf(b) { return CHAINS[b.c].items[b.t - 1]; }
+function renderBoard() {
+  var board = document.getElementById("board");
+  var html = "";
+  for (var i = 0; i < 28; i++) {
+    var b = state.board[i];
+    var cls = "cell";
+    if (i === sel) cls += " sel";
+    if (b && b.t === 6) cls += " maxed";
+    if (i === popCell) cls += " pop";
+    if (sel >= 0 && state.board[sel] && b && i !== sel && b.c === state.board[sel].c && b.t === state.board[sel].t && b.t < 6) cls += " match";
+    html += '<div class="' + cls + '" data-i="' + i + '">' +
+      (b ? '<span class="it">' + itemOf(b)[0] + '</span><span class="pips">' + "●".repeat(b.t) + "</span>" : "") + "</div>";
+  }
+  board.innerHTML = html;
+  var cells = board.querySelectorAll(".cell");
+  for (var j = 0; j < cells.length; j++) cells[j].addEventListener("click", function () { clickCell(parseInt(this.getAttribute("data-i"), 10)); });
+  popCell = -1;
+}
+function clickCell(i) {
+  var b = state.board[i];
+  if (sel === -1) {
+    if (b) { sel = i; renderAll(); }
+    return;
+  }
+  if (sel === i) { sel = -1; renderAll(); return; }
+  var s = state.board[sel];
+  if (!b) { state.board[i] = s; state.board[sel] = null; sel = -1; save(); renderAll(); return; }
+  if (b.c === s.c && b.t === s.t && b.t < 6) {
+    state.board[i] = { c: b.c, t: b.t + 1 };
+    state.board[sel] = null;
+    state.merges++;
+    sel = -1; popCell = i;
+    sndMerge(b.t + 1);
+    save(); renderAll();
+    if (b.t + 1 === 6) toast("🏆 Top tier! That's a " + itemOf(state.board[i])[1] + " — it sells for 🐚25 or fills a big order!");
+    return;
+  }
+  sel = i; renderAll();
+}
+function renderInfo() {
+  var txt = document.getElementById("infoText");
+  var bar = document.getElementById("infobar");
+  var oldBtn = document.getElementById("sellBtn");
+  if (oldBtn) oldBtn.remove();
+  if (sel >= 0 && state.board[sel]) {
+    var b = state.board[sel], it = itemOf(b);
+    txt.textContent = it[0] + " " + it[1] + " · Tier " + b.t + " of 6" + (b.t < 6 ? " — tap its twin to merge!" : " — top tier!");
+    var btn = document.createElement("button");
+    btn.id = "sellBtn";
+    btn.textContent = "Sell · 🐚" + SELL[b.t - 1];
+    btn.addEventListener("click", function () {
+      var bb = state.board[sel]; if (!bb) return;
+      addShells(SELL[bb.t - 1]);
+      toast("Sold the " + itemOf(bb)[1] + " for 🐚" + SELL[bb.t - 1]);
+      state.board[sel] = null; sel = -1; save(); renderAll();
+    });
+    bar.appendChild(btn);
+  } else {
+    txt.textContent = "Tap a supply box below for supplies. Tap any item, then tap its twin to merge.";
+  }
+}
+function renderOrders() {
+  var wrap = document.getElementById("orders");
+  var html = "";
+  for (var i = 0; i < state.orders.length; i++) {
+    var o = state.orders[i], ready = canFill(o);
+    var wants = "";
+    for (var j = 0; j < o.wants.length; j++) {
+      var w = o.wants[j], have = boardCount(w.c, w.t);
+      wants += CHAINS[w.c].items[w.t - 1][0] + (w.n > 1 ? "×" + w.n : "") +
+        ' <span class="' + (have >= w.n ? "have" : "lack") + '">(' + Math.min(have, w.n) + "/" + w.n + ")</span> ";
+    }
+    html += '<div class="order' + (ready ? " ready" : "") + '">' + faceHTML(o.who, "face") +
+      '<div class="mid"><div class="who">' + PEOPLE[o.who].name + '</div><div class="wants">' + wants + '</div>' +
+      '<div class="gossip">“' + o.gossip + '”</div></div>' +
+      '<div><div class="reward">🐚 ' + o.reward + " · ⭐ " + o.stars + '</div>' +
+      '<button class="deliver" data-i="' + i + '"' + (ready ? "" : " disabled") + ">Deliver</button></div></div>";
+  }
+  wrap.innerHTML = html;
+  var btns = wrap.querySelectorAll(".deliver");
+  for (var j = 0; j < btns.length; j++) btns[j].addEventListener("click", function () { deliver(parseInt(this.getAttribute("data-i"), 10)); });
+}
+function renderHUD() {
+  document.getElementById("shellCount").textContent = shells();
+  document.getElementById("starCount").textContent = state.stars;
+  document.getElementById("mergeCount").textContent = state.merges;
+  var unlocked = unlockedEpisodes();
+  var label = document.getElementById("epLabel"), fill = document.getElementById("epFill");
+  if (unlocked >= EPISODES.length) {
+    label.textContent = "🎭 Season One complete!";
+    fill.style.width = "100%";
+  } else {
+    var cur = EPISODES[unlocked - 1] ? EPISODES[unlocked - 1].at : 0;
+    var next = EPISODES[unlocked];
+    label.textContent = "🎭 " + state.epSeen + " of " + EPISODES.length + " episodes · next at ⭐" + next.at;
+    fill.style.width = Math.round(100 * (state.stars - cur) / (next.at - cur)) + "%";
+  }
+  document.getElementById("muteBtn").textContent = state.muted ? "🔇" : "🔊";
+}
+function renderGens() {
+  var wrap = document.getElementById("gens");
+  var html = "";
+  for (var i = 0; i < GENS.length; i++) {
+    html += '<button class="gen" data-i="' + i + '"><div class="gi">' + GENS[i].icon + '</div><div class="gn">' + GENS[i].name + '</div><div class="gt">tap for ' + GENS[i].tap + "</div></button>";
+  }
+  wrap.innerHTML = html;
+  var btns = wrap.querySelectorAll(".gen");
+  for (var j = 0; j < btns.length; j++) btns[j].addEventListener("click", function () { tapGen(parseInt(this.getAttribute("data-i"), 10), this); });
+}
+var genBusy = false;
+function tapGen(gi, btn) {
+  if (genBusy) return;
+  var empty = [];
+  for (var i = 0; i < 28; i++) if (!state.board[i]) empty.push(i);
+  if (!empty.length) { toast("The studio board is full — merge or sell something to make room!"); return; }
+  genBusy = true;
+  if (btn) btn.disabled = true;
+  setTimeout(function () { genBusy = false; if (btn) btn.disabled = false; }, 700);
+  var cell = empty[Math.floor(Math.random() * empty.length)];
+  state.board[cell] = { c: GENS[gi].chain, t: Math.random() < 0.72 ? 1 : 2 };
+  popCell = cell;
+  sndSpawn();
+  save(); renderAll();
+}
+function renderAll() { renderHUD(); renderOrders(); renderBoard(); renderInfo(); }
+
+/* ============ BOOT ============ */
+loadState();
+while (state.orders.length < 3) state.orders.push(genOrder());
+claimBank();
+renderGens();
+renderAll();
+document.getElementById("muteBtn").addEventListener("click", function () { state.muted = !state.muted; save(); renderHUD(); });
+document.getElementById("episodesBtn").addEventListener("click", openList);
+document.getElementById("listClose").addEventListener("click", function () { document.getElementById("listOverlay").className = "overlay"; });
+document.getElementById("epClose").addEventListener("click", closeEpisode);
+save();
+if (!state.started) {
+  state.started = true; save();
+  setTimeout(function () { if (state.epSeen === 0) showEpisode(0); }, 700);
+}
+try {
+  var day = new Date().toISOString().slice(0, 10);
+  var H = { "Authorization": "Bearer gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg", "Content-Type": "application/json" };
+  fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "cove-merge", 1]), keepalive: true }).catch(function () {});
+  fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "_total", 1]), keepalive: true }).catch(function () {});
+} catch (e) {}
+</script>
+</body>
+</html>
