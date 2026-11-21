@@ -149,6 +149,13 @@
         box-shadow: 0 0 16px 3px rgba(255, 201, 60, 0.85); animation: goldGlow 0.7s ease-in-out infinite alternate;
       }
       @keyframes goldGlow { from { box-shadow: 0 0 10px 2px rgba(255,201,60,0.6); } to { box-shadow: 0 0 22px 6px rgba(255,201,60,0.95); } }
+      /* ---------- Pixar-3D gloss pass ---------- */
+      .pack-art img.packimg { height: 104px; width: auto; border-radius: 10px; box-shadow: 0 5px 12px rgba(0,0,0,.35); display: block; margin: 0 auto; }
+      .rip-pack img.packimg { height: 168px; width: auto; border-radius: 12px; box-shadow: 0 10px 22px rgba(0,0,0,.45); display: block; }
+      .art img.cardimg { width: 46px; height: 46px; object-fit: cover; border-radius: 10px; display: block; margin: 0 auto; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+      .art img.cardimg.png { object-fit: contain; box-shadow: none; }
+      .rip-face.back { background: #01596d url("solitaire3d/card-back.jpg") center / contain no-repeat; }
+      .rip-face.front { background: linear-gradient(180deg, #ffffff, #fff6e0); }
       .rip-actions { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
       .btn {
         font-family: "Fredoka", sans-serif; font-weight: 700; cursor: pointer;
@@ -476,19 +483,20 @@
 
       /* ================= Cards (all Cove-original, no real licensed cards) ================= */
       var CARDS = [
-        { id: "kim",      name: "Kim",          art: "🖌️", hint: "paintbrush" },
-        { id: "trish",    name: "Trish",        art: "🎩", hint: "witch hat" },
-        { id: "sandy",    name: "Sandy",        art: "⭐", hint: "purple starfish" },
-        { id: "gladys",   name: "Gladys",       art: "👓", hint: "glasses" },
-        { id: "sprocket", name: "Sprocket",     art: "🤖", hint: "robot" },
-        { id: "grinch",   name: "Grinch",       art: "💚", hint: "green grouch" },
-        { id: "wave",     name: "Cove Wave",    art: "🌊", hint: "wave" },
-        { id: "canvas",   name: "Salty Canvas", art: "🎨", hint: "art studio" },
-        { id: "shell",    name: "Shell",        art: "🐚", hint: "seashell" },
-        { id: "anchor",   name: "Anchor",       art: "⚓", hint: "anchor" },
-        { id: "snowman",  name: "Snowman",      art: "⛄", hint: "snowman" },
-        { id: "treecake", name: "Tree Cake",    art: "🎄", hint: "tree cake" }
+        { id: "kim",      name: "Kim",          art: "🖌️", img: "rips3d/brush.jpg", hint: "paintbrush" },
+        { id: "trish",    name: "Trish",        art: "🎩", img: "rips3d/hat.jpg", hint: "witch hat" },
+        { id: "sandy",    name: "Sandy",        art: "⭐", img: "rips3d/starfish.jpg", hint: "purple starfish" },
+        { id: "gladys",   name: "Gladys",       art: "👓", img: "rips3d/glasses.jpg", hint: "glasses" },
+        { id: "sprocket", name: "Sprocket",     art: "🤖", img: "rips3d/robot.jpg", hint: "robot" },
+        { id: "grinch",   name: "Grinch",       art: "💚", img: "rips3d/heart.jpg", hint: "green grouch" },
+        { id: "wave",     name: "Cove Wave",    art: "🌊", img: "rips3d/wave.jpg", hint: "wave" },
+        { id: "canvas",   name: "Salty Canvas", art: "🎨", img: "rips3d/canvas.jpg", hint: "art studio" },
+        { id: "shell",    name: "Shell",        art: "🐚", img: "rips3d/shell.png", hint: "seashell" },
+        { id: "anchor",   name: "Anchor",       art: "⚓", img: "rips3d/anchor.png", hint: "anchor" },
+        { id: "snowman",  name: "Snowman",      art: "⛄", img: "rips3d/snowman.jpg", hint: "snowman" },
+        { id: "treecake", name: "Tree Cake",    art: "🎄", img: "rips3d/treecake.jpg", hint: "tree cake" }
       ];
+      function artHTML(owner, cls) { return owner.img ? '<img class="' + cls + (owner.img.slice(-4) === ".png" ? " png" : "") + '" src="' + owner.img + '" alt="">' : owner.art; }
       var CARD_BY_ID = {};
       CARDS.forEach(function (c) { CARD_BY_ID[c.id] = c; });
 
@@ -503,10 +511,10 @@
 
       /* ================= Packs ================= */
       var PACKS = [
-        { id: "crew",      name: "Crew Pack",      art: "🎒", price: 10,  pool: ["kim", "trish", "sandy", "gladys", "sprocket"], tag: "" },
-        { id: "christmas", name: "Christmas Grails", art: "🎄", price: 25, pool: ["grinch", "snowman", "treecake", "canvas", "shell"], tag: "Holiday" },
-        { id: "mermaid",   name: "Mermaid Pack",   art: "🧜‍♀️", price: 25, pool: ["kim", "trish", "sandy", "wave", "anchor"], tag: "Under the sea" },
-        { id: "elite",     name: "Elite Pack",     art: "👑", price: 100, pool: CARDS.map(function (c) { return c.id; }), tag: "Boosted odds", elite: true }
+        { id: "crew",      name: "Crew Pack",      art: "🎒", img: "rips3d/pack-crew.jpg", price: 10,  pool: ["kim", "trish", "sandy", "gladys", "sprocket"], tag: "" },
+        { id: "christmas", name: "Christmas Grails", art: "🎄", img: "rips3d/pack-christmas.jpg", price: 25, pool: ["grinch", "snowman", "treecake", "canvas", "shell"], tag: "Holiday" },
+        { id: "mermaid",   name: "Mermaid Pack",   art: "🧜‍♀️", img: "rips3d/pack-mermaid.jpg", price: 25, pool: ["kim", "trish", "sandy", "wave", "anchor"], tag: "Under the sea" },
+        { id: "elite",     name: "Elite Pack",     art: "👑", img: "rips3d/pack-elite.jpg", price: 100, pool: CARDS.map(function (c) { return c.id; }), tag: "Boosted odds", elite: true }
       ];
 
       /* ================= Coins + refill (same pattern as Cove Slots) ================= */
@@ -662,7 +670,7 @@
           btn.disabled = ripping || coins < pack.price;
           var poolNames = pack.pool.map(function (id) { return CARD_BY_ID[id].name; }).join(", ");
           btn.innerHTML =
-            '<div class="pack-art" aria-hidden="true">' + pack.art + '</div>' +
+            '<div class="pack-art" aria-hidden="true">' + artHTML(pack, "packimg") + '</div>' +
             "<h3>" + pack.name + "</h3>" +
             '<div class="price">🪙 ' + pack.price + " coins</div>" +
             '<div class="pulls">5 cards · ' + poolNames + "</div>" +
@@ -683,7 +691,7 @@
           if (entry && entry.count > 0) {
             div.className = "vault-card best-" + entry.best;
             div.innerHTML =
-              '<div class="art" aria-hidden="true">' + c.art + "</div>" +
+              '<div class="art" aria-hidden="true">' + artHTML(c, "cardimg") + "</div>" +
               '<div class="nm">' + c.name + "</div>" +
               '<div class="cnt">×' + entry.count + "</div>" +
               '<div class="best rar-' + entry.best + '">Best: ' + rarityLabel(entry.best) + "</div>";
@@ -759,7 +767,7 @@
         /* Stage 1: shaking pack */
         ripStageEl.classList.remove("hidden");
         ripStageEl.innerHTML =
-          '<div class="rip-pack shaking" id="ripPackArt" aria-hidden="true">' + pack.art + '</div>' +
+          '<div class="rip-pack shaking" id="ripPackArt" aria-hidden="true">' + artHTML(pack, "packimg") + '</div>' +
           '<div class="rip-hint">Ripping…</div>';
         setTimeout(function () {
           var art = document.getElementById("ripPackArt");
@@ -791,8 +799,8 @@
         pulls.forEach(function (p) {
           html += '<div class="rip-card r-' + p.rarity + '">' +
             '<div class="rip-card-inner">' +
-            '<div class="rip-face back">🌊</div>' +
-            '<div class="rip-face front"><div class="art">' + p.card.art + '</div><div class="nm">' + p.card.name + '</div><div class="rar rar-' + p.rarity + '">' + rarityLabel(p.rarity) + "</div></div>" +
+            '<div class="rip-face back"></div>' +
+            '<div class="rip-face front"><div class="art">' + artHTML(p.card, "cardimg") + '</div><div class="nm">' + p.card.name + '</div><div class="rar rar-' + p.rarity + '">' + rarityLabel(p.rarity) + "</div></div>" +
             "</div></div>";
         });
         html += "</div>";
@@ -852,7 +860,7 @@
         var golds = lastPull.filter(function (p) { return p.rarity === "gold"; });
         var shown = golds.length ? golds : lastPull.slice().sort(function (a, b) { return RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity]; }).slice(0, 3);
         var tiles = shown.map(function (p) {
-          return '<div class="wc-tile"><div class="art">' + p.card.art + '</div><div class="nm">' + p.card.name + " · " + rarityLabel(p.rarity) + "</div></div>";
+          return '<div class="wc-tile"><div class="art">' + artHTML(p.card, "cardimg") + '</div><div class="nm">' + p.card.name + " · " + rarityLabel(p.rarity) + "</div></div>";
         }).join("");
         var today = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
         document.getElementById("winnerCard").innerHTML =
