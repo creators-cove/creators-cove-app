@@ -66,7 +66,7 @@
 <div id="scene">
   <img class="town" id="bgTown" src="village2/town.jpg" alt="A cheerful beach town with cottages, a bakery, a fountain plaza and a lighthouse">
   <img class="town" id="bgStreet" src="village2/street.jpg" alt="Main Street at sunset: the Salty Canvas storefront, a signpost, and the lighthouse over the sea" style="display:none">
-  <img class="town" id="bgLot" src="village2/lotfull.jpg" alt="Your whole beach property in one picture: two building pads, a hill, a lily pond, a garden patch and the beach" style="display:none">
+  <img class="town" id="bgLot" src="village2/lotfull-v2.jpg" alt="Your whole beach property in one picture: a hill, a lily pond, a garden patch and the beach" style="display:none">
   <img class="town" id="bgBoard" src="village2/boardwalk.jpg" alt="The boardwalk: a wooden pier over the sea with string lights, a little shuttered stand and a ferris wheel in the distance" style="display:none">
   <img class="town" id="bgLane" src="village2/lane.jpg" alt="Neighbor Lane: a cobblestone lane between beach cottages with mailboxes and bunting, running down to the sea" style="display:none">
   <div id="dusk"></div>
@@ -573,9 +573,9 @@ function migrateTown() {
   if (had) { town.placed = {}; town.placedB = {}; try { localStorage.setItem(TOWN_KEY, JSON.stringify(town)); } catch (e) {} }
 }
 var LOT_DEFS = [
-  { n: 1, name: "Lot 1 · Home Lot", img: "lotfull.jpg", price: 0 },
-  { n: 2, name: "Lot 2 · The Palm Lot", img: "lot-palms.jpg", price: 25000 },
-  { n: 3, name: "Lot 3 · The Meadow Lot", img: "lot-meadow.jpg", price: 60000 }
+  { n: 1, name: "Lot 1 · Home Lot", img: "lotfull-v2.jpg", price: 0 },
+  { n: 2, name: "Lot 2 · The Palm Lot", img: "lot-palms-v2.jpg", price: 25000 },
+  { n: 3, name: "Lot 3 · The Meadow Lot", img: "lot-meadow-v2.jpg", price: 60000 }
 ];
 function normLots() {
   if (!town.lots || town.lots < 1) town.lots = 1;
@@ -778,7 +778,7 @@ function attachDrag(img, idx) {
 }
 
 function paintLotChrome(onLot) {
-  var show = onLot !== undefined ? onLot : (typeof curSceneName !== "undefined" && curSceneName === "lot");
+  var show = onLot !== undefined ? onLot : (document.getElementById("bgLot").style.display === "block");
   if (visitMode) {
     document.getElementById("lotRow").style.display = show ? "flex" : "none";
     document.getElementById("moveBar").style.display = "none";
