@@ -303,10 +303,10 @@
       </section>
 
       <section class="panel" aria-label="How to play">
-        <h2>How it works in the group</h2>
+        <h2>How it works</h2>
         <p>Rip packs just for fun — the coins are make-believe and there's nothing to buy. Every pack has <strong>5 cards</strong>. Most pulls are Common, some are Rare, a few are Epic — and a lucky few are <strong>Gold</strong>, and Gold cards glow.</p>
         <p><strong>Elite Pack</strong> costs more coins, but it boosts your Epic and Gold odds. Nothing is guaranteed, though — that's what makes a Gold pull worth celebrating.</p>
-        <p><strong>Your pulls can win a real prize.</strong> Pull a <strong>Gold</strong> card and you win the current prize — right now you pick between the <strong>Little Garden Witch Journal Kit</strong>, the <strong>Farmhouse Journal Kit</strong>, the <strong>Legends Tribute Coloring Pack</strong>, the <strong>North Pole Coloring Pack</strong>, the <strong>Button-Eyes Planner Pack</strong>, and the <strong>Enchanted Forest Journal Kit</strong>. Tap <strong>WINNER CARD</strong> to see your claim code, then hit <strong>Redeem</strong> — your prize downloads right to your phone, no waiting on anybody. Screenshot your win for the group if you want to show off. One prize per member, per round, and each code works once. Your codes stay saved right here in the game, under "Your prize codes," so you can't lose them.</p>
+        <p><strong>Your pulls can win a real prize.</strong> Pull a <strong>Gold</strong> card and you win the current prize — right now you pick between the <strong>Little Garden Witch Journal Kit</strong>, the <strong>Farmhouse Journal Kit</strong>, the <strong>Legends Tribute Coloring Pack</strong>, the <strong>North Pole Coloring Pack</strong>, the <strong>Button-Eyes Planner Pack</strong>, and the <strong>Enchanted Forest Journal Kit</strong>. Tap <strong>WINNER CARD</strong> to see your claim code, then hit <strong>Redeem</strong> — your prize downloads right to your phone, no waiting on anybody. One prize per member, per round, and each code works once. Your codes stay saved right here in the game, under "Your prize codes," so you can't lose them.</p>
         <p class="note">Run out of coins? Your next 100 free coins arrive tomorrow — when you hit zero, a countdown timer appears showing exactly how long is left until midnight. Come back tomorrow, tap to claim your 100, and you're ripping again. Your coin balance and your Vault are saved on this device, so they're right where you left them when you come back — your session scores start fresh each visit.</p>
       </section>
     </main>
@@ -736,7 +736,7 @@
           var when = isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
           html += '<p style="margin:6px 0;"><strong style="font-family:Fredoka,sans-serif; letter-spacing:0.06em; font-size:1.1rem;">' + p.code + "</strong> — " + rarityLabel(p.rarity) + " " + p.card + (when ? " · " + when : "") + ' · <a href="cove-redeem.html?code=' + p.code + '">Redeem</a></p>';
         });
-        html += '<p class="note">Tap Redeem next to a code and your journal kit downloads right to your phone — you pick which one. Screenshot your win for the group first if you want to show off. One prize per member, per round — each code works once.</p>';
+        html += '<p class="note">Tap Redeem next to a code and your journal kit downloads right to your phone — you pick which one. One prize per member, per round — each code works once.</p>';
         list.innerHTML = html;
       }
       function renderAll() {
@@ -826,7 +826,7 @@
             pb.className = "prize-code-box";
             pb.innerHTML = "🎁 <strong>You won the " + CURRENT_PRIZE + "!</strong><br>Your claim code:" +
               '<div class="prize-code">' + lastPrizeCode + "</div>" +
-              "Screenshot this and show it off in the Creator's Cove group — then tap the button and the kit downloads right to your phone. Nobody has to send you anything. One prize per member, per round.<br>" +
+              "Tap the button and the kit downloads right to your phone. Nobody has to send you anything. One prize per member, per round.<br>" +
               '<a class="btn" style="margin-top:10px; text-decoration:none;" href="cove-redeem.html?code=' + lastPrizeCode + '">🎁 Redeem my prize</a>';
             ripStageEl.appendChild(pb);
             renderPrizeCodes();
@@ -874,7 +874,7 @@
           (lastPrizeCode ?
             '<p class="wc-amount" style="font-size:1.25rem;">🎁 Claim code: ' + lastPrizeCode + "</p>" +
             '<p class="wc-detail">Prize: ' + CURRENT_PRIZE + "</p>" : "") +
-          '<p class="wc-detail" style="font-size:0.85rem; margin-top:10px;">Screenshot this and post it in the Creator\'s Cove Facebook group' + (lastPrizeCode ? " — redeem the code in the app and the kit downloads to your phone. One prize per member, per round." : " to enter — prizes are picked in the group, not in the app.") + ' Coins are make-believe.</p>';
+          '<p class="wc-detail" style="font-size:0.85rem; margin-top:10px;">' + (lastPrizeCode ? "Redeem the code in the app and the kit downloads to your phone. One prize per member, per round." : "Gold pulls win the prize — keep ripping!") + ' Coins are make-believe.</p>';
         overlay.classList.add("show");
       }
       document.getElementById("closeCardBtn").addEventListener("click", function () {

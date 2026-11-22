@@ -54,7 +54,7 @@
     <button class="btn gold" id="saveBtn" type="button">💾 Save my art</button>
   </div>
 
-  <p class="howto"><strong>How to play:</strong> pick a color from the palette, then tap any shape on the page to fill it. The <strong>white swatch is your eraser</strong>. Your coloring stays put when you hop between pages, so take your time. When a page is done, tap <strong>Save my art</strong> and post your masterpiece in the group! These pages come from <em>Creator's Cove: The Girls' Beach Adventure</em> — our coloring book (the whole book is in the Cove Downloads, if you want all 60 pages for printing).</p>
+  <p class="howto"><strong>How to play:</strong> pick a color from the palette, then tap any shape on the page to fill it. The <strong>white swatch is your eraser</strong>. Your coloring stays put when you hop between pages, so take your time. When a page is done, tap <strong>Save my art</strong> and it's yours to keep! These pages come from <em>Creator's Cove: The Girls' Beach Adventure</em> — our coloring book (the whole book is in the Cove Downloads, if you want all 60 pages for printing).</p>
 </div>
 <div id="toast"></div>
 
@@ -225,7 +225,7 @@
         a.click();
         setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
         Sfx.save();
-        toast("Saved! Post it in the group so we can ooh and aah 🎨");
+        toast("Saved to your phone 🎨");
       }, "image/png");
     } else {
       toast("Saving didn't work here — a screenshot works too!");

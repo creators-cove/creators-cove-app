@@ -189,7 +189,7 @@
         <p><strong>Tableau:</strong> build down in alternating colours — a red 7 goes on a black 8. Only a King can start an empty column. Tap a face-up card to pick it up (and every card on top of it), then tap where it goes.</p>
         <p><strong>Foundations:</strong> build up by suit, Ace first, up to King. Tap a card, then tap its foundation pile — or tap a foundation to send a card home.</p>
         <p><strong>Stock:</strong> tap the deck to draw one card. When the deck runs out, tap it again to turn the waste pile back over.</p>
-        <p class="note">Just for fun — screenshot your win and post it in the Creator's Cove Facebook group!</p>
+        <p class="note">Just for fun — your wins live right here.</p>
       </section>
     </main>
 
@@ -198,7 +198,7 @@
         <div style="font-size:3rem;">🏆🌊</div>
         <h2>You did it!</h2>
         <p id="winDetail">All four foundations are complete!</p>
-        <p style="opacity:.85;">Screenshot your win and post it in the Creator's Cove Facebook group!</p>
+        <p style="opacity:.85;">A win worth framing — nicely played!</p>
         <button id="playAgainBtn" type="button">Deal again</button>
       </div>
     </div>
@@ -573,7 +573,7 @@
             Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0") + "!";
           var o = document.getElementById("overlay");
           if (o) o.classList.add("open");
-          setDisplay("🎉 You win! Screenshot it for the Cove!");
+          setDisplay("🎉 You win! A proper Cove victory!");
         } else {
           Sfx.place();
           setDisplay(msg);
