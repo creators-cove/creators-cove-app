@@ -191,6 +191,7 @@
     <button data-place="stand">🍦 The Ice Cream Stand</button>
     <button data-place="wheel">🎡 The Ferris Wheel</button>
     <button data-place="railing">🌊 The Railing</button>
+    <button id="bwBtn">🎡 Boardwalk Fun</button>
   </div>
   <div class="row" id="dirRainbow" style="display:none">
     <button data-place="falls">🌈 Rainbow Falls</button>
@@ -772,6 +773,81 @@ function rbFrame(dt) {
     } else if (performance.now() > nextBfly) rbSpawnBfly();
   }
 }
+</script>
+<script>
+/* Boardwalk Fun — the Boardwalk's daily trio: fishing off the pier
+   (5 casts), one ferris wheel ride, one balloon pop game. State in
+   the town save as town.bw, reset by date. Winnings pay into the
+   farm wallet like everything else in town. */
+function bwToday() { var d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+function bwInit() {
+  if (!town.bw || town.bw.day !== bwToday()) town.bw = { day: bwToday(), casts: 0, wheel: false, pops: 0, popBoard: null, popped: [] };
+  return town.bw;
+}
+function bwPanel() {
+  var bw = bwInit();
+  var h = "<div>Your farm balance: \uD83D\uDC1A " + shells().toLocaleString() + "</div>";
+  h += "<div class='rb-sec'>\uD83C\uDFA3 Fishing off the Pier</div><div class='rb-row'><span class='nm'>Casts left today: " + (5 - bw.casts) + " of 5</span>" +
+    (bw.casts < 5 ? "<button class='rb-buy' onclick='bwCast()'>Cast a line</button>" : "<span>Back tomorrow</span>") + "</div>";
+  h += "<div class='rb-sec'>\uD83C\uDFA1 The Ferris Wheel</div><div class='rb-row'><span class='nm'>" + (bw.wheel ? "You rode it today \u2014 what a view." : "One ride a day. Whatever you spot from the top is yours.") + "</span>" +
+    (bw.wheel ? "" : "<button class='rb-buy' onclick='bwRide()'>Ride it</button>") + "</div>";
+  h += "<div class='rb-sec'>\uD83C\uDF88 Balloon Pop</div><div class='rb-row'><span class='nm'>" + (bw.pops >= 3 ? "All popped for today." : "Nine balloons, three pops. One of them is a water balloon.") + "</span>" +
+    (bw.pops >= 3 ? "" : "<button class='rb-buy' onclick='bwPopGame()'>Play</button>") + "</div>";
+  rbOpen("\uD83C\uDFA1 Boardwalk Fun", h);
+}
+function bwCast() {
+  var bw = bwInit();
+  if (bw.casts >= 5) { toast("\uD83C\uDFA3 That's all your casts for today \u2014 the fish need their rest too."); return; }
+  bw.casts++; saveTown();
+  var r = Math.random() * 100, msg, n = 0;
+  if (r < 4) { n = 150; msg = "\uD83D\uDC51\uD83E\uDD80 THE GOLDEN CRAB! The pier legend is REAL \u2014 +\uD83D\uDC1A 150!"; }
+  else if (r < 10) { n = 40; msg = "\uD83E\uDEAE A mermaid's lost comb, crusted with pearls \u2014 +\uD83D\uDC1A 40!"; }
+  else if (r < 18) { n = 20 + Math.floor(Math.random() * 11); msg = "\u2B50 A starfish (gently returned) left you +\uD83D\uDC1A " + n + " in thanks."; }
+  else if (r < 32) { n = 15 + Math.floor(Math.random() * 11); msg = "\uD83D\uDC1A A whole cluster of shells on the line \u2014 +\uD83D\uDC1A " + n + "!"; }
+  else if (r < 52) { n = 10 + Math.floor(Math.random() * 9); msg = "\uD83E\uDD80 A crab! He pinches the air, you keep +\uD83D\uDC1A " + n + "."; }
+  else if (r < 86) { n = 6 + Math.floor(Math.random() * 7); msg = "\uD83D\uDC1F A fish! Back he goes \u2014 the pier pays +\uD83D\uDC1A " + n + " for the sport."; }
+  else if (r < 96) { n = 2; msg = "\uD83C\uDF3F Seaweed. Mostly seaweed. +\uD83D\uDC1A 2 for your trouble."; }
+  else { n = 0; msg = "\uD83E\uDD7E An old boot. The pier provides. (No shells, but what a story.)"; }
+  if (n > 0 && !addShells(n)) { toast("Start your Farm & Village first \u2014 your winnings go to your farm."); return; }
+  toast(msg); bwPanel();
+}
+function bwRide() {
+  var bw = bwInit();
+  if (bw.wheel) { toast("\uD83C\uDFA1 You already rode today \u2014 come back tomorrow for another turn."); return; }
+  bw.wheel = true; saveTown();
+  var r = Math.random() * 100, n, msg;
+  if (r < 15) { n = 100; msg = "\uD83C\uDFA1 From the very top you spot something glinting on the sand \u2014 washed-up treasure! +\uD83D\uDC1A 100"; }
+  else if (r < 40) { n = 50 + Math.floor(Math.random() * 31); msg = "\uD83C\uDFA1 From the top you spot a whole trail of shells nobody else saw \u2014 +\uD83D\uDC1A " + n + "!"; }
+  else { n = 20 + Math.floor(Math.random() * 31); msg = "\uD83C\uDFA1 From the top you spot shells glinting by the railing \u2014 +\uD83D\uDC1A " + n + "!"; }
+  if (!addShells(n)) { toast("Start your Farm & Village first \u2014 your prize goes to your farm."); return; }
+  toast(msg); bwPanel();
+}
+function bwPopGame() {
+  var bw = bwInit();
+  if (bw.pops >= 3) { toast("\uD83C\uDF88 All popped for today \u2014 the balloon man restocks overnight."); return; }
+  if (!bw.popBoard) {
+    var vals = [5, 8, 10, 12, 15, 18, 22, 30, -1];
+    for (var i = vals.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = vals[i]; vals[i] = vals[j]; vals[j] = t; }
+    bw.popBoard = vals; bw.popped = []; saveTown();
+  }
+  var h = "<div>Pops used: " + bw.pops + " of 3 \u2014 tap a balloon.</div><div style='display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px'>";
+  bw.popBoard.forEach(function (v, i) {
+    var done = bw.popped.indexOf(i) >= 0;
+    h += "<button class='rb-buy' style='font-size:1.5rem;padding:12px 0' " + (done ? "disabled" : "onclick='bwPop(" + i + ")'") + ">" + (done ? (v < 0 ? "\uD83D\uDCA6" : "\uD83D\uDC1A " + v) : "\uD83C\uDF88") + "</button>";
+  });
+  h += "</div>";
+  rbOpen("\uD83C\uDF88 Balloon Pop", h);
+}
+function bwPop(i) {
+  var bw = bwInit();
+  if (!bw.popBoard || bw.popped.indexOf(i) >= 0 || bw.pops >= 3) return;
+  var v = bw.popBoard[i];
+  bw.popped.push(i); bw.pops++; saveTown();
+  if (v < 0) toast("\uD83D\uDCA6 SPLASH! The water balloon. The balloon man is NOT sorry.");
+  else { addShells(v); toast("\uD83C\uDF88 POP! +\uD83D\uDC1A " + v + " behind that one!"); }
+  if (bw.pops >= 3) { bwPanel(); } else bwPopGame();
+}
+document.getElementById("bwBtn").addEventListener("click", function () { startMusic(); bwPanel(); });
 </script>
 <script>
 /* Cove traffic tally - counts page opens per day, never who */
