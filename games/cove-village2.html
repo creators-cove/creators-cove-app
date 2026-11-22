@@ -27,6 +27,23 @@
   .zone:active { background: rgba(255,217,138,.18); border-radius: 12px; }
   .sprite { position: absolute; cursor: pointer; -webkit-tap-highlight-color: transparent; filter: drop-shadow(0 6px 5px rgba(0,0,0,.35)); animation: bob 2.8s ease-in-out infinite; }
   #sp-nova { position: absolute; cursor: pointer; -webkit-tap-highlight-color: transparent; filter: drop-shadow(0 6px 5px rgba(0,0,0,.3)); z-index: 7; }
+  #rbLayer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+  #rbLayer img { position: absolute; pointer-events: auto; -webkit-tap-highlight-color: transparent; }
+  .rb-item { cursor: grab; filter: drop-shadow(0 5px 5px rgba(0,0,0,.3)); touch-action: none; }
+  .rb-item.ripe { filter: drop-shadow(0 0 12px rgba(255,215,80,.95)) drop-shadow(0 5px 5px rgba(0,0,0,.3)); cursor: pointer; }
+  .rb-pet { cursor: pointer; filter: drop-shadow(0 4px 4px rgba(0,0,0,.3)); }
+  .rb-bfly { cursor: pointer; z-index: 9; filter: drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
+  #rbPanel { position: fixed; inset: 0; background: rgba(10,30,40,.55); z-index: 80; align-items: center; justify-content: center; }
+  #rbPanelInner { background: #fff8ee; color: #17384a; border-radius: 18px; width: 430px; max-width: 92vw; max-height: 82vh; overflow-y: auto; padding: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.4); }
+  #rbPanelTitle { font-weight: bold; font-size: 1.05rem; margin-bottom: 8px; }
+  .rb-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #ead9bd; }
+  .rb-row .nm { flex: 1; }
+  .rb-buy { background: #ffd98a; border: 2px solid #b98a2f; color: #17384a; border-radius: 999px; padding: 5px 12px; font-weight: bold; cursor: pointer; }
+  .rb-sec { font-weight: bold; margin: 12px 0 2px; color: #8a5a12; }
+  .bfly-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center; }
+  .bfly-cell img { width: 100%; }
+  .bfly-cell .bn { font-size: .72rem; line-height: 1.2; }
+  .bfly-miss { filter: brightness(0) opacity(.28); }
   @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.2%); } }
   .sprite.wiggle { animation: wig .55s ease-in-out; }
   .sprite.walking { animation: glidebob .55s ease-in-out infinite; }
@@ -129,6 +146,7 @@
   <img class="sprite" id="sp-gladys" src="village2/gladys.png" alt="Gladys" style="left:71%;bottom:28%;height:31%;animation-delay:.4s">
   <img class="sprite" id="sp-sprocket" src="village2/sprocket.png" alt="Sprocket" style="left:86%;bottom:28%;height:16%;animation-delay:1s">
   <img id="sp-nova" src="village2/nova.png" alt="Nova the unicorn" style="display:none;left:26%;bottom:10%;height:20%">
+  <div id="rbLayer" style="display:none"></div>
   <div id="gull"><svg viewBox="0 0 40 18" width="54" height="24"><path d="M2 13 Q10 3 20 11 Q30 3 38 13" stroke="#ffffff" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg></div>
   <div id="bubble"></div>
 </div>
@@ -177,10 +195,13 @@
     <button data-place="cottages2">🍭 Candy Cottages</button>
     <button data-place="pond">✨ Sparkle Pond</button>
     <button data-place="nova">🦄 Nova</button>
+    <button id="rbShopBtn">🏠 Build &amp; Decorate</button>
+    <button id="bflyBtn">🦋 Butterflies</button>
   </div>
   <div id="dirLane" style="display:none"><div id="laneDirInner"></div></div>
 </div>
 
+<div id="rbPanel" style="display:none"><div id="rbPanelInner"><div id="rbPanelTitle"></div><div id="rbPanelBody"></div><div style="text-align:center;margin-top:12px"><button class="rb-buy" id="rbPanelClose">Close</button></div></div></div>
 <footer>Village 2 shares your farm's name and code — your neighbors here are your farm neighbors.<br>The town tune is the same soft one from the farm. First tap starts the music.</footer>
 
 <script>
@@ -269,6 +290,7 @@ function setScene(name) {
   document.getElementById("dirLane").style.display = lane ? "block" : "none";
   document.getElementById("dirRainbow").style.display = rainbow ? "flex" : "none";
   document.getElementById("sp-nova").style.display = rainbow ? "block" : "none";
+  document.getElementById("rbLayer").style.display = rainbow ? "block" : "none";
   document.getElementById("tabTown").classList.toggle("active", townS);
   document.getElementById("tabStreet").classList.toggle("active", street);
   document.getElementById("tabLot").classList.toggle("active", lot);
@@ -434,6 +456,7 @@ function lifeFrame(ts) {
   var pub = scene === "town" || scene === "street" || scene === "board" || scene === "rainbow";
   if (!pub || document.hidden) return;
   if (typeof novaFrame === "function") novaFrame(dt);
+  if (typeof rbFrame === "function") rbFrame(dt);
   var sceneEl = document.getElementById("scene");
   var sr = sceneEl.getBoundingClientRect();
   Object.keys(agents).forEach(function (who) {
@@ -506,6 +529,226 @@ function novaFrame(dt) {
   novaEl.style.left = nova.x + "%";
   novaEl.style.bottom = (nova.y + Math.abs(Math.sin(nova.ph)) * 0.55) + "%";
   novaEl.style.height = (20 + (12 - nova.y) * 0.35) + "%";
+}
+</script>
+<script>
+/* Rainbow World building — candy houses and decor you buy with farm
+   shells and drag anywhere in the world, pet unicorns that move in,
+   cotton candy plants that grow and get picked, and a butterfly
+   collection to complete. State lives in the town save: town.rb
+   (placed things), town.pets, town.bfly. */
+var RB_ITEMS = {
+  housepink:  { img: "rb-house-pink",    name: "\uD83C\uDF6D Candy Cottage",      price: 2500, h: 27 },
+  housemint:  { img: "rb-house-mint",    name: "\uD83C\uDF6C Peppermint Cottage", price: 2500, h: 27 },
+  houselemon: { img: "rb-house-lemon",   name: "\uD83C\uDF4B Lemon Drop Cottage", price: 3000, h: 27 },
+  castle:     { img: "rb-house-castle",  name: "\uD83C\uDFF0 Rainbow Castle",     price: 9000, h: 34 },
+  stable:     { img: "rb-stable",        name: "\uD83E\uDD84 Unicorn Stable",     price: 1800, h: 22 },
+  fountain:   { img: "rb-fountain",      name: "\u26F2 Sparkle Fountain",         price: 1200, h: 20 },
+  rbtree:     { img: "rb-rainbow-tree",  name: "\uD83C\uDF08 Rainbow Tree",       price: 600,  h: 24 },
+  loltree:    { img: "rb-lollipop-tree", name: "\uD83C\uDF6D Lollipop Tree",      price: 450,  h: 24 },
+  cotton:     { img: "rb-cotton",        name: "\uD83C\uDF6C Cotton Candy Plant", price: 150,  h: 20, grow: true }
+};
+var RB_PETS = {
+  sky:   { img: "uni-sky",   name: "Skye",    price: 2000 },
+  mint:  { img: "uni-mint",  name: "Minty",   price: 2000 },
+  peach: { img: "uni-peach", name: "Peaches", price: 2000 },
+  gold:  { img: "uni-gold",  name: "Goldie",  price: 2000 }
+};
+var BFLY = [
+  ["rainbow", "Rainbow Wonder", 5], ["monarch", "Monarch", 14], ["morpho", "Blue Morpho", 14],
+  ["rose", "Rose Pink", 14], ["violet", "Violet", 13], ["lemon", "Lemon Drop", 14],
+  ["mint", "Mint", 13], ["peach", "Peach", 13]
+];
+var rbLayer = document.getElementById("rbLayer");
+var petState = {}, bflyActive = null, nextBfly = 0;
+function rbInit() { if (!town.rb) town.rb = []; if (!town.pets) town.pets = []; if (!town.bfly) town.bfly = {}; }
+function cottonStage(it) { var hrs = (Date.now() - (it.born || 0)) / 3600000; return hrs < 2 ? 0 : hrs < 5 ? 1 : 2; }
+function renderRB() {
+  rbInit();
+  rbLayer.innerHTML = "";
+  town.rb.forEach(function (it, idx) {
+    var d = RB_ITEMS[it.k]; if (!d) return;
+    var img = document.createElement("img");
+    img.src = "village2/" + d.img + ".png"; img.alt = d.name; img.className = "rb-item"; img.dataset.idx = idx; img.draggable = false;
+    var sc = 1;
+    if (d.grow) { var st = cottonStage(it); sc = [0.5, 0.78, 1][st]; img.dataset.stage = st; if (st === 2) img.classList.add("ripe"); }
+    img.style.left = it.x + "%"; img.style.bottom = it.y + "%"; img.style.height = (d.h * sc) + "%";
+    img.style.zIndex = String(10 - Math.round(it.y / 4));
+    rbLayer.appendChild(img);
+  });
+  if (bflyActive) rbLayer.appendChild(bflyActive.el);
+  town.pets.forEach(function (pk) {
+    var d = RB_PETS[pk]; if (!d) return;
+    if (!petState[pk]) petState[pk] = { x: 15 + Math.random() * 55, y: 7 + Math.random() * 5, tx: 40, wait: Math.random() * 2, ph: Math.random() * 6 };
+    var img = document.createElement("img");
+    img.src = "village2/" + d.img + ".png"; img.alt = d.name; img.className = "rb-pet"; img.dataset.pet = pk; img.draggable = false;
+    img.style.left = petState[pk].x + "%"; img.style.bottom = petState[pk].y + "%"; img.style.height = "14%"; img.style.zIndex = "8";
+    img.addEventListener("click", function () { toast("\uD83E\uDD84 " + d.name + " nuzzles your hand and prances in a little circle."); });
+    rbLayer.appendChild(img);
+  });
+}
+function rbOpen(title, html) {
+  document.getElementById("rbPanelTitle").textContent = title;
+  document.getElementById("rbPanelBody").innerHTML = html;
+  document.getElementById("rbPanel").style.display = "flex";
+}
+function rbClose() { document.getElementById("rbPanel").style.display = "none"; }
+document.getElementById("rbPanelClose").addEventListener("click", rbClose);
+document.getElementById("rbPanel").addEventListener("click", function (e) { if (e.target === this) rbClose(); });
+function rbShop() {
+  rbInit();
+  var h = "<div>Your farm balance: \uD83D\uDC1A " + shells().toLocaleString() + "</div>";
+  h += "<div class='rb-sec'>Houses &amp; Decor</div>";
+  Object.keys(RB_ITEMS).forEach(function (k) {
+    var d = RB_ITEMS[k];
+    h += "<div class='rb-row'><span class='nm'>" + d.name + "</span><span>\uD83D\uDC1A " + d.price.toLocaleString() + "</span><button class='rb-buy' onclick='rbBuy(\"" + k + "\")'>Buy</button></div>";
+  });
+  h += "<div class='rb-sec'>Pet Unicorns (up to 3)</div>";
+  Object.keys(RB_PETS).forEach(function (k) {
+    var d = RB_PETS[k], owned = town.pets.indexOf(k) >= 0;
+    h += "<div class='rb-row'><span class='nm'>\uD83E\uDD84 " + d.name + "</span>" + (owned ? "<span>\u2713 Lives here</span>" : "<span>\uD83D\uDC1A " + d.price.toLocaleString() + "</span><button class='rb-buy' onclick='rbBuyPet(\"" + k + "\")'>Adopt</button>") + "</div>";
+  });
+  h += "<div style='margin-top:10px;font-size:.85rem'>Drag your houses and things to arrange them. Tap one to sell it back for half price. Cotton candy plants take about 5 hours to fluff up \u2014 tap a glowing one to pick it.</div>";
+  rbOpen("\uD83C\uDF08 Build in Rainbow World", h);
+}
+function rbBuy(k) {
+  rbInit();
+  var d = RB_ITEMS[k];
+  if (!spendShells(d.price)) { toast("Not enough shells \u2014 your farm has \uD83D\uDC1A " + shells().toLocaleString()); return; }
+  var n = town.rb.length;
+  town.rb.push({ k: k, x: 6 + (n * 14) % 72, y: 5, born: Date.now() });
+  saveTown(); renderRB(); rbShop();
+  toast(d.name + " is yours! Drag it wherever you like.");
+}
+function rbBuyPet(k) {
+  rbInit();
+  if (town.pets.length >= 3) { toast("Three unicorns is a happy herd \u2014 that's the limit for now."); return; }
+  var d = RB_PETS[k];
+  if (!spendShells(d.price)) { toast("Not enough shells \u2014 your farm has \uD83D\uDC1A " + shells().toLocaleString()); return; }
+  town.pets.push(k); saveTown(); renderRB(); rbShop();
+  toast("\uD83E\uDD84 " + d.name + " has moved into Rainbow World!");
+}
+function rbItemTap(idx) {
+  rbInit();
+  var it = town.rb[idx]; if (!it) return;
+  var d = RB_ITEMS[it.k];
+  if (d.grow) {
+    if (cottonStage(it) === 2) {
+      var n = 25 + Math.floor(Math.random() * 21);
+      if (addShells(n)) { it.born = Date.now(); saveTown(); renderRB(); toast("\uD83C\uDF6C You pick a big fluffy cotton candy \u2014 +\uD83D\uDC1A " + n + "! The plant starts puffing up again."); }
+      else toast("Start your Farm & Village first \u2014 harvest shells go to your farm.");
+    } else toast("\uD83C\uDF6C Still growing \u2014 cotton candy takes about 5 hours to fluff up.");
+    return;
+  }
+  var half = Math.floor(d.price / 2);
+  rbOpen(d.name, "<div>Sell it back for \uD83D\uDC1A " + half.toLocaleString() + "?</div><div style='text-align:center;margin-top:12px'><button class='rb-buy' onclick='rbSell(" + idx + ")'>Sell back \u00B7 \uD83D\uDC1A " + half.toLocaleString() + "</button></div>");
+}
+function rbSell(idx) {
+  rbInit();
+  var it = town.rb[idx]; if (!it) { rbClose(); return; }
+  var d = RB_ITEMS[it.k], half = Math.floor(d.price / 2);
+  if (!addShells(half)) { toast("Start your Farm & Village first \u2014 your shells live there."); rbClose(); return; }
+  town.rb.splice(idx, 1); saveTown(); renderRB(); rbClose();
+  toast(d.name + " sold back \u2014 +\uD83D\uDC1A " + half.toLocaleString());
+}
+document.getElementById("rbShopBtn").addEventListener("click", function () { startMusic(); rbShop(); });
+document.getElementById("bflyBtn").addEventListener("click", function () { startMusic(); bflyPanel(); });
+function bflyPanel() {
+  rbInit();
+  var found = BFLY.filter(function (b) { return (town.bfly[b[0]] || 0) > 0; }).length;
+  var h = "<div>" + found + " of 8 found" + (town.bflyDone ? " \u2014 collection complete! \uD83C\uDF89" : " \u2014 catch one of each for a \uD83D\uDC1A 250 bonus") + "</div><div class='bfly-grid' style='margin-top:10px'>";
+  BFLY.forEach(function (b) {
+    var c = town.bfly[b[0]] || 0;
+    h += "<div class='bfly-cell'><img src='village2/bfly-" + b[0] + ".png' alt='" + b[1] + "'" + (c ? "" : " class='bfly-miss'") + "><div class='bn'>" + (c ? b[1] : "???") + (c > 1 ? " \u00D7" + c : "") + "</div></div>";
+  });
+  h += "</div><div style='margin-top:10px;font-size:.85rem'>Butterflies flutter through Rainbow World every so often. Tap one before it flutters away to add it to your collection \u2014 and pocket \uD83D\uDC1A 8.</div>";
+  rbOpen("\uD83E\uDD8B Butterfly Collection", h);
+}
+function rbSpawnBfly() {
+  if (bflyActive || curSceneName !== "rainbow") return;
+  var tot = BFLY.reduce(function (a, b) { return a + b[2]; }, 0), r = Math.random() * tot, sp = BFLY[0];
+  for (var i = 0; i < BFLY.length; i++) { r -= BFLY[i][2]; if (r <= 0) { sp = BFLY[i]; break; } }
+  var img = document.createElement("img");
+  img.src = "village2/bfly-" + sp[0] + ".png"; img.alt = sp[1]; img.className = "rb-bfly"; img.style.height = "7%"; img.draggable = false;
+  var dir = Math.random() < 0.5 ? 1 : -1;
+  bflyActive = { el: img, sp: sp, t: 0, dur: 11, dir: dir, yBase: 20 + Math.random() * 16 };
+  img.addEventListener("pointerdown", function (e) { e.stopPropagation(); rbCatchBfly(); });
+  rbLayer.appendChild(img);
+}
+function rbCatchBfly() {
+  if (!bflyActive) return;
+  var sp = bflyActive.sp;
+  rbInit();
+  var isNew = !(town.bfly[sp[0]] > 0);
+  town.bfly[sp[0]] = (town.bfly[sp[0]] || 0) + 1;
+  addShells(8);
+  bflyActive.el.remove(); bflyActive = null; nextBfly = performance.now() + 25000 + Math.random() * 25000;
+  var found = BFLY.filter(function (b) { return (town.bfly[b[0]] || 0) > 0; }).length;
+  if (isNew && found === 8 && !town.bflyDone) { town.bflyDone = true; addShells(250); toast("\uD83E\uDD8B " + sp[1] + " caught \u2014 THAT'S ALL 8! Collection complete: +\uD83D\uDC1A 250 bonus!"); }
+  else toast(isNew ? "\uD83E\uDD8B NEW! " + sp[1] + " joins your collection (" + found + " of 8) \u2014 +\uD83D\uDC1A 8" : "\uD83E\uDD8B " + sp[1] + " caught \u2014 +\uD83D\uDC1A 8");
+  saveTown();
+}
+var rbDrag = null;
+rbLayer.addEventListener("pointerdown", function (e) {
+  var t = e.target;
+  if (!t.classList || !t.classList.contains("rb-item")) return;
+  e.preventDefault();
+  var scene = document.getElementById("scene").getBoundingClientRect();
+  rbDrag = { idx: +t.dataset.idx, el: t, moved: false,
+    gx: (e.clientX - scene.left) / scene.width * 100 - parseFloat(t.style.left),
+    gy: (scene.bottom - e.clientY) / scene.height * 100 - parseFloat(t.style.bottom) };
+  try { t.setPointerCapture(e.pointerId); } catch (err) {}
+});
+rbLayer.addEventListener("pointermove", function (e) {
+  if (!rbDrag) return;
+  var scene = document.getElementById("scene").getBoundingClientRect();
+  var x = (e.clientX - scene.left) / scene.width * 100 - rbDrag.gx;
+  var y = (scene.bottom - e.clientY) / scene.height * 100 - rbDrag.gy;
+  x = Math.max(0, Math.min(93, x)); y = Math.max(1, Math.min(32, y));
+  if (Math.abs(x - parseFloat(rbDrag.el.style.left)) > 0.4 || Math.abs(y - parseFloat(rbDrag.el.style.bottom)) > 0.4) rbDrag.moved = true;
+  rbDrag.el.style.left = x + "%"; rbDrag.el.style.bottom = y + "%"; rbDrag.el.style.zIndex = String(10 - Math.round(y / 4));
+  rbDrag.x = x; rbDrag.y = y;
+});
+rbLayer.addEventListener("pointerup", function () {
+  if (!rbDrag) return;
+  var d = rbDrag; rbDrag = null;
+  if (d.moved) { rbInit(); var it = town.rb[d.idx]; if (it) { it.x = Math.round(d.x * 10) / 10; it.y = Math.round(d.y * 10) / 10; saveTown(); } }
+  else rbItemTap(d.idx);
+});
+var rbTick = 0;
+var rbBooted = false;
+function rbFrame(dt) {
+  if (typeof curSceneName === "undefined" || curSceneName !== "rainbow" || document.hidden) return;
+  if (!rbBooted) { rbBooted = true; rbInit(); renderRB(); }
+  rbTick += dt;
+  Object.keys(petState).forEach(function (pk) {
+    var st = petState[pk], el = rbLayer.querySelector("[data-pet='" + pk + "']");
+    if (!el) return;
+    st.ph += dt * 5;
+    if (st.wait > 0) st.wait -= dt;
+    else {
+      var dx = st.tx - st.x, dist = Math.abs(dx), sp = 1.9 * dt;
+      if (dist < 0.7) { st.tx = 6 + Math.random() * 66; st.y = 6 + Math.random() * 6; st.wait = 1.5 + Math.random() * 3.5; }
+      else { st.x += Math.sign(dx) * Math.min(sp, dist); el.style.transform = dx < 0 ? "scaleX(1)" : "scaleX(-1)"; }
+    }
+    el.style.left = st.x + "%";
+    el.style.bottom = (st.y + Math.abs(Math.sin(st.ph)) * 0.5) + "%";
+  });
+  if (bflyActive) {
+    var b = bflyActive; b.t += dt;
+    var k = b.t / b.dur;
+    if (k >= 1) { b.el.remove(); bflyActive = null; nextBfly = performance.now() + 20000 + Math.random() * 25000; }
+    else {
+      var x = b.dir > 0 ? -8 + k * 112 : 100 - k * 112;
+      b.el.style.left = x + "%";
+      b.el.style.bottom = (b.yBase + Math.sin(k * Math.PI) * 9 + Math.sin(b.t * 9) * 1.4) + "%";
+      b.el.style.transform = "scaleX(" + (b.dir > 0 ? 1 : -1) + ") rotate(" + Math.sin(b.t * 9) * 7 + "deg)";
+    }
+  } else if (performance.now() > nextBfly) rbSpawnBfly();
+  if (rbTick > 5) { rbTick = 0; rbInit(); var dirty = false;
+    town.rb.forEach(function (it, idx) { var d = RB_ITEMS[it.k]; if (d && d.grow) { var el = rbLayer.querySelector("[data-idx='" + idx + "']"); if (el && +el.dataset.stage !== cottonStage(it)) dirty = true; } });
+    if (dirty) renderRB();
+  }
 }
 </script>
 <script>
