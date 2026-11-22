@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cove Word — Creator's Cove</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: linear-gradient(180deg, #0b3d4a, #082f3a); color: #fdf6e3; min-height: 100vh; padding: 16px 12px 40px; }
+  .wrap { max-width: 430px; margin: 0 auto; }
+  a.back { color: #ffd97a; text-decoration: none; font-size: .95rem; }
+  h1 { text-align: center; font-size: 1.9rem; margin: 8px 0 2px; color: #ffe9b0; }
+  .sub { text-align: center; opacity: .9; margin-bottom: 6px; }
+  .stats { text-align: center; color: #ffd97a; margin-bottom: 12px; font-size: .98rem; }
+  #board { display: grid; grid-template-rows: repeat(6, 1fr); gap: 6px; max-width: 320px; margin: 0 auto 10px; }
+  .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .tile { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; font-weight: bold; text-transform: uppercase; background: rgba(255,248,238,.08); border: 2px solid rgba(255,233,176,.35); border-radius: 8px; color: #fff8ee; }
+  .tile.filled { border-color: rgba(255,233,176,.85); }
+  .tile.green { background: #2e9e62; border-color: #2e9e62; }
+  .tile.gold { background: #d9a441; border-color: #d9a441; color: #402d00; }
+  .tile.gray { background: #5d6d72; border-color: #5d6d72; opacity: .85; }
+  #msg { text-align: center; min-height: 1.5em; margin: 4px 0 10px; color: #ffe9b0; }
+  #keyboard { max-width: 400px; margin: 0 auto; }
+  .krow { display: flex; gap: 5px; justify-content: center; margin-bottom: 6px; }
+  .key { flex: 1; max-width: 38px; padding: 13px 0; border: none; border-radius: 7px; background: #e8dcc0; color: #223; font-size: 1rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+  .key.wide { max-width: 62px; flex: 1.5; font-size: .8rem; }
+  .key.green { background: #2e9e62; color: #fff; }
+  .key.gold { background: #d9a441; color: #402d00; }
+  .key.gray { background: #5d6d72; color: #fff; opacity: .7; }
+  .panel { background: #fff8ee; color: #23404a; border-radius: 14px; padding: 16px; margin-top: 16px; display: none; }
+  .panel h2 { font-size: 1.15rem; color: #8a5a12; margin-bottom: 8px; }
+  .dist-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-size: .92rem; }
+  .dist-bar { background: #2e9e62; color: #fff; border-radius: 4px; padding: 1px 7px; min-width: 26px; text-align: right; font-size: .85rem; }
+  .dist-row.me .dist-bar { background: #d9a441; color: #402d00; font-weight: bold; }
+  .nb-row { padding: 5px 0; border-bottom: 1px solid #ead9bd; font-size: .95rem; }
+  .nb-row:last-child { border-bottom: none; }
+  .howto { background: rgba(255,248,238,.09); border: 1px solid rgba(255,233,176,.25); border-radius: 14px; padding: 14px 16px; margin-top: 16px; font-size: .95rem; line-height: 1.5; }
+  .howto h2 { font-size: 1.05rem; color: #ffe9b0; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Back to Cove</a>
+  <h1>&#128292; Cove Word</h1>
+  <p class="sub">One word a day &mdash; the same word for the whole Cove.</p>
+  <p class="stats" id="statsLine"></p>
+  <div id="board"></div>
+  <p id="msg"></p>
+  <div id="keyboard"></div>
+  <div class="panel" id="resultsPanel"></div>
+  <div class="howto">
+    <h2>How to play</h2>
+    <p>Guess the 5-letter word in 6 tries. Tap the letters, then <b>Enter</b>. Green means the right letter in the right spot, gold means the letter is in the word but in another spot, and gray means it is not in the word at all. Any five letters count as a guess &mdash; no dictionary checks, this is the friendly version.</p>
+    <p style="margin-top:8px">A new word arrives at midnight. Win and your farm earns shells &mdash; the fewer guesses, the bigger the prize (100 / 75 / 50 / 35 / 25 / 15). When you finish, you will see how the rest of the Cove did today, and how your neighbors fared.</p>
+  </div>
+</div>
+<script>
+var COVE_API_URL = "https://enabled-platypus-167183.upstash.io";
+var COVE_API_KEY = "gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg";
+function api(cmd) {
+  return fetch(COVE_API_URL, { method: "POST", headers: { "Authorization": "Bearer " + COVE_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(cmd) })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { return j ? j.result : null; });
+}
+function apiReady() { return COVE_API_URL.indexOf("http") === 0; }
+var WORDS = ["PAINT","BRUSH","COLOR","PAPER","CRAFT","OCEAN","BEACH","SHELL","PEARL","CORAL","WAVES","SANDY","SUNNY","TIDES","SHORE","PALMS","LIGHT","GLOBE","WATER","SMILE","LAUGH","DANCE","MUSIC","PARTY","GIFTS","CANDY","HONEY","SPICE","HERBS","BLOOM","PETAL","TULIP","DAISY","ROSES","LILAC","IVORY","AMBER","JEWEL","PEACH","MELON","LEMON","APPLE","BERRY","GRAPE","MANGO","COCOA","CREAM","TOAST","BAGEL","CREEK","RIVER","BROOK","TRAIL","WOODS","PINES","MAPLE","BIRCH","CEDAR","FROST","SNOWY","FIRES","EMBER","FLAME","SPARK","WITCH","MAGIC","FAIRY","GNOME","PIXIE","TROLL","COMET","ORBIT","HAPPY","SUGAR","SASSY","WITTY","QUEST","DOCKS","PIERS","OTTER"];
+WORDS = WORDS.filter(function (w) { return /^[A-Z]{5}$/.test(w); });
+var PAY = [0, 100, 75, 50, 35, 25, 15];
+var SAVE_KEY = "cove-word-v1";
+function dayNum() { var d = new Date(); return Math.floor(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 86400000); }
+function dateStr() { var d = new Date(); function p(n) { return (n < 10 ? "0" : "") + n; } return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()); }
+function todaysWord() { return WORDS[((dayNum() * 37 + 11) % WORDS.length + WORDS.length) % WORDS.length]; }
+function loadSave() {
+  var s = null;
+  try { s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); } catch (e) { s = null; }
+  if (!s || typeof s !== "object") s = { streak: 0, played: 0, won: 0, lastWinDay: -9 };
+  if (s.day !== dayNum()) { s.day = dayNum(); s.guesses = []; s.status = "playing"; s.cur = ""; s.paidDay = s.paidDay || -1; s.reportedDay = s.reportedDay || -1; }
+  if (!Array.isArray(s.guesses)) s.guesses = [];
+  if (typeof s.cur !== "string") s.cur = "";
+  return s;
+}
+var S = loadSave();
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+function farmState() { try { return JSON.parse(localStorage.getItem("cove-farm-village-v1") || "null"); } catch (e) { return null; } }
+function addToFarm(n) {
+  var f = farmState(); if (!f) return false;
+  f.shells = (f.shells || 0) + n;
+  if (typeof f.earned === "number") f.earned += n;
+  try { localStorage.setItem("cove-farm-village-v1", JSON.stringify(f)); } catch (e) { return false; }
+  return true;
+}
+function myCode() { try { return localStorage.getItem("cove-farm-code") || ""; } catch (e) { return ""; } }
+function esc(t) { return String(t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function evaluate(guess, word) {
+  var res = ["gray", "gray", "gray", "gray", "gray"], rest = {};
+  for (var i = 0; i < 5; i++) {
+    if (guess[i] === word[i]) res[i] = "green";
+    else rest[word[i]] = (rest[word[i]] || 0) + 1;
+  }
+  for (var j = 0; j < 5; j++) {
+    if (res[j] === "green") continue;
+    if (rest[guess[j]] > 0) { res[j] = "gold"; rest[guess[j]]--; }
+  }
+  return res;
+}
+var keyState = {};
+function render() {
+  var word = todaysWord();
+  document.getElementById("statsLine").textContent = "\uD83D\uDD25 Streak: " + (S.streak || 0) + " \u00B7 Won " + (S.won || 0) + " of " + (S.played || 0);
+  var board = document.getElementById("board");
+  board.innerHTML = "";
+  keyState = {};
+  for (var r = 0; r < 6; r++) {
+    var rowEl = document.createElement("div"); rowEl.className = "row";
+    var guess = S.guesses[r] || (r === S.guesses.length && S.status === "playing" ? S.cur : "");
+    var ev = S.guesses[r] ? evaluate(S.guesses[r], word) : null;
+    for (var c = 0; c < 5; c++) {
+      var t = document.createElement("div");
+      t.className = "tile" + (guess[c] ? " filled" : "") + (ev ? " " + ev[c] : "");
+      t.textContent = guess[c] || "";
+      rowEl.appendChild(t);
+      if (ev && guess[c]) {
+        var prev = keyState[guess[c]];
+        if (ev[c] === "green" || (ev[c] === "gold" && prev !== "green") || !prev) keyState[guess[c]] = ev[c];
+      }
+    }
+    board.appendChild(rowEl);
+  }
+  document.querySelectorAll(".key[data-k]").forEach(function (k) {
+    var st = keyState[k.getAttribute("data-k")];
+    k.classList.remove("green", "gold", "gray");
+    if (st) k.classList.add(st);
+  });
+  var msg = document.getElementById("msg");
+  if (S.status === "won") msg.textContent = "\uD83C\uDF89 You got it in " + S.guesses.length + (S.guesses.length === 1 ? " guess" : " guesses") + "!";
+  else if (S.status === "lost") msg.textContent = "So close! Today's word was " + word + ". New word at midnight.";
+  else msg.textContent = "";
+}
+function buildKeyboard() {
+  var rows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+  var kb = document.getElementById("keyboard");
+  rows.forEach(function (rowStr, ri) {
+    var rowEl = document.createElement("div"); rowEl.className = "krow";
+    if (ri === 2) rowEl.appendChild(mkKey("Enter", "ENTER", true));
+    rowStr.split("").forEach(function (ch) { rowEl.appendChild(mkKey(ch, ch, false)); });
+    if (ri === 2) rowEl.appendChild(mkKey("\u232B", "BACK", true));
+    kb.appendChild(rowEl);
+  });
+  function mkKey(label, val, wide) {
+    var b = document.createElement("button");
+    b.className = "key" + (wide ? " wide" : "");
+    b.textContent = label;
+    if (!wide) b.setAttribute("data-k", val);
+    b.addEventListener("click", function () { press(val); });
+    return b;
+  }
+}
+function press(k) {
+  if (S.status !== "playing") return;
+  if (k === "BACK") S.cur = S.cur.slice(0, -1);
+  else if (k === "ENTER") { submitGuess(); return; }
+  else if (/^[A-Z]$/.test(k) && S.cur.length < 5) S.cur += k;
+  else return;
+  save(); render();
+}
+function submitGuess() {
+  if (S.cur.length !== 5) { document.getElementById("msg").textContent = "Five letters, then Enter."; return; }
+  var word = todaysWord();
+  var guess = S.cur;
+  S.guesses.push(guess); S.cur = "";
+  if (guess === word) finishGame(true);
+  else if (S.guesses.length >= 6) finishGame(false);
+  save(); render();
+  if (S.status !== "playing") showResults();
+}
+function finishGame(wonGame) {
+  S.status = wonGame ? "won" : "lost";
+  S.played = (S.played || 0) + 1;
+  if (wonGame) {
+    S.won = (S.won || 0) + 1;
+    S.streak = (S.lastWinDay === dayNum() - 1 || S.lastWinDay === dayNum()) ? (S.streak || 0) + 1 : 1;
+    S.lastWinDay = dayNum();
+    if (S.paidDay !== dayNum()) {
+      var pay = PAY[S.guesses.length] || 15;
+      if (addToFarm(pay)) { S.paidDay = dayNum(); setTimeout(function () { document.getElementById("msg").textContent += " +\uD83D\uDC1A " + pay + " to your farm!"; }, 50); }
+    }
+  } else S.streak = 0;
+  save();
+  reportResult(wonGame);
+}
+function reportResult(wonGame) {
+  if (S.reportedDay === dayNum() || !apiReady()) return;
+  S.reportedDay = dayNum(); save();
+  var key = "wordday:" + dateStr(), n = S.guesses.length;
+  api(["HINCRBY", key, "played", 1]).catch(function () {});
+  if (wonGame) {
+    api(["HINCRBY", key, "won", 1]).catch(function () {});
+    api(["HINCRBY", key, "g" + n, 1]).catch(function () {});
+  }
+  var code = myCode();
+  if (code) api(["SET", "wordres:" + code + ":" + dateStr(), wonGame ? String(n) : "X"]).catch(function () {});
+}
+function showResults() {
+  var panel = document.getElementById("resultsPanel");
+  panel.style.display = "block";
+  panel.innerHTML = "<h2>\uD83D\uDD24 Today at the Cove</h2><div>Counting today's words\u2026</div>";
+  if (!apiReady()) { panel.innerHTML = "<h2>\uD83D\uDD24 Today at the Cove</h2><div>The Cove board needs a connection \u2014 your game still counts.</div>"; return; }
+  api(["HGETALL", "wordday:" + dateStr()]).then(function (res) {
+    var d = {};
+    if (Array.isArray(res)) for (var i = 0; i + 1 < res.length; i += 2) d[res[i]] = parseInt(res[i + 1], 10) || 0;
+    var played = d.played || 0, won = d.won || 0;
+    var h = "<h2>\uD83D\uDD24 Today at the Cove</h2>";
+    if (!played) h += "<div>You're the first Cove finisher today!</div>";
+    else {
+      var mode = 0, modeN = 0;
+      for (var g = 1; g <= 6; g++) if ((d["g" + g] || 0) > modeN) { modeN = d["g" + g]; mode = g; }
+      h += "<div><b>" + played + "</b> creator" + (played === 1 ? "" : "s") + " finished today's word \u00B7 <b>" + won + "</b> found it" + (mode ? " \u00B7 most in <b>" + mode + "</b>" : "") + ".</div>";
+      h += "<div style='margin-top:8px'>";
+      for (var g2 = 1; g2 <= 6; g2++) {
+        var cnt = d["g" + g2] || 0, pct = won ? Math.round(cnt / won * 100) : 0;
+        var me = S.status === "won" && S.guesses.length === g2;
+        h += "<div class='dist-row" + (me ? " me" : "") + "'><span style='width:12px'>" + g2 + "</span><span class='dist-bar' style='width:" + Math.max(8, pct) + "%'>" + cnt + "</span></div>";
+      }
+      h += "</div>";
+    }
+    panel.innerHTML = h;
+    renderNeighbors(panel);
+  }).catch(function () {
+    panel.innerHTML = "<h2>\uD83D\uDD24 Today at the Cove</h2><div>The Cove board could not be reached just now.</div>";
+  });
+}
+function renderNeighbors(panel) {
+  var nbs = [];
+  try { nbs = JSON.parse(localStorage.getItem("cove-farm-neighbors") || "[]"); } catch (e) { nbs = []; }
+  if (!Array.isArray(nbs) || !nbs.length) return;
+  var mine = myCode();
+  nbs = nbs.filter(function (n) { return n && n.code && n.code !== mine; }).slice(0, 10);
+  if (!nbs.length) return;
+  var sec = document.createElement("div");
+  sec.innerHTML = "<h2 style='margin-top:12px'>\uD83C\uDFE1 Your neighbors today</h2>";
+  panel.appendChild(sec);
+  nbs.forEach(function (nb) {
+    var rowEl = document.createElement("div");
+    rowEl.className = "nb-row";
+    rowEl.textContent = nb.name || nb.code;
+    sec.appendChild(rowEl);
+    api(["GET", "wordres:" + nb.code + ":" + dateStr()]).then(function (v) {
+      var tail = " \u2014 hasn't finished yet";
+      if (v === "X") tail = " \u2014 no luck today";
+      else if (v) tail = " \u2014 got it in " + v + " \uD83C\uDF89";
+      rowEl.textContent = (nb.name || nb.code) + tail;
+    }).catch(function () {});
+  });
+}
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") press("ENTER");
+  else if (e.key === "Backspace") press("BACK");
+  else if (/^[a-zA-Z]$/.test(e.key)) press(e.key.toUpperCase());
+});
+buildKeyboard();
+render();
+if (S.status !== "playing") showResults();
+</script>
+</body>
+</html>
