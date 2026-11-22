@@ -32,7 +32,7 @@
   .rb-item { cursor: grab; filter: drop-shadow(0 5px 5px rgba(0,0,0,.3)); touch-action: none; }
   .rb-item.ripe { filter: drop-shadow(0 0 12px rgba(255,215,80,.95)) drop-shadow(0 5px 5px rgba(0,0,0,.3)); cursor: pointer; }
   .rb-pet { cursor: pointer; filter: drop-shadow(0 4px 4px rgba(0,0,0,.3)); }
-  .rb-bfly { cursor: pointer; z-index: 9; filter: drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
+  .rb-bfly { position: absolute; cursor: pointer; z-index: 9; filter: drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
   #rbPanel { position: fixed; inset: 0; background: rgba(10,30,40,.55); z-index: 80; align-items: center; justify-content: center; }
   #rbPanelInner { background: #fff8ee; color: #17384a; border-radius: 18px; width: 430px; max-width: 92vw; max-height: 82vh; overflow-y: auto; padding: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.4); }
   #rbPanelTitle { font-weight: bold; font-size: 1.05rem; margin-bottom: 8px; }
@@ -98,6 +98,7 @@
   <button id="tabLane">🔒 Neighbor Lane</button>
   <button id="tabBoard">🎡 The Boardwalk</button>
   <button id="tabRainbow">🌈 Rainbow World</button>
+  <button id="tabRainbowLot">🏡 My Rainbow Land</button>
 </div>
 <div id="ladderStrip"><button id="ladderBtn">🪜 Town Ladder</button><button id="funBtn">🎁 Town Fun</button></div>
 <div id="scene">
@@ -107,6 +108,7 @@
   <img class="town" id="bgBoard" src="village2/boardwalk.jpg" alt="The boardwalk: a wooden pier over the sea with string lights, a little shuttered stand and a ferris wheel in the distance" style="display:none">
   <img class="town" id="bgLane" src="village2/lane.jpg" alt="Neighbor Lane: a cobblestone lane between beach cottages with mailboxes and bunting, running down to the sea" style="display:none">
   <img class="town" id="bgRainbow" src="village2/rainbow.jpg" alt="Rainbow World: a whole other world of rainbow trees, candy cottages, a sparkle pond and a rainbow waterfall" style="display:none">
+  <img class="town" id="bgRainbowLot" src="village2/rainbowlot.jpg" alt="My Rainbow Land: your own empty sparkle meadow under the rainbow, ready to build on" style="display:none">
   <div id="dusk"></div>
   <div id="beam"></div>
   <div id="winGlow"></div>
@@ -195,8 +197,12 @@
     <button data-place="cottages2">🍭 Candy Cottages</button>
     <button data-place="pond">✨ Sparkle Pond</button>
     <button data-place="nova">🦄 Nova</button>
-    <button id="rbShopBtn">🏠 Build &amp; Decorate</button>
+    <button id="rbGoLandBtn">🏡 My Rainbow Land</button>
     <button id="bflyBtn">🦋 Butterflies</button>
+  </div>
+  <div class="row" id="dirRainbowLot" style="display:none">
+    <button id="rbShopBtn2">🏠 Build &amp; Decorate</button>
+    <button id="rbBackBtn">🌈 Back to Rainbow World</button>
   </div>
   <div id="dirLane" style="display:none"><div id="laneDirInner"></div></div>
 </div>
@@ -264,11 +270,12 @@ var SUBS = {
   lot: "Your own little piece of the Cove",
   board: "The Boardwalk — sea air and string lights",
   lane: "Neighbor Lane — your neighbors live here",
-  rainbow: "Rainbow World — a whole other world, through the rainbow"
+  rainbow: "Rainbow World — a whole other world, through the rainbow",
+  rainbowlot: "My Rainbow Land — your own plot through the rainbow"
 };
 var townNameSet = !!document.getElementById("townSub").textContent.match(/COVE-/);
 function setScene(name) {
-  var street = name === "street", lot = name === "lot", board = name === "board", townS = name === "town", lane = name === "lane", rainbow = name === "rainbow";
+  var street = name === "street", lot = name === "lot", board = name === "board", townS = name === "town", lane = name === "lane", rainbow = name === "rainbow", rainbowlot = name === "rainbowlot";
   document.getElementById("scene").classList.toggle("street", street);
   document.getElementById("bgTown").style.display = townS ? "block" : "none";
   document.getElementById("bgStreet").style.display = street ? "block" : "none";
@@ -276,6 +283,7 @@ function setScene(name) {
   document.getElementById("bgBoard").style.display = board ? "block" : "none";
   document.getElementById("bgLane").style.display = lane ? "block" : "none";
   document.getElementById("bgRainbow").style.display = rainbow ? "block" : "none";
+  document.getElementById("bgRainbowLot").style.display = rainbowlot ? "block" : "none";
   document.getElementById("zonesTown").style.display = townS ? "block" : "none";
   document.getElementById("zonesStreet").style.display = street ? "block" : "none";
   document.getElementById("zonesBoard").style.display = board ? "block" : "none";
@@ -289,22 +297,27 @@ function setScene(name) {
   document.getElementById("dirBoard").style.display = board ? "flex" : "none";
   document.getElementById("dirLane").style.display = lane ? "block" : "none";
   document.getElementById("dirRainbow").style.display = rainbow ? "flex" : "none";
+  document.getElementById("dirRainbowLot").style.display = rainbowlot ? "flex" : "none";
   document.getElementById("sp-nova").style.display = rainbow ? "block" : "none";
-  document.getElementById("rbLayer").style.display = rainbow ? "block" : "none";
+  document.getElementById("rbLayer").style.display = rainbowlot ? "block" : "none";
+  if (rainbowlot && typeof rbBoot === "function") rbBoot();
   document.getElementById("tabTown").classList.toggle("active", townS);
   document.getElementById("tabStreet").classList.toggle("active", street);
   document.getElementById("tabLot").classList.toggle("active", lot);
   document.getElementById("tabBoard").classList.toggle("active", board);
   document.getElementById("tabLane").classList.toggle("active", lane);
   document.getElementById("tabRainbow").classList.toggle("active", rainbow);
+  document.getElementById("tabRainbowLot").classList.toggle("active", rainbowlot);
   document.getElementById("dirTitle").textContent = lot ? "🏡 Your Lots — tap a chip below the picture to switch lots; drag your things wherever you want them" : "📍 Around Town — tap a place, or tap the girls in the picture";
   if (lane) document.getElementById("dirTitle").textContent = "🛤️ Neighbor Lane — tap a neighbor in the picture to visit their lots";
   if (rainbow) document.getElementById("dirTitle").textContent = "🌈 Rainbow World — tap a place, tap the girls, and don't forget to say hello to Nova";
+  if (rainbowlot) document.getElementById("dirTitle").textContent = "🏡 My Rainbow Land — this plot is all yours: build your houses, plant your cotton candy, let your unicorns roam";
   if (street) document.getElementById("dusk").style.display = "none"; else applyDusk();
   if (rainbow) document.getElementById("dusk").style.display = "none";
+  if (rainbowlot) document.getElementById("dusk").style.display = "none";
   if (!townNameSet) document.getElementById("townSub").textContent = SUBS[name];
-  document.querySelectorAll(".sprite").forEach(function (el) { el.style.display = (lot || lane) ? "none" : "block"; });
-  if (!lot && !lane) {
+  document.querySelectorAll(".sprite").forEach(function (el) { el.style.display = (lot || lane || rainbowlot) ? "none" : "block"; });
+  if (!lot && !lane && !rainbowlot) {
     var pos = POS[name];
     Object.keys(pos).forEach(function (who) {
       var el = document.getElementById("sp-" + who), p = pos[who];
@@ -324,6 +337,7 @@ document.getElementById("tabStreet").addEventListener("click", function () { sta
 document.getElementById("tabLot").addEventListener("click", function () { startMusic(); setScene("lot"); });
 document.getElementById("tabBoard").addEventListener("click", function () { startMusic(); if (!sceneUnlocked("board")) { lockedTap("board"); return; } setScene("board"); });
 document.getElementById("tabRainbow").addEventListener("click", function () { startMusic(); setScene("rainbow"); });
+document.getElementById("tabRainbowLot").addEventListener("click", function () { startMusic(); setScene("rainbowlot"); });
 document.getElementById("tabLane").addEventListener("click", function () { startMusic(); if (typeof neighborCount === "function" && neighborCount() >= 3) setScene("lane"); else if (typeof openLanePanel === "function") openLanePanel(); });
 
 function showPlace(key) {
@@ -454,9 +468,9 @@ function lifeFrame(ts) {
   var scene = (typeof curSceneName === "string") ? curSceneName : null;
   if (scene !== lifeScene) lifeSync(scene);
   var pub = scene === "town" || scene === "street" || scene === "board" || scene === "rainbow";
+  if (typeof rbFrame === "function") rbFrame(dt);
   if (!pub || document.hidden) return;
   if (typeof novaFrame === "function") novaFrame(dt);
-  if (typeof rbFrame === "function") rbFrame(dt);
   var sceneEl = document.getElementById("scene");
   var sr = sceneEl.getBoundingClientRect();
   Object.keys(agents).forEach(function (who) {
@@ -576,7 +590,6 @@ function renderRB() {
     img.style.zIndex = String(10 - Math.round(it.y / 4));
     rbLayer.appendChild(img);
   });
-  if (bflyActive) rbLayer.appendChild(bflyActive.el);
   town.pets.forEach(function (pk) {
     var d = RB_PETS[pk]; if (!d) return;
     if (!petState[pk]) petState[pk] = { x: 15 + Math.random() * 55, y: 7 + Math.random() * 5, tx: 40, wait: Math.random() * 2, ph: Math.random() * 6 };
@@ -651,7 +664,9 @@ function rbSell(idx) {
   town.rb.splice(idx, 1); saveTown(); renderRB(); rbClose();
   toast(d.name + " sold back \u2014 +\uD83D\uDC1A " + half.toLocaleString());
 }
-document.getElementById("rbShopBtn").addEventListener("click", function () { startMusic(); rbShop(); });
+document.getElementById("rbShopBtn2").addEventListener("click", function () { startMusic(); rbShop(); });
+document.getElementById("rbGoLandBtn").addEventListener("click", function () { startMusic(); setScene("rainbowlot"); });
+document.getElementById("rbBackBtn").addEventListener("click", function () { startMusic(); setScene("rainbow"); });
 document.getElementById("bflyBtn").addEventListener("click", function () { startMusic(); bflyPanel(); });
 function bflyPanel() {
   rbInit();
@@ -673,7 +688,7 @@ function rbSpawnBfly() {
   var dir = Math.random() < 0.5 ? 1 : -1;
   bflyActive = { el: img, sp: sp, t: 0, dur: 11, dir: dir, yBase: 20 + Math.random() * 16 };
   img.addEventListener("pointerdown", function (e) { e.stopPropagation(); rbCatchBfly(); });
-  rbLayer.appendChild(img);
+  document.getElementById("scene").appendChild(img);
 }
 function rbCatchBfly() {
   if (!bflyActive) return;
@@ -717,37 +732,44 @@ rbLayer.addEventListener("pointerup", function () {
 });
 var rbTick = 0;
 var rbBooted = false;
+function rbBoot() { if (!rbBooted) { rbBooted = true; rbInit(); renderRB(); } }
 function rbFrame(dt) {
-  if (typeof curSceneName === "undefined" || curSceneName !== "rainbow" || document.hidden) return;
-  if (!rbBooted) { rbBooted = true; rbInit(); renderRB(); }
+  if (typeof curSceneName === "undefined" || document.hidden) return;
+  var inWorld = curSceneName === "rainbow", inLand = curSceneName === "rainbowlot";
+  if (!inWorld && !inLand) return;
+  rbBoot();
   rbTick += dt;
-  Object.keys(petState).forEach(function (pk) {
-    var st = petState[pk], el = rbLayer.querySelector("[data-pet='" + pk + "']");
-    if (!el) return;
-    st.ph += dt * 5;
-    if (st.wait > 0) st.wait -= dt;
-    else {
-      var dx = st.tx - st.x, dist = Math.abs(dx), sp = 1.9 * dt;
-      if (dist < 0.7) { st.tx = 6 + Math.random() * 66; st.y = 6 + Math.random() * 6; st.wait = 1.5 + Math.random() * 3.5; }
-      else { st.x += Math.sign(dx) * Math.min(sp, dist); el.style.transform = dx < 0 ? "scaleX(1)" : "scaleX(-1)"; }
+  if (inLand) {
+    Object.keys(petState).forEach(function (pk) {
+      var st = petState[pk], el = rbLayer.querySelector("[data-pet='" + pk + "']");
+      if (!el) return;
+      st.ph += dt * 5;
+      if (st.wait > 0) st.wait -= dt;
+      else {
+        var dx = st.tx - st.x, dist = Math.abs(dx), sp = 1.9 * dt;
+        if (dist < 0.7) { st.tx = 6 + Math.random() * 66; st.y = 6 + Math.random() * 6; st.wait = 1.5 + Math.random() * 3.5; }
+        else { st.x += Math.sign(dx) * Math.min(sp, dist); el.style.transform = dx < 0 ? "scaleX(1)" : "scaleX(-1)"; }
+      }
+      el.style.left = st.x + "%";
+      el.style.bottom = (st.y + Math.abs(Math.sin(st.ph)) * 0.5) + "%";
+    });
+    if (rbTick > 5) { rbTick = 0; rbInit(); var dirty = false;
+      town.rb.forEach(function (it, idx) { var d = RB_ITEMS[it.k]; if (d && d.grow) { var el = rbLayer.querySelector("[data-idx='" + idx + "']"); if (el && +el.dataset.stage !== cottonStage(it)) dirty = true; } });
+      if (dirty) renderRB();
     }
-    el.style.left = st.x + "%";
-    el.style.bottom = (st.y + Math.abs(Math.sin(st.ph)) * 0.5) + "%";
-  });
-  if (bflyActive) {
-    var b = bflyActive; b.t += dt;
-    var k = b.t / b.dur;
-    if (k >= 1) { b.el.remove(); bflyActive = null; nextBfly = performance.now() + 20000 + Math.random() * 25000; }
-    else {
-      var x = b.dir > 0 ? -8 + k * 112 : 100 - k * 112;
-      b.el.style.left = x + "%";
-      b.el.style.bottom = (b.yBase + Math.sin(k * Math.PI) * 9 + Math.sin(b.t * 9) * 1.4) + "%";
-      b.el.style.transform = "scaleX(" + (b.dir > 0 ? 1 : -1) + ") rotate(" + Math.sin(b.t * 9) * 7 + "deg)";
-    }
-  } else if (performance.now() > nextBfly) rbSpawnBfly();
-  if (rbTick > 5) { rbTick = 0; rbInit(); var dirty = false;
-    town.rb.forEach(function (it, idx) { var d = RB_ITEMS[it.k]; if (d && d.grow) { var el = rbLayer.querySelector("[data-idx='" + idx + "']"); if (el && +el.dataset.stage !== cottonStage(it)) dirty = true; } });
-    if (dirty) renderRB();
+  }
+  if (inWorld) {
+    if (bflyActive) {
+      var b = bflyActive; b.t += dt;
+      var k = b.t / b.dur;
+      if (k >= 1) { b.el.remove(); bflyActive = null; nextBfly = performance.now() + 20000 + Math.random() * 25000; }
+      else {
+        var x = b.dir > 0 ? -8 + k * 112 : 100 - k * 112;
+        b.el.style.left = x + "%";
+        b.el.style.bottom = (b.yBase + Math.sin(k * Math.PI) * 9 + Math.sin(b.t * 9) * 1.4) + "%";
+        b.el.style.transform = "scaleX(" + (b.dir > 0 ? 1 : -1) + ") rotate(" + Math.sin(b.t * 9) * 7 + "deg)";
+      }
+    } else if (performance.now() > nextBfly) rbSpawnBfly();
   }
 }
 </script>
