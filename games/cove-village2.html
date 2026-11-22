@@ -850,6 +850,79 @@ function bwPop(i) {
 document.getElementById("bwBtn").addEventListener("click", function () { startMusic(); bwPanel(); });
 </script>
 <script>
+/* My Art — creators hang their OWN paintings on their town lot.
+   Photos are shrunk to 480px JPEGs and kept in a per-device store
+   (localStorage cove-userart-v1), deliberately OUT of the town save:
+   lot backups and neighbor snapshots stay lean, and a placed entry
+   carries only {i:"myart", art:id, t:title, x, y}. Visitors see the
+   frame and title; the picture itself lives on the owner's phone. */
+var ART_KEY = "cove-userart-v1", ART_MAX = 6;
+function artStore() { try { return JSON.parse(localStorage.getItem(ART_KEY) || "{}"); } catch (e) { return {}; } }
+function artSave(map) { try { localStorage.setItem(ART_KEY, JSON.stringify(map)); return true; } catch (e) { return false; } }
+function artEsc(t) { return String(t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+function buildArtCard(grid) {
+  var store = artStore(), ids = Object.keys(store);
+  var placed = {};
+  [1, 2, 3].forEach(function (n) { ((town.free || {})[n] || []).forEach(function (e) { if (e.i === "myart") placed[e.art] = true; }); });
+  var oldCard = document.getElementById("artCard");
+  if (oldCard) oldCard.remove();
+  var card = document.createElement("div");
+  card.className = "shopcard";
+  card.id = "artCard";
+  card.style.textAlign = "left";
+  card.style.marginTop = "10px";
+  var h = '<div class="nm">\uD83D\uDDBC\uFE0F My Art \u2014 hang your own painting</div>';
+  h += '<div class="pr">' + ids.length + " of " + ART_MAX + " pieces \u00B7 your art lives on this phone</div>";
+  ids.forEach(function (id) {
+    var rec = store[id];
+    h += '<div class="rb-row"><img src="' + rec.img + '" style="width:38px;height:30px;object-fit:cover;border-radius:4px"><span class="nm">' + artEsc(rec.title) + "</span>" +
+      (placed[id] ? "<span>Hung \u2713</span>" : '<button data-art-hang="' + id + '">Hang it</button>') +
+      '<button data-art-del="' + id + '">Delete</button></div>';
+  });
+  if (ids.length < ART_MAX) h += '<input id="artTitle" placeholder="Title of your piece (optional)" style="width:100%;margin:6px 0;padding:7px;border-radius:8px;border:1px solid #c9a86a;box-sizing:border-box"><label class="rb-buy" style="display:inline-block;cursor:pointer">\u2795 Add my art<input id="artFile" type="file" accept="image/*" style="display:none"></label>';
+  card.innerHTML = h;
+  grid.parentNode.insertBefore(card, grid);
+  card.querySelectorAll("[data-art-hang]").forEach(function (b) { b.addEventListener("click", function () { placeArt(b.getAttribute("data-art-hang")); }); });
+  card.querySelectorAll("[data-art-del]").forEach(function (b) { b.addEventListener("click", function () { deleteArt(b.getAttribute("data-art-del")); }); });
+  var f = card.querySelector("#artFile");
+  if (f) f.addEventListener("change", function () {
+    if (f.files && f.files[0]) addArtFile(f.files[0], (card.querySelector("#artTitle") || {}).value || "");
+  });
+}
+function addArtFile(file, title) {
+  var rd = new FileReader();
+  rd.onload = function () {
+    var img = new Image();
+    img.onload = function () {
+      var max = 480, sc = Math.min(1, max / Math.max(img.width, img.height));
+      var cv = document.createElement("canvas");
+      cv.width = Math.max(1, Math.round(img.width * sc)); cv.height = Math.max(1, Math.round(img.height * sc));
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+      var store = artStore(), id = "a" + Date.now();
+      store[id] = { img: cv.toDataURL("image/jpeg", 0.82), title: (title || "My painting").slice(0, 40) };
+      if (!artSave(store)) { toast("\uD83D\uDDBC\uFE0F Your phone is out of room for artwork \u2014 delete a piece and try again."); return; }
+      placeArt(id);
+    };
+    img.onerror = function () { toast("\uD83D\uDDBC\uFE0F That file would not open as a picture \u2014 try another."); };
+    img.src = rd.result;
+  };
+  rd.readAsDataURL(file);
+}
+function placeArt(id) {
+  var rec = artStore()[id]; if (!rec) return;
+  var arr = curFree();
+  arr.push({ i: "myart", art: id, t: rec.title, x: 40, y: 24 });
+  saveTown(); closePanels(); renderLot();
+  enterMove(arr.length - 1, true, "Drag your painting where you want it, then tap \u2713 Done.");
+}
+function deleteArt(id) {
+  var store = artStore(); delete store[id]; artSave(store);
+  [1, 2, 3].forEach(function (n) { if (town.free && town.free[n]) town.free[n] = town.free[n].filter(function (e) { return !(e.i === "myart" && e.art === id); }); });
+  saveTown(); renderLot(); openCatalog();
+  toast("\uD83D\uDDBC\uFE0F Piece deleted.");
+}
+</script>
+<script>
 /* Cove traffic tally - counts page opens per day, never who */
 (function () {
   try {
@@ -879,6 +952,9 @@ document.getElementById("bwBtn").addEventListener("click", function () { startMu
   .closebtn.alt { background: #e8a33d; color: #17384a; font-weight: bold; }
   .spotmark { position: absolute; transform: translateX(-50%); width: 40px; height: 40px; border-radius: 50%; border: 2px dashed rgba(255,248,236,.95); background: rgba(11,61,84,.45); color: #fff8ec; font-size: 1.25rem; line-height: 1; cursor: pointer; z-index: 6; }
   .placeditem { position: absolute; cursor: pointer; filter: drop-shadow(0 5px 5px rgba(0,0,0,.3)); z-index: 5; }
+  .artframe { background: linear-gradient(145deg, #a4712f, #7a4a21 60%, #96682e); padding: 5px; border-radius: 6px; box-shadow: inset 0 0 0 2px #d9a94f, 0 5px 8px rgba(0,0,0,.35); cursor: pointer; }
+  .artframe .artimg { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; border-radius: 2px; background: #fff8ee; }
+  .artframe .artph { width: 100%; aspect-ratio: 4 / 3; background: #fff8ee; color: #8a5a12; display: flex; align-items: center; justify-content: center; text-align: center; font-size: .68rem; line-height: 1.25; padding: 4px; box-sizing: border-box; border-radius: 2px; }
   .lotfig { position: absolute; filter: drop-shadow(0 6px 5px rgba(0,0,0,.35)); animation: bob 2.8s ease-in-out infinite; z-index: 8; }
   .avatarpick { position: absolute; transform: translateX(-50%); background: #ffd98a; color: #17384a; border: none; border-radius: 999px; padding: 9px 14px; font-size: .88rem; font-weight: bold; cursor: pointer; z-index: 8; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
   #toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: #17384a; color: #fff8ec; border: 1px solid #2c85a8; border-radius: 999px; padding: 10px 18px; font-size: .9rem; display: none; z-index: 99; box-shadow: 0 8px 22px rgba(0,0,0,.4); max-width: 92vw; text-align: center; }
@@ -1067,7 +1143,8 @@ var ITEMS = {
   dogwood: { name: "Dogwood Tree", emoji: "🌼", price: 750, size: "med", img: "item-dogwood.png", blurb: "Covered in white blossoms — Virginia's own, and she shows it." },
   maple:   { name: "Autumn Maple", emoji: "🍁", price: 800, size: "med", img: "item-maple.png", blurb: "Orange and red all year round. Fall never leaves." },
   snowpine:{ name: "Snowy Pine", emoji: "❄️", price: 650, size: "med", img: "item-snowpine.png", blurb: "A pine with snow on every branch, even in July. Especially in July." },
-  orange:  { name: "Orange Tree", emoji: "🍊", price: 700, size: "med", img: "item-orange.png", blurb: "Glossy leaves, and oranges ripening for the picking. The Cove runs on sunshine." }
+  orange:  { name: "Orange Tree", emoji: "🍊", price: 700, size: "med", img: "item-orange.png", blurb: "Glossy leaves, and oranges ripening for the picking. The Cove runs on sunshine." },
+  myart:   { name: "My Art", emoji: "🖼️", price: 0, size: "med", img: "", blurb: "Your own painting, hung on your lot." }
 };
 var SPOTS = {
   hill:   { left: 31, bottom: 63, w: 21, sizes: ["big", "med"], acre: true },
@@ -1633,7 +1710,21 @@ function fetchTownGifts() {
 function makeItemEl(entry) {
   var it = ITEMS[entry.i];
   var el;
-  if (entry.i === "bubbles") {
+  if (entry.i === "myart") {
+    el = document.createElement("div");
+    el.className = "placeditem artframe";
+    var rec = (typeof artStore === "function") ? artStore()[entry.art] : null;
+    if (rec && rec.img) {
+      var aim = document.createElement("img");
+      aim.src = rec.img; aim.alt = entry.t || "My art"; aim.className = "artimg"; aim.draggable = false;
+      el.appendChild(aim);
+    } else {
+      var aph = document.createElement("div");
+      aph.className = "artph";
+      aph.textContent = "\uD83D\uDDBC\uFE0F " + (entry.t || "My Art");
+      el.appendChild(aph);
+    }
+  } else if (entry.i === "bubbles") {
     el = document.createElement("div");
     el.className = "placeditem";
     var im = document.createElement("img");
@@ -1759,8 +1850,10 @@ function openCatalog() {
   document.getElementById("catalogHint").innerHTML = "Your farm shells: <b>🐚 " + bal.toLocaleString() + "</b>" + (farmState() ? "" : " — start a farm to earn shells for your lot.") + "<br>Pick something, then drag it wherever you want it.";
   var grid = document.getElementById("catalogGrid");
   grid.innerHTML = "";
+  if (typeof buildArtCard === "function") buildArtCard(grid);
   Object.keys(ITEMS).forEach(function (id) {
     var it = ITEMS[id];
+    if (id === "myart") return;
     if (it.myst && available(id) <= 0) return;
     var card = document.createElement("div");
     card.className = "shopcard";
@@ -1811,6 +1904,14 @@ function openItemMenu(idx) {
   if (!entry) return;
   var it = ITEMS[entry.i];
   if (!it) return;
+  if (entry.i === "myart") {
+    document.getElementById("itemMenuTitle").textContent = "\uD83D\uDDBC\uFE0F " + (entry.t || "My Art");
+    document.getElementById("itemMenuText").textContent = "Your own painting, hung right here on your lot. It lives on this phone \u2014 neighbors who visit see its frame and title.";
+    document.getElementById("sellBtn").style.display = "none";
+    openPanel("itemMenu");
+    return;
+  }
+  document.getElementById("sellBtn").style.display = "";
   document.getElementById("itemMenuTitle").textContent = it.emoji + " " + it.name;
   document.getElementById("itemMenuText").textContent = it.blurb;
   var crop = TREE_CROPS[entry.i];
@@ -1827,8 +1928,9 @@ document.getElementById("moveBtn").addEventListener("click", function () {
   enterMove(menuIdx, false);
 });
 document.getElementById("putAwayBtn").addEventListener("click", function () {
-  if (menuIdx != null) { curFree().splice(menuIdx, 1); menuIdx = null; saveTown(); renderLot(); }
-  closePanels(); toast("Back in the shed — place it again anytime.");
+  var wasArt = false;
+  if (menuIdx != null) { var e0 = curFree()[menuIdx]; wasArt = !!(e0 && e0.i === "myart"); curFree().splice(menuIdx, 1); menuIdx = null; saveTown(); renderLot(); }
+  closePanels(); toast(wasArt ? "Taken down \u2014 hang it again anytime from \uD83D\uDE12 Build & Decorate." : "Back in the shed \u2014 place it again anytime.");
 });
 document.getElementById("sellBtn").addEventListener("click", function () {
   if (menuIdx == null) return;
