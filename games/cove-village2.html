@@ -18,6 +18,7 @@
   .scenetabs { max-width: 1100px; margin: 12px auto 0; padding: 0 12px; display: flex; gap: 8px; }
   .scenetabs button { flex: 1; background: #14607f; color: #fff8ec; border: 1px solid #2c85a8; border-radius: 12px; padding: 9px 10px; font-size: .95rem; cursor: pointer; font-family: inherit; }
   .scenetabs button.active { background: #ffd98a; color: #17384a; border-color: #ffd98a; font-weight: bold; }
+  @media (max-width: 640px) { .scenetabs { flex-wrap: wrap; } .scenetabs button { flex: 1 1 30%; font-size: .88rem; padding: 8px 6px; } }
   #scene.street { aspect-ratio: 16 / 9; }
   .zones { position: absolute; inset: 0; }
   #scene > img.town { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -25,6 +26,7 @@
   .zone { position: absolute; background: transparent; border: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .zone:active { background: rgba(255,217,138,.18); border-radius: 12px; }
   .sprite { position: absolute; cursor: pointer; -webkit-tap-highlight-color: transparent; filter: drop-shadow(0 6px 5px rgba(0,0,0,.35)); animation: bob 2.8s ease-in-out infinite; }
+  #sp-nova { position: absolute; cursor: pointer; -webkit-tap-highlight-color: transparent; filter: drop-shadow(0 6px 5px rgba(0,0,0,.3)); z-index: 7; }
   @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.2%); } }
   .sprite.wiggle { animation: wig .55s ease-in-out; }
   .sprite.walking { animation: glidebob .55s ease-in-out infinite; }
@@ -78,6 +80,7 @@
   <button id="tabLot">🏡 My Lot</button>
   <button id="tabLane">🔒 Neighbor Lane</button>
   <button id="tabBoard">🎡 The Boardwalk</button>
+  <button id="tabRainbow">🌈 Rainbow World</button>
 </div>
 <div id="ladderStrip"><button id="ladderBtn">🪜 Town Ladder</button><button id="funBtn">🎁 Town Fun</button></div>
 <div id="scene">
@@ -86,6 +89,7 @@
   <img class="town" id="bgLot" src="village2/lotfull-v2.jpg" alt="Your whole beach property in one picture: a hill, a lily pond, a garden patch and the beach" style="display:none">
   <img class="town" id="bgBoard" src="village2/boardwalk.jpg" alt="The boardwalk: a wooden pier over the sea with string lights, a little shuttered stand and a ferris wheel in the distance" style="display:none">
   <img class="town" id="bgLane" src="village2/lane.jpg" alt="Neighbor Lane: a cobblestone lane between beach cottages with mailboxes and bunting, running down to the sea" style="display:none">
+  <img class="town" id="bgRainbow" src="village2/rainbow.jpg" alt="Rainbow World: a whole other world of rainbow trees, candy cottages, a sparkle pond and a rainbow waterfall" style="display:none">
   <div id="dusk"></div>
   <div id="beam"></div>
   <div id="winGlow"></div>
@@ -111,6 +115,11 @@
   <button class="zone" style="left:85%;top:28%;width:14%;height:20%" data-place="wheel" aria-label="The ferris wheel"></button>
   <button class="zone" style="left:38%;top:62%;width:30%;height:30%" data-place="railing" aria-label="The railing"></button>
   </div>
+  <div class="zones" id="zonesRainbow" style="display:none">
+  <button class="zone" style="left:74%;top:30%;width:22%;height:38%" data-place="falls" aria-label="Rainbow Falls"></button>
+  <button class="zone" style="left:5%;top:50%;width:42%;height:27%" data-place="cottages2" aria-label="Candy Cottages"></button>
+  <button class="zone" style="left:38%;top:76%;width:34%;height:20%" data-place="pond" aria-label="Sparkle Pond"></button>
+  </div>
   <div id="lotLayer" style="display:none; position:absolute; inset:0;"></div>
   <div id="laneLayer" style="display:none; position:absolute; inset:0;"></div>
   <div id="huntLayer"></div>
@@ -119,6 +128,7 @@
   <img class="sprite" id="sp-sandy" src="village2/sandy.png" alt="Sandy" style="left:52%;bottom:27%;height:31%;animation-delay:1.3s">
   <img class="sprite" id="sp-gladys" src="village2/gladys.png" alt="Gladys" style="left:71%;bottom:28%;height:31%;animation-delay:.4s">
   <img class="sprite" id="sp-sprocket" src="village2/sprocket.png" alt="Sprocket" style="left:86%;bottom:28%;height:16%;animation-delay:1s">
+  <img id="sp-nova" src="village2/nova.png" alt="Nova the unicorn" style="display:none;left:26%;bottom:10%;height:20%">
   <div id="gull"><svg viewBox="0 0 40 18" width="54" height="24"><path d="M2 13 Q10 3 20 11 Q30 3 38 13" stroke="#ffffff" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg></div>
   <div id="bubble"></div>
 </div>
@@ -162,6 +172,12 @@
     <button data-place="wheel">🎡 The Ferris Wheel</button>
     <button data-place="railing">🌊 The Railing</button>
   </div>
+  <div class="row" id="dirRainbow" style="display:none">
+    <button data-place="falls">🌈 Rainbow Falls</button>
+    <button data-place="cottages2">🍭 Candy Cottages</button>
+    <button data-place="pond">✨ Sparkle Pond</button>
+    <button data-place="nova">🦄 Nova</button>
+  </div>
   <div id="dirLane" style="display:none"><div id="laneDirInner"></div></div>
 </div>
 
@@ -184,7 +200,11 @@ var PLACES = {
   pier:      ["🎣 The Fishing Pier", "The boards run out past the breakers, and the fish are already telling stories about the Cove. Fishing is coming — collectibles to catch and trade when the town grows again."],
   stand:     ["🍦 The Ice Cream Stand", "Shuttered up tight for the season. The town is saving it for something sweet."],
   wheel:     ["🎡 The Ferris Wheel", "On a clear day you can see the whole Cove from the top — the farm, the lighthouse, and somebody's laundry."],
-  railing:   ["🌊 The Railing", "Lean here long enough and somebody will tell you a story. Lean here longer and you will tell one back."]
+  railing:   ["🌊 The Railing", "Lean here long enough and somebody will tell you a story. Lean here longer and you will tell one back."],
+  falls:     ["🌈 Rainbow Falls", "The waterfall pours pure rainbow into the Sparkle Pond. On a sunny day there are two rainbows — the one in the sky and the one in the water."],
+  cottages2: ["🍭 Candy Cottages", "Pink, mint and lemon, with swirled candy roofs. The sweetest little houses in any world — the crew's home away from home through the rainbow."],
+  pond:      ["✨ Sparkle Pond", "The water glitters like somebody shook a snow globe full of stars. Nova drinks here every morning."],
+  nova:      ["🦄 Nova the Unicorn", "Nova keeps Rainbow World and loves company. Tap her once a day — she shares a sprinkle of shells with anyone who stops to say hello."]
 };
 var LINES = {
   kim:     ["Welcome to the neighborhood.", "Canvas is open if you need a painting.", "Mind the wet paint. It is everywhere."],
@@ -214,27 +234,31 @@ applyDusk();
 var POS = {
   town:   { kim: [6, 27, 32], trish: [32, 28, 31], sandy: [52, 27, 31], gladys: [71, 28, 31], sprocket: [86, 28, 16] },
   street: { kim: [3, 1, 40], trish: [26, 2, 37], sandy: [47, 1, 38], gladys: [66, 2, 36], sprocket: [86, 3, 19] },
-  board:  { kim: [4, 5, 30], trish: [24, 4, 28], sandy: [42, 5, 28], gladys: [59, 4, 27], sprocket: [76, 6, 15] }
+  board:  { kim: [4, 5, 30], trish: [24, 4, 28], sandy: [42, 5, 28], gladys: [59, 4, 27], sprocket: [76, 6, 15] },
+  rainbow:{ kim: [8, 10, 30], trish: [28, 11, 29], sandy: [47, 10, 29], gladys: [64, 11, 28], sprocket: [80, 12, 15] }
 };
 var SUBS = {
   town: "The crew's new neighborhood by the sea",
   street: "Main Street at sunset",
   lot: "Your own little piece of the Cove",
   board: "The Boardwalk — sea air and string lights",
-  lane: "Neighbor Lane — your neighbors live here"
+  lane: "Neighbor Lane — your neighbors live here",
+  rainbow: "Rainbow World — a whole other world, through the rainbow"
 };
 var townNameSet = !!document.getElementById("townSub").textContent.match(/COVE-/);
 function setScene(name) {
-  var street = name === "street", lot = name === "lot", board = name === "board", townS = name === "town", lane = name === "lane";
+  var street = name === "street", lot = name === "lot", board = name === "board", townS = name === "town", lane = name === "lane", rainbow = name === "rainbow";
   document.getElementById("scene").classList.toggle("street", street);
   document.getElementById("bgTown").style.display = townS ? "block" : "none";
   document.getElementById("bgStreet").style.display = street ? "block" : "none";
   document.getElementById("bgLot").style.display = lot ? "block" : "none";
   document.getElementById("bgBoard").style.display = board ? "block" : "none";
   document.getElementById("bgLane").style.display = lane ? "block" : "none";
+  document.getElementById("bgRainbow").style.display = rainbow ? "block" : "none";
   document.getElementById("zonesTown").style.display = townS ? "block" : "none";
   document.getElementById("zonesStreet").style.display = street ? "block" : "none";
   document.getElementById("zonesBoard").style.display = board ? "block" : "none";
+  document.getElementById("zonesRainbow").style.display = rainbow ? "block" : "none";
   document.getElementById("lotLayer").style.display = lot ? "block" : "none";
   document.getElementById("laneLayer").style.display = lane ? "block" : "none";
   document.getElementById("dirTown").style.display = townS ? "flex" : "none";
@@ -243,14 +267,19 @@ function setScene(name) {
   if (typeof paintLotChrome === "function") paintLotChrome(lot);
   document.getElementById("dirBoard").style.display = board ? "flex" : "none";
   document.getElementById("dirLane").style.display = lane ? "block" : "none";
+  document.getElementById("dirRainbow").style.display = rainbow ? "flex" : "none";
+  document.getElementById("sp-nova").style.display = rainbow ? "block" : "none";
   document.getElementById("tabTown").classList.toggle("active", townS);
   document.getElementById("tabStreet").classList.toggle("active", street);
   document.getElementById("tabLot").classList.toggle("active", lot);
   document.getElementById("tabBoard").classList.toggle("active", board);
   document.getElementById("tabLane").classList.toggle("active", lane);
+  document.getElementById("tabRainbow").classList.toggle("active", rainbow);
   document.getElementById("dirTitle").textContent = lot ? "🏡 Your Lots — tap a chip below the picture to switch lots; drag your things wherever you want them" : "📍 Around Town — tap a place, or tap the girls in the picture";
   if (lane) document.getElementById("dirTitle").textContent = "🛤️ Neighbor Lane — tap a neighbor in the picture to visit their lots";
+  if (rainbow) document.getElementById("dirTitle").textContent = "🌈 Rainbow World — tap a place, tap the girls, and don't forget to say hello to Nova";
   if (street) document.getElementById("dusk").style.display = "none"; else applyDusk();
+  if (rainbow) document.getElementById("dusk").style.display = "none";
   if (!townNameSet) document.getElementById("townSub").textContent = SUBS[name];
   document.querySelectorAll(".sprite").forEach(function (el) { el.style.display = (lot || lane) ? "none" : "block"; });
   if (!lot && !lane) {
@@ -272,6 +301,7 @@ document.getElementById("tabTown").addEventListener("click", function () { if (!
 document.getElementById("tabStreet").addEventListener("click", function () { startMusic(); if (!sceneUnlocked("street")) { lockedTap("street"); return; } setScene("street"); });
 document.getElementById("tabLot").addEventListener("click", function () { startMusic(); setScene("lot"); });
 document.getElementById("tabBoard").addEventListener("click", function () { startMusic(); if (!sceneUnlocked("board")) { lockedTap("board"); return; } setScene("board"); });
+document.getElementById("tabRainbow").addEventListener("click", function () { startMusic(); setScene("rainbow"); });
 document.getElementById("tabLane").addEventListener("click", function () { startMusic(); if (typeof neighborCount === "function" && neighborCount() >= 3) setScene("lane"); else if (typeof openLanePanel === "function") openLanePanel(); });
 
 function showPlace(key) {
@@ -313,7 +343,8 @@ var LIFE_ON = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 var ACTS = {
   town:   { kim: [10, 27, "\uD83C\uDFA8", "painting"], trish: [24, 28, "\uD83D\uDCD6", "reading on the porch"], sandy: [45, 26, "\uD83C\uDF38", "by the fountain flowers"], gladys: [63, 27, "\uD83D\uDCA7", "watering the flower boxes"], sprocket: [68, 27, "\uD83C\uDF81", "delivering a present"] },
   street: { kim: [30, 1, "\uD83C\uDFA8", "painting at the easel"], gladys: [7, 1, "\uD83D\uDCA7", "watering the sunflowers"], trish: [44, 2, "\uD83D\uDCD6", "reading on the bench"], sandy: [79, 2, "\uD83D\uDCF8", "taking pictures by the bike"], sprocket: [58, 2, "\uD83C\uDF81", "delivering a present"] },
-  board:  { kim: [45, 5, "\uD83C\uDFA8", "painting the sea"], sandy: [55, 5, "\uD83D\uDCF8", "taking pictures at the railing"], trish: [88, 4, "\uD83C\uDFA1", "watching the ferris wheel"], gladys: [24, 4, "\uD83E\uDDF6", "knitting by the stand"], sprocket: [68, 6, "\uD83C\uDF81", "delivering a present"] }
+  board:  { kim: [45, 5, "\uD83C\uDFA8", "painting the sea"], sandy: [55, 5, "\uD83D\uDCF8", "taking pictures at the railing"], trish: [88, 4, "\uD83C\uDFA1", "watching the ferris wheel"], gladys: [24, 4, "\uD83E\uDDF6", "knitting by the stand"], sprocket: [68, 6, "\uD83C\uDF81", "delivering a present"] },
+  rainbow:{ kim: [14, 10, "\uD83C\uDFA8", "painting the rainbow"], trish: [34, 11, "\uD83D\uDCD6", "reading under a candy tree"], sandy: [54, 10, "\uD83D\uDCF8", "photographing the falls"], gladys: [70, 11, "\uD83E\uDD8B", "chasing butterflies"], sprocket: [82, 12, "\uD83C\uDF81", "delivering a present"] }
 };
 var BEAMS = { town: [88.5, 8], street: [66, 27] };
 var agents = {}, lifeScene = "__boot__", gullIn = 6, lastFrame = 0;
@@ -400,8 +431,9 @@ function lifeFrame(ts) {
   var dt = Math.min(0.05, (ts - lastFrame) / 1000 || 0.016); lastFrame = ts;
   var scene = (typeof curSceneName === "string") ? curSceneName : null;
   if (scene !== lifeScene) lifeSync(scene);
-  var pub = scene === "town" || scene === "street" || scene === "board";
+  var pub = scene === "town" || scene === "street" || scene === "board" || scene === "rainbow";
   if (!pub || document.hidden) return;
+  if (typeof novaFrame === "function") novaFrame(dt);
   var sceneEl = document.getElementById("scene");
   var sr = sceneEl.getBoundingClientRect();
   Object.keys(agents).forEach(function (who) {
@@ -446,6 +478,35 @@ document.addEventListener("visibilitychange", function () {
   if (document.hidden) bgAudio.pause();
   else if (!musicMuted) bgAudio.play().catch(function () {});
 });
+</script>
+<script>
+/* Nova the unicorn \u2014 Rainbow World's resident. She strolls the sparkle
+   path on her own; tap her once a day and she shares a sprinkle of
+   shells. Her day lives in the town save as town.novaDay. */
+var novaEl = document.getElementById("sp-nova");
+var nova = { x: 26, y: 10, tx: 60, ty: 11, wait: 1.5, ph: Math.random() * 6 };
+function novaToday() { var d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+novaEl.addEventListener("click", function () {
+  startMusic();
+  if (typeof town !== "undefined" && town.novaDay === novaToday()) { toast("\uD83E\uDD84 Nova nuzzles your hand. She has already shared her sparkle today \u2014 come back tomorrow."); return; }
+  var n = 15 + Math.floor(Math.random() * 21);
+  if (!addShells(n)) { toast("Start your Farm & Village first \u2014 Nova's shells go to your farm."); return; }
+  town.novaDay = novaToday(); saveTown();
+  toast("\uD83E\uDD84 Nova prances in a happy circle \u2014 +\uD83D\uDC1A " + n + " shells of unicorn sparkle!");
+});
+function novaFrame(dt) {
+  if (typeof curSceneName === "undefined" || curSceneName !== "rainbow" || document.hidden) return;
+  nova.ph += dt * 5;
+  if (nova.wait > 0) { nova.wait -= dt; }
+  else {
+    var dx = nova.tx - nova.x, dy = nova.ty - nova.y, dist = Math.hypot(dx, dy), sp = 2.4 * dt;
+    if (dist < 0.6) { nova.tx = 8 + Math.random() * 62; nova.ty = 8 + Math.random() * 6; nova.wait = 1.5 + Math.random() * 3.5; }
+    else { nova.x += dx / dist * Math.min(sp, dist); nova.y += dy / dist * Math.min(sp, dist); novaEl.style.transform = dx < 0 ? "scaleX(1)" : "scaleX(-1)"; }
+  }
+  novaEl.style.left = nova.x + "%";
+  novaEl.style.bottom = (nova.y + Math.abs(Math.sin(nova.ph)) * 0.55) + "%";
+  novaEl.style.height = (20 + (12 - nova.y) * 0.35) + "%";
+}
 </script>
 <script>
 /* Cove traffic tally - counts page opens per day, never who */
