@@ -440,6 +440,10 @@
         background: #ffd9ec url("crush3d/map-bg-a.jpg") center 38% / cover no-repeat;
         box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.65), inset 0 6px 18px rgba(90, 30, 60, 0.18);
       }
+      .map-wrap.board2 { margin-top: 20px; }
+      .map-area.board2 {
+        background: #f7e3c8 url("crush3d/map-bg-b.jpg") center 30% / cover no-repeat;
+      }
       .map-node {
         border: 3px solid #ffffff;
         box-shadow: 0 5px 12px rgba(60, 20, 50, 0.4), inset 0 -4px 8px rgba(0,0,0,0.22), inset 0 3px 5px rgba(255,255,255,0.55);
@@ -528,6 +532,12 @@
         <div class="map-area" id="mapArea"></div>
       </section>
 
+      <section class="map-wrap board2" id="mapSection2" style="display:none" aria-label="Board 2 level map">
+        <h2>🍬 Board 2 · The Gingerbread Boardwalk</h2>
+        <p class="map-sub">You finished the Boardwalk Path — the trail climbs into gingerbread country. Same Sprocket, steeper hills!</p>
+        <div class="map-area board2" id="mapArea2"></div>
+      </section>
+
       <section class="panel" aria-label="Your session">
         <h2>Your session</h2>
         <p>Best score this visit: <strong id="bestVal">0</strong> &nbsp;·&nbsp; Levels cleared: <strong id="levelsVal">0</strong> &nbsp;·&nbsp; Biggest chain: <strong id="chainVal">0</strong></p>
@@ -540,6 +550,7 @@
         <p>Some levels ask you to <strong>clear the jelly</strong> instead of chasing points — match candies sitting on the blue jelly squares to melt it away before your moves run out. Win with moves to spare and Sprocket spends them on a <strong>Shell Crush</strong> bonus round of free blasts!</p>
         <p>🎵 The <strong>Cove Crush tune</strong> plays while you play — and it dips down on its own whenever Sprocket talks, so you never miss a word of his bragging.</p>
         <p>🏆 <strong>Crush Rewards:</strong> clearing levels earns candy decorations for your cottage or shop lot in <strong>Village 2</strong> — a Lollipop Tree at level 3, a Candy Awning at 12, all the way up to the Candy Cottage at 18. Find them at the top of Build &amp; Decorate on your lot. They're free — you earned them.</p>
+        <p>🍬 <strong>Board 2:</strong> finish all 18 levels and the map keeps going — 18 more levels up the <strong>Gingerbread Boardwalk</strong>, with thicker jelly and steeper targets.</p>
         <p>Reach the target before you run out of moves to clear the level. Follow the <strong>Boardwalk Path</strong> on the map to replay any level you have unlocked. If there are no moves left, tap <strong>Shuffle</strong> to mix the board up.</p>
         <div class="legend">
           <div><span class="emoji">🐚</span> Shell</div>
@@ -1037,7 +1048,25 @@
         { target: 4100, moves: 26 },
         { target: 4500, moves: 28, mask: "diamond" },
         { objective: "jelly", jelly: 26, moves: 28, target: 4200 },
-        { target: 5200, moves: 28, mask: "heart" }
+        { target: 5200, moves: 28, mask: "heart" },
+        { target: 5600, moves: 28 },
+        { objective: "jelly", jelly: 28, moves: 28, target: 4600 },
+        { target: 6000, moves: 28, mask: "cross" },
+        { objective: "jelly", jelly: 30, moves: 30, target: 5000, mask: "diamond" },
+        { target: 6800, moves: 28 },
+        { objective: "jelly", jelly: 24, moves: 26, target: 5400, mask: "heart" },
+        { target: 7400, moves: 28, mask: "diamond" },
+        { objective: "jelly", jelly: 30, moves: 30, target: 5800 },
+        { target: 7800, moves: 28, mask: "cross" },
+        { objective: "jelly", jelly: 28, moves: 28, target: 6200, mask: "cross" },
+        { target: 8600, moves: 28 },
+        { objective: "jelly", jelly: 32, moves: 30, target: 6600, mask: "heart" },
+        { target: 9200, moves: 28, mask: "heart" },
+        { objective: "jelly", jelly: 34, moves: 30, target: 7000, mask: "diamond" },
+        { target: 9400, moves: 28, mask: "cross" },
+        { objective: "jelly", jelly: 36, moves: 32, target: 7400 },
+        { target: 10200, moves: 30, mask: "diamond" },
+        { objective: "jelly", jelly: 36, moves: 34, target: 7600, mask: "heart" }
       ];
       var SAVE_KEY = "cove-crush-progress-v1";
       var progress = { unlocked: 1, stars: {} };
@@ -1122,7 +1151,7 @@
         el.overlay = $("overlay"); el.winnerCard = $("winnerCard");
         el.overlayBtn = $("overlayBtn");
         el.readouts = $("readouts"); el.jellyMeter = $("jellyMeter"); el.jellyVal = $("jellyVal");
-        el.gameSection = $("gameSection"); el.mapSection = $("mapSection"); el.mapArea = $("mapArea");
+        el.gameSection = $("gameSection"); el.mapSection = $("mapSection"); el.mapArea = $("mapArea"); el.mapSection2 = $("mapSection2"); el.mapArea2 = $("mapArea2");
         el.praise = $("praise"); el.praiseWord = $("praiseWord");
         el.confetti = $("confetti"); el.crushBanner = $("crushBanner");
         el.boardFrame = $("boardFrame");
@@ -1300,14 +1329,22 @@
       function showScreen(which) {
         if (el.gameSection) el.gameSection.style.display = which === "game" ? "" : "none";
         if (el.mapSection) el.mapSection.style.display = which === "map" ? "" : "none";
+        if (el.mapSection2) el.mapSection2.style.display = which === "map" ? "" : "none";
         if (which === "map") buildMap();
       }
 
       function buildMap() {
-        if (!el.mapArea) return;
-        var area = el.mapArea;
+        renderMapInto(el.mapArea, 1, 18);
+        renderMapInto(el.mapArea2, 19, LEVELS.length);
+        var cur = document.querySelector(".map-node.current");
+        if (cur && el.mapSection && el.mapSection.style.display !== "none") {
+          setTimeout(function () { try { cur.scrollIntoView({ block: "center" }); } catch (e) {} }, 60);
+        }
+      }
+      function renderMapInto(area, fromLv, toLv) {
+        if (!area) return;
         area.innerHTML = "";
-        var N = LEVELS.length;
+        var N = toLv - fromLv + 1;
         var perRow = 4, rows = Math.ceil(N / perRow), rowH = 98;
         var H = rows * rowH + 26;
         area.style.height = H + "px";
@@ -1337,10 +1374,10 @@
         }
         svg.innerHTML = '<path d="' + d + '" fill="none" stroke="rgba(255,248,234,0.75)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>' + dotsHtml;
         area.appendChild(svg);
-        var current = Math.min(progress.unlocked, N);
+        var current = Math.min(progress.unlocked, LEVELS.length);
         for (var n = 0; n < N; n++) {
           (function (n) {
-            var lv = n + 1, p = pts[n];
+            var lv = fromLv + n, p = pts[n];
             var b = document.createElement("button");
             b.type = "button";
             var unlocked = lv <= progress.unlocked;
@@ -1348,28 +1385,31 @@
             b.className = "map-node" + (stars > 0 ? " done" : "") + (!unlocked ? " locked" : "") + (lv === current ? " current" : "");
             b.style.left = p.x + "px";
             b.style.top = p.y + "px";
-            b.innerHTML = (unlocked ? String(lv) : "🔒") + '<span class="stars">' + (stars > 0 ? "★★★".slice(0, stars) : "") + "</span>";
+            b.innerHTML = (unlocked ? String(lv) : "🔒") + '<span class="stars">' + (stars > 0 ? "★★★".slice(0, stars) : "") + '</span>';
             b.setAttribute("aria-label", "Level " + lv + (unlocked ? (stars ? ", " + stars + " of 3 stars earned" : "") : ", locked"));
             if (unlocked) b.addEventListener("click", function () { sfxClick(); startLevel(lv); });
             area.appendChild(b);
           })(n);
         }
         /* Sprocket stands beside the level you're on. */
-        var sp = document.createElement("img");
-        sp.src = "crush3d/sprocket.png";
-        sp.alt = "Sprocket";
-        sp.className = "map-mascot";
-        sp.style.left = pts[current - 1].x + "px";
-        sp.style.top = pts[current - 1].y + "px";
-        area.appendChild(sp);
+        if (current >= fromLv && current <= toLv) {
+          var sp = document.createElement("img");
+          sp.src = "crush3d/sprocket.png";
+          sp.alt = "Sprocket";
+          sp.className = "map-mascot";
+          sp.style.left = pts[current - fromLv].x + "px";
+          sp.style.top = pts[current - fromLv].y + "px";
+          area.appendChild(sp);
+        }
         /* The Cove crab sits on the next locked level, keeping it safe. */
-        if (current < N) {
+        var crabLv = current + 1;
+        if (current < LEVELS.length && crabLv >= fromLv && crabLv <= toLv) {
           var crab = document.createElement("img");
           crab.src = "crush3d/crab.jpg";
           crab.alt = "Cove crab";
           crab.className = "map-crab";
-          crab.style.left = pts[current].x + "px";
-          crab.style.top = pts[current].y + "px";
+          crab.style.left = pts[crabLv - fromLv].x + "px";
+          crab.style.top = pts[crabLv - fromLv].y + "px";
           area.appendChild(crab);
         }
       }
