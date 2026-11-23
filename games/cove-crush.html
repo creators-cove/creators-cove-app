@@ -535,6 +535,7 @@
         <p>Tap a tile, then tap a tile next to it to swap them. If the swap makes a match of <strong>3 or more of the same tile in a row</strong>, they pop, the tiles above fall down, and new tiles drop in — chains can keep matching all on their own!</p>
         <p><strong>Match 4</strong> in a row and you get a striped tile — match it and it clears its whole row or column. <strong>Smash two striped tiles together</strong> — any two, whatever they are — and both fire at once, each clearing the line it faces. Make an <strong>L or T shape</strong> and you get a <strong>wrapped candy</strong> — match it and it blows up the 3×3 around it, then blows up again! <strong>Match 5</strong> and you get a <strong>Sprinkle Bomb</strong> — swap it with any tile and it zaps every tile of that type at once.</p>
         <p>Some levels ask you to <strong>clear the jelly</strong> instead of chasing points — match candies sitting on the blue jelly squares to melt it away before your moves run out. Win with moves to spare and Sprocket spends them on a <strong>Shell Crush</strong> bonus round of free blasts!</p>
+        <p>🎵 The <strong>Cove Crush tune</strong> plays while you play — and it dips down on its own whenever Sprocket talks, so you never miss a word of his bragging.</p>
         <p>🏆 <strong>Crush Rewards:</strong> clearing levels earns candy decorations for your cottage or shop lot in <strong>Village 2</strong> — a Lollipop Tree at level 3, a Candy Awning at 12, all the way up to the Candy Cottage at 18. Find them at the top of Build &amp; Decorate on your lot. They're free — you earned them.</p>
         <p>Reach the target before you run out of moves to clear the level. Follow the <strong>Boardwalk Path</strong> on the map to replay any level you have unlocked. If there are no moves left, tap <strong>Shuffle</strong> to mix the board up.</p>
         <div class="legend">
@@ -897,6 +898,11 @@
       var praiseAudio = [];
       function sfxVoice(tier) {
         if (!soundOn) return;
+        if (tuneAudio && !tuneAudio.paused) {
+          tuneAudio.volume = 0.12;
+          var dk = ++tuneDuckToken;
+          setTimeout(function () { if (dk === tuneDuckToken && tuneAudio) tuneAudio.volume = 0.42; }, 1700);
+        }
         try {
           if (!praiseAudio[tier]) { praiseAudio[tier] = new Audio(PRAISE_VOICE[tier]); praiseAudio[tier].preload = "auto"; }
           var au = praiseAudio[tier];
@@ -931,15 +937,25 @@
           musicStep++;
         }
       }
+      var tuneAudio = null, tuneDuckToken = 0;
+      function getTune() {
+        if (!tuneAudio) {
+          tuneAudio = new Audio("crush3d/tune.mp3");
+          tuneAudio.loop = true;
+          tuneAudio.volume = 0.42;
+          tuneAudio.preload = "auto";
+        }
+        return tuneAudio;
+      }
       function startMusic() {
         var ctx = ac();
-        if (!ctx || musicTimer) return;
-        musicStep = 0;
-        nextNoteTime = ctx.currentTime + 0.1;
-        musicTimer = setInterval(scheduleMusic, 90);
+        if (!ctx) return;
+        var t = getTune();
+        if (t.paused) { var p = t.play(); if (p && p.catch) p.catch(function () {}); }
       }
       function stopMusic() {
         if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+        if (tuneAudio) tuneAudio.pause();
       }
 
       /* Stop audio when the page is hidden (app closed / switched away) —
