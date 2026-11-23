@@ -359,7 +359,7 @@
       <section class="panel" aria-label="How to play">
         <h2>How to play</h2>
         <p>Tap a tile, then tap a tile next to it to swap them. If the swap makes a match of <strong>3 or more of the same tile in a row</strong>, they pop, the tiles above fall down, and new tiles drop in — chains can keep matching all on their own!</p>
-        <p><strong>Match 4</strong> in a row and you get a striped tile — match it and it clears its whole row or column. Make an <strong>L or T shape</strong> and you get a <strong>wrapped candy</strong> — match it and it blows up the 3×3 around it, then blows up again! <strong>Match 5</strong> and you get a <strong>Sprinkle Bomb</strong> — swap it with any tile and it zaps every tile of that type at once.</p>
+        <p><strong>Match 4</strong> in a row and you get a striped tile — match it and it clears its whole row or column. <strong>Smash two striped tiles together</strong> — any two, whatever they are — and both fire at once, each clearing the line it faces. Make an <strong>L or T shape</strong> and you get a <strong>wrapped candy</strong> — match it and it blows up the 3×3 around it, then blows up again! <strong>Match 5</strong> and you get a <strong>Sprinkle Bomb</strong> — swap it with any tile and it zaps every tile of that type at once.</p>
         <p>Some levels ask you to <strong>clear the jelly</strong> instead of chasing points — match candies sitting on the blue jelly squares to melt it away before your moves run out. Win with moves to spare and Sprocket spends them on a <strong>Shell Crush</strong> bonus round of free blasts!</p>
         <p>Reach the target before you run out of moves to clear the level. Follow the <strong>Boardwalk Path</strong> on the map to replay any level you have unlocked. If there are no moves left, tap <strong>Shuffle</strong> to mix the board up.</p>
         <div class="legend">
@@ -524,6 +524,8 @@
         if (!b[r1][c1] || !b[r2][c2] || b[r1][c1].blocked || b[r2][c2].blocked) return false;
         if (b[r1][c1].special === "rainbow" || b[r2][c2].special === "rainbow") return true;
         if (b[r1][c1].special === "bomb" || b[r2][c2].special === "bomb") return true;
+        var sa = b[r1][c1].special, sb = b[r2][c2].special;
+        if ((sa === "row" || sa === "col") && (sb === "row" || sb === "col")) return true;
         swapCells(b, r1, c1, r2, c2);
         var ok = hasMatch(b);
         swapCells(b, r1, c1, r2, c2);
@@ -713,6 +715,18 @@
       function sfxPraise(tier) {
         var notes = PRAISE_CHORDS[Math.max(0, Math.min(3, tier))];
         for (var i = 0; i < notes.length; i++) playTone(notes[i], 0.3, "triangle", 0.15, i * 0.045);
+      }
+      var PRAISE_VOICE = ["crush3d/voice/praise-sweet.mp3", "crush3d/voice/praise-splashy.mp3", "crush3d/voice/praise-golden.mp3", "crush3d/voice/praise-legendary.mp3"];
+      var praiseAudio = [];
+      function sfxVoice(tier) {
+        if (!soundOn) return;
+        try {
+          if (!praiseAudio[tier]) { praiseAudio[tier] = new Audio(PRAISE_VOICE[tier]); praiseAudio[tier].preload = "auto"; }
+          var au = praiseAudio[tier];
+          au.currentTime = 0;
+          var p = au.play();
+          if (p && p.catch) p.catch(function () {});
+        } catch (e) {}
       }
       function sfxStar(i) {
         playTone(880 + i * 220, 0.28, "sine", 0.2);
@@ -1107,6 +1121,7 @@
         var now = Date.now();
         if (now - lastPraiseAt < 500) return;
         lastPraiseAt = now;
+        sfxVoice(tier);
         el.praiseWord.textContent = PRAISE_WORDS[tier];
         el.praise.style.display = "grid";
         el.praise.classList.remove("show");
@@ -1177,7 +1192,8 @@
         var spA = a.special === "rainbow" || a.special === "bomb";
         var spB = b.special === "rainbow" || b.special === "bomb";
         var usesSpecial = spA || spB;
-        if (!usesSpecial && !swapCreatesMatch(board, r1, c1, r2, c2)) {
+        var stripeCombo = (a.special === "row" || a.special === "col") && (b.special === "row" || b.special === "col");
+        if (!usesSpecial && !stripeCombo && !swapCreatesMatch(board, r1, c1, r2, c2)) {
           sfxInvalid();
           render();
           markTiles((function () { var o = {}; o[key(r1, c1)] = true; o[key(r2, c2)] = true; return o; })(), "shake");
@@ -1191,7 +1207,30 @@
         sfxSwap();
         render();
         await sleep(180);
-        if (usesSpecial) {
+        if (stripeCombo) {
+          /* Two striped tiles smashed together — types don't matter.
+             Each one fires the line it faces, from its new home. */
+          var cleared2 = {};
+          cleared2[key(r1, c1)] = true;
+          cleared2[key(r2, c2)] = true;
+          var spots = [[r1, c1], [r2, c2]];
+          for (var si = 0; si < spots.length; si++) {
+            var sr = spots[si][0], sc = spots[si][1];
+            var stile = board[sr][sc];
+            if (!stile) continue;
+            if (stile.special === "row") { for (var cc2 = 0; cc2 < COLS; cc2++) cleared2[key(sr, cc2)] = true; }
+            else if (stile.special === "col") { for (var rr2 = 0; rr2 < ROWS; rr2++) cleared2[key(rr2, sc)] = true; }
+          }
+          cleared2 = expandWithSpecials(board, cleared2);
+          var gained2 = Object.keys(cleared2).length * 20;
+          score += gained2;
+          if (score > bestScore) bestScore = score;
+          sfxBombZap();
+          setDisplay("💥 Double Stripe! +" + gained2, true);
+          showPraise(2);
+          await clearCells(cleared2);
+          await cascade(1);
+        } else if (usesSpecial) {
           var bombInvolved = a.special === "bomb" || b.special === "bomb";
           var other = spA ? b : a;
           var typesToClear = {};
