@@ -862,6 +862,56 @@ var ART_KEY = "cove-userart-v1", ART_MAX = 6;
 function artStore() { try { return JSON.parse(localStorage.getItem(ART_KEY) || "{}"); } catch (e) { return {}; } }
 function artSave(map) { try { localStorage.setItem(ART_KEY, JSON.stringify(map)); return true; } catch (e) { return false; } }
 function artEsc(t) { return String(t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+/* ---- Crush Rewards: candy decorations earned by clearing Cove Crush levels.
+   Crush and Village 2 share this phone's local storage, so progress just reads across. ---- */
+var CRUSH_REWARDS = ["crlolli", "crgumdrop", "crplanter", "crawning", "crfountain", "crcottage"];
+var CRUSH_TOTAL = 18;
+function crushCleared() {
+  try {
+    var p = JSON.parse(localStorage.getItem("cove-crush-progress-v1"));
+    if (!p || !p.stars) return 0;
+    var n = 0;
+    for (var k in p.stars) if (p.stars[k] > 0) n++;
+    return n;
+  } catch (e) { return 0; }
+}
+function buildCrushPanel(grid) {
+  var old = document.getElementById("crushPanel");
+  if (old) old.remove();
+  var cleared = crushCleared();
+  var card = document.createElement("div");
+  card.className = "shopcard";
+  card.id = "crushPanel";
+  card.style.textAlign = "left";
+  card.style.marginTop = "10px";
+  var h = '<div class="nm">🏆 Crush Rewards — candy for your cottage &amp; shop</div>';
+  h += '<div class="pr">' + (cleared > 0
+    ? "You've cleared <b>" + cleared + " of " + CRUSH_TOTAL + "</b> Cove Crush levels. Earned pieces are free — they're yours."
+    : "Clear levels in <b>Cove Crush</b> and candy decorations for your lot unlock here — free, because you earned them.") + "</div>";
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">';
+  CRUSH_REWARDS.forEach(function (id) {
+    var it = ITEMS[id];
+    var owned = (town.inv[id] || 0) > 0;
+    var avail = available(id);
+    var state;
+    if (cleared < it.crush) state = '<button disabled>🔒 Clear Crush Level ' + it.crush + "</button>";
+    else if (owned && avail <= 0) state = "<span>On your lot ✓</span>";
+    else if (owned) state = '<button data-crush-place="' + id + '">Place — in your shed</button>';
+    else state = '<button data-crush-place="' + id + '">Place — earned! 🏆</button>';
+    h += '<div class="shopcard" style="margin:0">' +
+      '<img src="village2/' + it.img + '" alt=""' + (cleared < it.crush ? ' style="filter:grayscale(0.85);opacity:0.55"' : "") + ">" +
+      '<div class="nm">' + it.emoji + " " + it.name + "</div>" +
+      '<div class="pr">' + (cleared < it.crush ? "Crush Level " + it.crush : owned ? "Earned ✓" : "Earned — place it!") + "</div>" + state + "</div>";
+  });
+  h += "</div>";
+  card.innerHTML = h;
+  grid.parentNode.insertBefore(card, grid);
+  card.querySelectorAll("[data-crush-place]").forEach(function (b) {
+    b.addEventListener("click", function () { placeItem(b.getAttribute("data-crush-place")); });
+  });
+}
+
 function buildArtCard(grid) {
   var store = artStore(), ids = Object.keys(store);
   var placed = {};
@@ -1263,6 +1313,12 @@ var ITEMS = {
   maple:   { name: "Autumn Maple", emoji: "🍁", price: 800, size: "med", img: "item-maple.png", blurb: "Orange and red all year round. Fall never leaves." },
   snowpine:{ name: "Snowy Pine", emoji: "❄️", price: 650, size: "med", img: "item-snowpine.png", blurb: "A pine with snow on every branch, even in July. Especially in July." },
   orange:  { name: "Orange Tree", emoji: "🍊", price: 700, size: "med", img: "item-orange.png", blurb: "Glossy leaves, and oranges ripening for the picking. The Cove runs on sunshine." },
+  crlolli:   { name: "Lollipop Tree", emoji: "🍭", price: 0, size: "med", img: "cr-lolli.png", crush: 3, blurb: "A rainbow lollipop growing on a candy-cane trunk. You earned it in Cove Crush." },
+  crgumdrop: { name: "Gumdrop Bush", emoji: "🍬", price: 0, size: "small", img: "cr-gumdrop.png", crush: 6, blurb: "A sugar-dusted gumdrop shrub in every pastel. You earned it in Cove Crush." },
+  crplanter: { name: "Peppermint Planter", emoji: "🌺", price: 0, size: "small", img: "cr-planter.png", crush: 9, blurb: "Peppermint swirl blooms in a pink striped planter. You earned it in Cove Crush." },
+  crawning:  { name: "Candy Awning", emoji: "🎪", price: 0, size: "med", img: "cr-awning.png", crush: 12, blurb: "A pink-and-white candy awning on candy-cane poles — instant sweet shop. You earned it in Cove Crush." },
+  crfountain:{ name: "Pearl Fountain", emoji: "⛲", price: 0, size: "med", img: "cr-fountain.png", crush: 15, blurb: "A shell fountain full of pearls and sparkle. You earned it in Cove Crush." },
+  crcottage: { name: "Candy Cottage", emoji: "🏡", price: 0, size: "big", img: "cr-cottage.png", crush: 18, blurb: "THE Candy Cottage — frosting roof, candy-cane pillars, cherry on top. For clearing every Cove Crush level. There is only one, and it's yours." },
   myart:   { name: "My Art", emoji: "🖼️", price: 0, size: "med", img: "", blurb: "Your own painting, hung on your lot." }
 };
 var SPOTS = {
@@ -1772,7 +1828,7 @@ function openGiftPicker() {
   document.getElementById("giftText").textContent = "One gift a day for " + visitMode.name + ". It lands in their town the next time they open it.";
   var box = document.getElementById("giftInner");
   var html = "<div class='btnrow'><button class='closebtn alt' id='giftShells'>🐚 Send 25 shells</button></div>";
-  var shed = Object.keys(ITEMS).filter(function (id) { return available(id) > 0; });
+  var shed = Object.keys(ITEMS).filter(function (id) { return available(id) > 0 && !ITEMS[id].crush; });
   if (shed.length) {
     html += "<p style='margin:10px 0 4px'>…or send something from your shed:</p><div class='grid'>";
     shed.forEach(function (id) { html += "<div class='shopcard'><img src='village2/" + ITEMS[id].img + "' alt=''><div class='nm'>" + ITEMS[id].emoji + " " + ITEMS[id].name + "</div><button data-giftitem='" + id + "'>Send this</button></div>"; });
@@ -1970,9 +2026,11 @@ function openCatalog() {
   var grid = document.getElementById("catalogGrid");
   grid.innerHTML = "";
   if (typeof buildArtCard === "function") buildArtCard(grid);
+  if (typeof buildCrushPanel === "function") buildCrushPanel(grid);
   Object.keys(ITEMS).forEach(function (id) {
     var it = ITEMS[id];
     if (id === "myart") return;
+    if (it.crush) return;
     if (it.myst && available(id) <= 0) return;
     var card = document.createElement("div");
     card.className = "shopcard";
@@ -1995,8 +2053,14 @@ function openCatalog() {
   openPanel("catalog");
 }
 function placeItem(id) {
+  var cit = ITEMS[id];
+  if (cit && cit.crush) {
+    if (crushCleared() < cit.crush) { toast("🔒 Clear Cove Crush Level " + cit.crush + " to earn the " + cit.name + "!"); return; }
+    if ((town.inv[id] || 0) >= 1 && available(id) <= 0) { toast("🏆 Your " + cit.name + " is already on your lot — it's a one-of-a-kind Crush reward!"); return; }
+  }
   var before = ladderSig();
-  if (available(id) > 0) { /* already owned */ }
+  if (cit && cit.crush) { if (available(id) <= 0) town.inv[id] = (town.inv[id] || 0) + 1; }
+  else if (available(id) > 0) { /* already owned */ }
   else if (!spendShells(ITEMS[id].price)) { toast("Not enough shells — your farm has 🐚 " + shells().toLocaleString()); return; }
   else town.inv[id] = (town.inv[id] || 0) + 1;
   var arr = curFree();
@@ -2030,7 +2094,7 @@ function openItemMenu(idx) {
     openPanel("itemMenu");
     return;
   }
-  document.getElementById("sellBtn").style.display = "";
+  document.getElementById("sellBtn").style.display = it.crush ? "none" : "";
   document.getElementById("itemMenuTitle").textContent = it.emoji + " " + it.name;
   document.getElementById("itemMenuText").textContent = it.blurb;
   var crop = TREE_CROPS[entry.i];
