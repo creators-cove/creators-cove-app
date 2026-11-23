@@ -120,7 +120,7 @@
       }
       .board {
         display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); aspect-ratio: 1 / 1; gap: 5px;
-        touch-action: manipulation; -webkit-user-select: none; user-select: none;
+        touch-action: none; -webkit-user-select: none; user-select: none;
         -webkit-touch-callout: none; overscroll-behavior: none;
       }
       .tile {
@@ -130,7 +130,7 @@
         box-shadow: inset 0 -3px 0 rgba(9, 50, 70, 0.14), 0 2px 4px rgba(0,0,0,0.25);
         transition: transform 0.12s ease, background 0.12s ease;
         position: relative;
-        touch-action: manipulation; -webkit-user-select: none; user-select: none;
+        touch-action: none; -webkit-user-select: none; user-select: none;
         -webkit-touch-callout: none; will-change: transform;
       }
       .tile:active { transform: scale(0.94); }
@@ -198,14 +198,17 @@
       .tile.blocked { background: transparent; box-shadow: none; cursor: default; }
       .tile.blocked:active { transform: none; }
       .tile .jelly {
-        position: absolute; inset: 5%; border-radius: 10px; z-index: 2; pointer-events: none;
-        background: linear-gradient(160deg, rgba(185,238,255,0.42), rgba(70,160,220,0.34));
-        box-shadow: inset 0 2px 3px rgba(255,255,255,0.85), inset 0 -4px 7px rgba(25,100,155,0.4);
+        position: absolute; inset: 0; border-radius: 12px; z-index: 0; pointer-events: none;
+        background: linear-gradient(160deg, #c9efff, #55aae2);
+        box-shadow: inset 0 0 0 3px rgba(255,255,255,0.95), inset 0 4px 7px rgba(255,255,255,0.95), inset 0 -7px 11px rgba(18,90,150,0.5);
       }
       .tile .jelly.j2 {
-        inset: 1%;
-        background: linear-gradient(160deg, rgba(150,220,255,0.62), rgba(40,135,205,0.55));
-        box-shadow: inset 0 2px 4px rgba(255,255,255,0.9), inset 0 -5px 9px rgba(15,85,140,0.5);
+        background: linear-gradient(160deg, #93d6ff, #2b83c6);
+        box-shadow: inset 0 0 0 3px rgba(255,255,255,0.95), inset 0 0 0 7px rgba(20,85,145,0.6), inset 0 -7px 11px rgba(8,55,105,0.55);
+      }
+      .tile.onjelly img.candy-img {
+        width: 80%; height: 80%; border-radius: 9px; position: relative; z-index: 1;
+        box-shadow: 0 2px 8px rgba(0,35,60,0.55), 0 0 0 2px rgba(255,255,255,0.35);
       }
       .tile.striped-row::after, .tile.striped-col::after {
         content: ""; position: absolute; inset: 0; border-radius: 12px; z-index: 3; pointer-events: none;
@@ -1124,11 +1127,36 @@
         el.confetti = $("confetti"); el.crushBanner = $("crushBanner");
         el.boardFrame = $("boardFrame");
         if (el.board) {
+          var suppressClickUntil = 0;
           el.board.addEventListener("click", function (e) {
+            if (Date.now() < suppressClickUntil) return;
             var t = e.target.closest ? e.target.closest(".tile") : null;
             if (!t) return;
             onTileClick(parseInt(t.dataset.r, 10), parseInt(t.dataset.c, 10));
           });
+          /* Slide a candy toward its neighbor to swap — a plain tap still selects, as before. */
+          var dragStart = null, dragFired = false;
+          el.board.addEventListener("pointerdown", function (e) {
+            var t = e.target.closest ? e.target.closest(".tile") : null;
+            if (!t || t.classList.contains("blocked")) { dragStart = null; return; }
+            dragStart = { r: parseInt(t.dataset.r, 10), c: parseInt(t.dataset.c, 10), x: e.clientX, y: e.clientY };
+            dragFired = false;
+          });
+          el.board.addEventListener("pointermove", function (e) {
+            if (!dragStart || dragFired || busy || over) return;
+            var dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
+            if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+            var r2 = dragStart.r, c2 = dragStart.c;
+            if (Math.abs(dx) > Math.abs(dy)) c2 += dx > 0 ? 1 : -1; else r2 += dy > 0 ? 1 : -1;
+            if (r2 < 0 || r2 >= ROWS || c2 < 0 || c2 >= COLS) return;
+            if (!board[r2] || !board[r2][c2] || board[r2][c2].blocked) return;
+            dragFired = true;
+            suppressClickUntil = Date.now() + 400;
+            selected = { r: dragStart.r, c: dragStart.c };
+            onTileClick(r2, c2);
+          });
+          el.board.addEventListener("pointerup", function () { dragStart = null; });
+          el.board.addEventListener("pointercancel", function () { dragStart = null; });
         }
         if (el.boardFrame) {
           el.boardFrame.addEventListener("pointerdown", function () { if (crushing) crushSkip = true; });
@@ -1218,7 +1246,7 @@
             im.alt = label;
             btn.setAttribute("aria-label", label + " tile, row " + (r + 1) + " column " + (c + 1));
             var jl = jelly ? jelly[r][c] : 0;
-            if (jl > 0) { jd.style.display = "block"; jd.className = "jelly" + (jl >= 2 ? " j2" : ""); }
+            if (jl > 0) { jd.style.display = "block"; jd.className = "jelly" + (jl >= 2 ? " j2" : ""); btn.classList.add("onjelly"); }
             else jd.style.display = "none";
           }
         }
