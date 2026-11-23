@@ -578,6 +578,7 @@ var BFLY = [
 ];
 var rbLayer = document.getElementById("rbLayer");
 var petState = {}, bflyActive = null, nextBfly = 0;
+function rbDepth(y) { return y <= 30 ? 1 : Math.max(0.45, 1 - (y - 30) * 0.018); }
 function rbInit() { if (!town.rb) town.rb = []; if (!town.pets) town.pets = []; if (!town.bfly) town.bfly = {}; }
 function cottonStage(it) { var hrs = (Date.now() - (it.born || 0)) / 3600000; return hrs < 2 ? 0 : hrs < 5 ? 1 : 2; }
 function renderRB() {
@@ -589,16 +590,16 @@ function renderRB() {
     img.src = "village2/" + d.img + ".png"; img.alt = d.name; img.className = "rb-item"; img.dataset.idx = idx; img.draggable = false;
     var sc = 1;
     if (d.grow) { var st = cottonStage(it); sc = [0.5, 0.78, 1][st]; img.dataset.stage = st; if (st === 2) img.classList.add("ripe"); }
-    img.style.left = it.x + "%"; img.style.bottom = it.y + "%"; img.style.height = (d.h * sc) + "%";
+    img.style.left = it.x + "%"; img.style.bottom = it.y + "%"; img.style.height = (d.h * sc * rbDepth(it.y)) + "%";
     img.style.zIndex = String(10 - Math.round(it.y / 4));
     rbLayer.appendChild(img);
   });
   town.pets.forEach(function (pk) {
     var d = RB_PETS[pk]; if (!d) return;
-    if (!petState[pk]) petState[pk] = { x: 15 + Math.random() * 55, y: 7 + Math.random() * 5, tx: 40, wait: Math.random() * 2, ph: Math.random() * 6 };
+    if (!petState[pk]) petState[pk] = { x: 15 + Math.random() * 55, y: 5 + Math.random() * 20, tx: 40, wait: Math.random() * 2, ph: Math.random() * 6 };
     var img = document.createElement("img");
     img.src = "village2/" + d.img + ".png"; img.alt = d.name; img.className = "rb-pet"; img.dataset.pet = pk; img.draggable = false;
-    img.style.left = petState[pk].x + "%"; img.style.bottom = petState[pk].y + "%"; img.style.height = "14%"; img.style.zIndex = "8";
+    img.style.left = petState[pk].x + "%"; img.style.bottom = petState[pk].y + "%"; img.style.height = (14 * rbDepth(petState[pk].y)) + "%"; img.style.zIndex = String(10 - Math.round(petState[pk].y / 4));
     img.addEventListener("click", function () { toast("\uD83E\uDD84 " + d.name + " nuzzles your hand and prances in a little circle."); });
     rbLayer.appendChild(img);
   });
@@ -712,7 +713,8 @@ rbLayer.addEventListener("pointerdown", function (e) {
   if (!t.classList || !t.classList.contains("rb-item")) return;
   e.preventDefault();
   var scene = document.getElementById("scene").getBoundingClientRect();
-  rbDrag = { idx: +t.dataset.idx, el: t, moved: false,
+  var it0 = town.rb[+t.dataset.idx]; var d0 = it0 && RB_ITEMS[it0.k]; var g0 = d0 && d0.grow ? [0.5, 0.78, 1][cottonStage(it0)] : 1;
+  rbDrag = { idx: +t.dataset.idx, el: t, moved: false, baseH: d0 ? d0.h * g0 : 20,
     gx: (e.clientX - scene.left) / scene.width * 100 - parseFloat(t.style.left),
     gy: (scene.bottom - e.clientY) / scene.height * 100 - parseFloat(t.style.bottom) };
   try { t.setPointerCapture(e.pointerId); } catch (err) {}
@@ -722,15 +724,15 @@ rbLayer.addEventListener("pointermove", function (e) {
   var scene = document.getElementById("scene").getBoundingClientRect();
   var x = (e.clientX - scene.left) / scene.width * 100 - rbDrag.gx;
   var y = (scene.bottom - e.clientY) / scene.height * 100 - rbDrag.gy;
-  x = Math.max(0, Math.min(93, x)); y = Math.max(1, Math.min(32, y));
+  x = Math.max(0, Math.min(93, x)); y = Math.max(1, Math.min(60, y));
   if (Math.abs(x - parseFloat(rbDrag.el.style.left)) > 0.4 || Math.abs(y - parseFloat(rbDrag.el.style.bottom)) > 0.4) rbDrag.moved = true;
-  rbDrag.el.style.left = x + "%"; rbDrag.el.style.bottom = y + "%"; rbDrag.el.style.zIndex = String(10 - Math.round(y / 4));
+  rbDrag.el.style.left = x + "%"; rbDrag.el.style.bottom = y + "%"; rbDrag.el.style.zIndex = String(10 - Math.round(y / 4)); rbDrag.el.style.height = (rbDrag.baseH * rbDepth(y)) + "%";
   rbDrag.x = x; rbDrag.y = y;
 });
 rbLayer.addEventListener("pointerup", function () {
   if (!rbDrag) return;
   var d = rbDrag; rbDrag = null;
-  if (d.moved) { rbInit(); var it = town.rb[d.idx]; if (it) { it.x = Math.round(d.x * 10) / 10; it.y = Math.round(d.y * 10) / 10; saveTown(); } }
+  if (d.moved) { rbInit(); var it = town.rb[d.idx]; if (it) { it.x = Math.round(d.x * 10) / 10; it.y = Math.round(d.y * 10) / 10; saveTown(); renderRB(); } }
   else rbItemTap(d.idx);
 });
 var rbTick = 0;
@@ -750,11 +752,12 @@ function rbFrame(dt) {
       if (st.wait > 0) st.wait -= dt;
       else {
         var dx = st.tx - st.x, dist = Math.abs(dx), sp = 1.9 * dt;
-        if (dist < 0.7) { st.tx = 6 + Math.random() * 66; st.y = 6 + Math.random() * 6; st.wait = 1.5 + Math.random() * 3.5; }
+        if (dist < 0.7) { st.tx = 4 + Math.random() * 78; st.y = 5 + Math.random() * 33; st.wait = 1.5 + Math.random() * 3.5; }
         else { st.x += Math.sign(dx) * Math.min(sp, dist); el.style.transform = dx < 0 ? "scaleX(1)" : "scaleX(-1)"; }
       }
       el.style.left = st.x + "%";
       el.style.bottom = (st.y + Math.abs(Math.sin(st.ph)) * 0.5) + "%";
+      el.style.height = (14 * rbDepth(st.y)) + "%"; el.style.zIndex = String(10 - Math.round(st.y / 4));
     });
     if (rbTick > 5) { rbTick = 0; rbInit(); var dirty = false;
       town.rb.forEach(function (it, idx) { var d = RB_ITEMS[it.k]; if (d && d.grow) { var el = rbLayer.querySelector("[data-idx='" + idx + "']"); if (el && +el.dataset.stage !== cottonStage(it)) dirty = true; } });
