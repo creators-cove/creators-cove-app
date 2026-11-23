@@ -228,6 +228,81 @@
       @keyframes bombPulse { from { filter: brightness(1); } to { filter: brightness(1.28); } }
       .readouts.jelly-on { grid-template-columns: repeat(4, 1fr); }
       .readouts.jelly-on .meter .val { font-size: 1.12rem; }
+      /* ---------- Polish pass: dimensional pieces, personalities, buttons ---------- */
+      .tile { box-shadow: inset 0 -3px 0 rgba(9, 50, 70, 0.14), 0 3px 7px rgba(0, 0, 0, 0.38); }
+      .tile img.candy-img { filter: saturate(1.07) contrast(1.05) brightness(1.02); }
+      @keyframes bombPulse {
+        from { filter: saturate(1.07) contrast(1.05) brightness(1.02); }
+        to { filter: saturate(1.07) contrast(1.05) brightness(1.3); }
+      }
+      /* One light source for every piece: same shine, same shade, same rim. */
+      .tile .gloss {
+        position: absolute; inset: 0; border-radius: 12px; z-index: 2; pointer-events: none;
+        background:
+          radial-gradient(115% 85% at 30% 16%, rgba(255,255,255,0.40), rgba(255,255,255,0.10) 44%, rgba(255,255,255,0) 62%),
+          linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 46%, rgba(4,30,44,0.16) 100%);
+        box-shadow: inset 0 2px 3px rgba(255,255,255,0.55), inset 0 -5px 9px rgba(6,40,60,0.30), inset 0 0 0 1px rgba(255,255,255,0.16);
+      }
+      /* Personalities: each piece idles its own way */
+      .tile.t0 img.candy-img { animation: shellRock 3.4s ease-in-out infinite alternate; }
+      @keyframes shellRock { from { transform: rotate(-2deg) scale(1.07); } to { transform: rotate(2deg) scale(1.07); } }
+      .tile.t1 img.candy-img { animation: starBreathe 2.8s ease-in-out infinite alternate; }
+      @keyframes starBreathe { from { transform: scale(1.01); } to { transform: scale(1.05); } }
+      .tile.t2 img.candy-img { animation: pearlShimmer 3.8s ease-in-out infinite alternate; }
+      @keyframes pearlShimmer {
+        from { filter: saturate(1.07) contrast(1.05) brightness(1.02); }
+        to { filter: saturate(1.1) contrast(1.05) brightness(1.17); }
+      }
+      .tile.t3 img.candy-img { animation: paletteBob 3.1s ease-in-out infinite alternate; }
+      @keyframes paletteBob { from { transform: translateY(0) scale(1.05); } to { transform: translateY(-2.5px) scale(1.05); } }
+      .tile.t4 img.candy-img { animation: anchorSway 4.2s ease-in-out infinite alternate; transform-origin: 50% 12%; }
+      @keyframes anchorSway { from { transform: rotate(1.8deg) scale(1.07); } to { transform: rotate(-1.8deg) scale(1.07); } }
+      .tile.t5 img.candy-img { animation: waveDrift 3.6s ease-in-out infinite alternate; }
+      @keyframes waveDrift { from { transform: translateX(-1.6px) scale(1.04); } to { transform: translateX(1.6px) scale(1.04); } }
+      /* Buttons: one family — pill, gold for go, turquoise for the rest */
+      .side-btn {
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        background: linear-gradient(180deg, #3ec3dc, #1283a3);
+        color: #ffffff; text-shadow: 0 1px 2px rgba(4, 40, 56, 0.45);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(4, 40, 56, 0.18);
+      }
+      .side-btn.gold {
+        border-color: var(--gold-deep);
+        background: linear-gradient(180deg, #ffe08a, var(--gold));
+        color: #4a2c00; text-shadow: none;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -3px 0 rgba(146, 90, 0, 0.25);
+      }
+      .side-btn:active { transform: translateY(1px); }
+      .close-btn {
+        border-radius: 999px; border: 2px solid var(--gold-deep);
+        background: linear-gradient(180deg, #ffe08a, var(--gold)); color: #4a2c00;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -3px 0 rgba(146, 90, 0, 0.25);
+      }
+      #overlayMapBtn {
+        border-color: rgba(255, 255, 255, 0.35);
+        background: linear-gradient(180deg, #3ec3dc, #1283a3); color: #ffffff;
+        text-shadow: 0 1px 2px rgba(4, 40, 56, 0.45);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(4, 40, 56, 0.18);
+      }
+      .close-btn:active, #overlayMapBtn:active { transform: translateY(1px); }
+      .sound-btn, .cove-back-btn {
+        background: linear-gradient(180deg, #3ec3dc, #1283a3); color: #ffffff;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        text-shadow: 0 1px 2px rgba(4, 40, 56, 0.45);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(4, 40, 56, 0.18);
+      }
+      .controls { gap: 8px; }
+      .controls .side-btn { font-size: 0.85rem; white-space: nowrap; padding: 0 4px; }
+      /* Jelly counters: compact when the jelly meter joins the row */
+      .readouts.jelly-on { gap: 6px; }
+      .readouts.jelly-on .meter { height: 50px; padding: 3px 4px; border-radius: 10px; }
+      .readouts.jelly-on .meter .lbl { font-size: 0.56rem; letter-spacing: 0.1em; }
+      .readouts.jelly-on .meter .val { font-size: 1.02rem; line-height: 1.1; }
+      @media (prefers-reduced-motion: reduce) {
+        .tile.t0 img.candy-img, .tile.t1 img.candy-img, .tile.t2 img.candy-img,
+        .tile.t3 img.candy-img, .tile.t4 img.candy-img, .tile.t5 img.candy-img { animation: none; }
+      }
+
       /* ---------- Praise, confetti, Shell Crush banner ---------- */
       .praise { position: absolute; inset: 0; display: none; place-items: center; pointer-events: none; z-index: 6; }
       .praise-inner { display: flex; align-items: center; gap: 10px; }
@@ -943,13 +1018,13 @@
         }
       }
 
-      var tileEls = null, tileImg = null, tileJelly = null;
+      var tileEls = null, tileImg = null, tileJelly = null, tileGloss = null;
       function buildBoardDom() {
         if (!el.board) return;
         while (el.board.firstChild) el.board.removeChild(el.board.firstChild);
-        tileEls = []; tileImg = []; tileJelly = [];
+        tileEls = []; tileImg = []; tileJelly = []; tileGloss = [];
         for (var r = 0; r < ROWS; r++) {
-          tileEls.push([]); tileImg.push([]); tileJelly.push([]);
+          tileEls.push([]); tileImg.push([]); tileJelly.push([]); tileGloss.push([]);
           for (var c = 0; c < COLS; c++) {
             var btn = document.createElement("button");
             btn.type = "button";
@@ -964,12 +1039,16 @@
             im.className = "candy-img";
             im.alt = "";
             im.draggable = false;
+            var gl = document.createElement("div");
+            gl.className = "gloss";
             btn.appendChild(jd);
             btn.appendChild(im);
+            btn.appendChild(gl);
             el.board.appendChild(btn);
             tileEls[r].push(btn);
             tileImg[r].push(im);
             tileJelly[r].push(jd);
+            tileGloss[r].push(gl);
           }
         }
       }
@@ -982,17 +1061,20 @@
             var t = board[r][c];
             /* Defensive: a playable cell must never render blank. */
             if (!t) { t = board[r][c] = newTile(randType()); }
-            var btn = tileEls[r][c], im = tileImg[r][c], jd = tileJelly[r][c];
+            var btn = tileEls[r][c], im = tileImg[r][c], jd = tileJelly[r][c], gl = tileGloss[r][c];
             if (t.blocked) {
               btn.className = "tile blocked";
               im.removeAttribute("src");
               im.style.display = "none";
               jd.style.display = "none";
+              gl.style.display = "none";
               btn.setAttribute("aria-label", "Blocked cell");
               continue;
             }
             im.style.display = "";
+            gl.style.display = "";
             var cls = "tile", src = CANDY_IMG[t.type], label = TYPES[t.type].name;
+            if (t.special !== "bomb" && t.special !== "rainbow") cls += " t" + t.type;
             if (t.special === "row") cls += " striped-row";
             else if (t.special === "col") cls += " striped-col";
             else if (t.special === "wrapped") { cls += " wrapped"; label = "Wrapped " + label; }
