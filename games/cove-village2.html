@@ -29,6 +29,7 @@
   #sp-nova { position: absolute; cursor: pointer; -webkit-tap-highlight-color: transparent; filter: drop-shadow(0 6px 5px rgba(0,0,0,.3)); z-index: 7; }
   #rbLayer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
   #rbLayer img { position: absolute; pointer-events: auto; -webkit-tap-highlight-color: transparent; }
+  .rb-shadow { position: absolute; height: 3.9%; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(22,46,34,.55) 0%, rgba(22,46,34,.28) 55%, rgba(22,46,34,0) 72%); pointer-events: none; }
   .rb-item { cursor: grab; filter: drop-shadow(0 5px 5px rgba(0,0,0,.3)); touch-action: none; }
   .rb-item.ripe { filter: drop-shadow(0 0 12px rgba(255,215,80,.95)) drop-shadow(0 5px 5px rgba(0,0,0,.3)); cursor: pointer; }
   .rb-pet { cursor: pointer; filter: drop-shadow(0 4px 4px rgba(0,0,0,.3)); }
@@ -555,21 +556,21 @@ function novaFrame(dt) {
    collection to complete. State lives in the town save: town.rb
    (placed things), town.pets, town.bfly. */
 var RB_ITEMS = {
-  housepink:  { img: "rb-house-pink",    name: "\uD83C\uDF6D Candy Cottage",      price: 2500, h: 27 },
-  housemint:  { img: "rb-house-mint",    name: "\uD83C\uDF6C Peppermint Cottage", price: 2500, h: 27 },
-  houselemon: { img: "rb-house-lemon",   name: "\uD83C\uDF4B Lemon Drop Cottage", price: 3000, h: 27 },
-  castle:     { img: "rb-house-castle",  name: "\uD83C\uDFF0 Rainbow Castle",     price: 9000, h: 34 },
-  stable:     { img: "rb-stable",        name: "\uD83E\uDD84 Unicorn Stable",     price: 1800, h: 22 },
-  fountain:   { img: "rb-fountain",      name: "\u26F2 Sparkle Fountain",         price: 1200, h: 20 },
-  rbtree:     { img: "rb-rainbow-tree",  name: "\uD83C\uDF08 Rainbow Tree",       price: 600,  h: 24 },
-  loltree:    { img: "rb-lollipop-tree", name: "\uD83C\uDF6D Lollipop Tree",      price: 450,  h: 24 },
-  cotton:     { img: "rb-cotton",        name: "\uD83C\uDF6C Cotton Candy Plant", price: 150,  h: 20, grow: true }
+  housepink:  { img: "rb-house-pink",    name: "\uD83C\uDF6D Candy Cottage",      price: 2500, h: 27, sw: 20.4 },
+  housemint:  { img: "rb-house-mint",    name: "\uD83C\uDF6C Peppermint Cottage", price: 2500, h: 27, sw: 18.6 },
+  houselemon: { img: "rb-house-lemon",   name: "\uD83C\uDF4B Lemon Drop Cottage", price: 3000, h: 27, sw: 19.4 },
+  castle:     { img: "rb-house-castle",  name: "\uD83C\uDFF0 Rainbow Castle",     price: 9000, h: 34, sw: 22.8 },
+  stable:     { img: "rb-stable",        name: "\uD83E\uDD84 Unicorn Stable",     price: 1800, h: 22, sw: 16.6 },
+  fountain:   { img: "rb-fountain",      name: "\u26F2 Sparkle Fountain",         price: 1200, h: 20, sw: 12.4 },
+  rbtree:     { img: "rb-rainbow-tree",  name: "\uD83C\uDF08 Rainbow Tree",       price: 600,  h: 24, sw: 12.7 },
+  loltree:    { img: "rb-lollipop-tree", name: "\uD83C\uDF6D Lollipop Tree",      price: 450,  h: 24, sw: 12.4 },
+  cotton:     { img: "rb-cotton",        name: "\uD83C\uDF6C Cotton Candy Plant", price: 150,  h: 20, sw: 9.2, grow: true }
 };
 var RB_PETS = {
-  sky:   { img: "uni-sky",   name: "Skye",    price: 2000 },
-  mint:  { img: "uni-mint",  name: "Minty",   price: 2000 },
-  peach: { img: "uni-peach", name: "Peaches", price: 2000 },
-  gold:  { img: "uni-gold",  name: "Goldie",  price: 2000 }
+  sky:   { img: "uni-sky",   name: "Skye",    price: 2000, sw: 11.2 },
+  mint:  { img: "uni-mint",  name: "Minty",   price: 2000, sw: 11.2 },
+  peach: { img: "uni-peach", name: "Peaches", price: 2000, sw: 11.2 },
+  gold:  { img: "uni-gold",  name: "Goldie",  price: 2000, sw: 11.2 }
 };
 var BFLY = [
   ["rainbow", "Rainbow Wonder", 5], ["monarch", "Monarch", 14], ["morpho", "Blue Morpho", 14],
@@ -592,6 +593,12 @@ function renderRB() {
     if (d.grow) { var st = cottonStage(it); sc = [0.5, 0.78, 1][st]; img.dataset.stage = st; if (st === 2) img.classList.add("ripe"); }
     img.style.left = it.x + "%"; img.style.bottom = it.y + "%"; img.style.height = (d.h * sc * rbDepth(it.y)) + "%";
     img.style.zIndex = String(10 - Math.round(it.y / 4));
+    var sh = document.createElement("div");
+    sh.className = "rb-shadow"; sh.dataset.idx = idx;
+    var sprW = d.sw * sc * rbDepth(it.y), shW = sprW * 0.92;
+    sh.style.width = shW + "%"; sh.style.left = (it.x + (sprW - shW) / 2) + "%"; sh.style.bottom = (it.y - 0.6) + "%";
+    sh.style.zIndex = String(9 - Math.round(it.y / 4));
+    rbLayer.appendChild(sh);
     rbLayer.appendChild(img);
   });
   town.pets.forEach(function (pk) {
@@ -601,6 +608,13 @@ function renderRB() {
     img.src = "village2/" + d.img + ".png"; img.alt = d.name; img.className = "rb-pet"; img.dataset.pet = pk; img.draggable = false;
     img.style.left = petState[pk].x + "%"; img.style.bottom = petState[pk].y + "%"; img.style.height = (14 * rbDepth(petState[pk].y)) + "%"; img.style.zIndex = String(10 - Math.round(petState[pk].y / 4));
     img.addEventListener("click", function () { toast("\uD83E\uDD84 " + d.name + " nuzzles your hand and prances in a little circle."); });
+    var psh = document.createElement("div");
+    psh.className = "rb-shadow"; psh.dataset.petshadow = pk;
+    var pSprW = d.sw * rbDepth(petState[pk].y), pShW = pSprW * 0.92;
+    psh.style.width = pShW + "%"; psh.style.left = (petState[pk].x + (pSprW - pShW) / 2) + "%"; psh.style.bottom = (petState[pk].y - 0.5) + "%";
+    psh.style.zIndex = String(9 - Math.round(petState[pk].y / 4));
+    petState[pk].sh = psh;
+    rbLayer.appendChild(psh);
     rbLayer.appendChild(img);
   });
 }
@@ -714,7 +728,7 @@ rbLayer.addEventListener("pointerdown", function (e) {
   e.preventDefault();
   var scene = document.getElementById("scene").getBoundingClientRect();
   var it0 = town.rb[+t.dataset.idx]; var d0 = it0 && RB_ITEMS[it0.k]; var g0 = d0 && d0.grow ? [0.5, 0.78, 1][cottonStage(it0)] : 1;
-  rbDrag = { idx: +t.dataset.idx, el: t, moved: false, baseH: d0 ? d0.h * g0 : 20,
+  rbDrag = { idx: +t.dataset.idx, el: t, moved: false, baseH: d0 ? d0.h * g0 : 20, swBase: d0 ? d0.sw * g0 : 12, sh: rbLayer.querySelector(".rb-shadow[data-idx='" + t.dataset.idx + "']"),
     gx: (e.clientX - scene.left) / scene.width * 100 - parseFloat(t.style.left),
     gy: (scene.bottom - e.clientY) / scene.height * 100 - parseFloat(t.style.bottom) };
   try { t.setPointerCapture(e.pointerId); } catch (err) {}
@@ -727,6 +741,7 @@ rbLayer.addEventListener("pointermove", function (e) {
   x = Math.max(0, Math.min(93, x)); y = Math.max(1, Math.min(60, y));
   if (Math.abs(x - parseFloat(rbDrag.el.style.left)) > 0.4 || Math.abs(y - parseFloat(rbDrag.el.style.bottom)) > 0.4) rbDrag.moved = true;
   rbDrag.el.style.left = x + "%"; rbDrag.el.style.bottom = y + "%"; rbDrag.el.style.zIndex = String(10 - Math.round(y / 4)); rbDrag.el.style.height = (rbDrag.baseH * rbDepth(y)) + "%";
+  if (rbDrag.sh) { var sW = rbDrag.swBase * rbDepth(y), shW2 = sW * 0.92; rbDrag.sh.style.width = shW2 + "%"; rbDrag.sh.style.left = (x + (sW - shW2) / 2) + "%"; rbDrag.sh.style.bottom = (y - 0.6) + "%"; rbDrag.sh.style.zIndex = String(9 - Math.round(y / 4)); }
   rbDrag.x = x; rbDrag.y = y;
 });
 rbLayer.addEventListener("pointerup", function () {
@@ -758,6 +773,7 @@ function rbFrame(dt) {
       el.style.left = st.x + "%";
       el.style.bottom = (st.y + Math.abs(Math.sin(st.ph)) * 0.5) + "%";
       el.style.height = (14 * rbDepth(st.y)) + "%"; el.style.zIndex = String(10 - Math.round(st.y / 4));
+      if (st.sh) { var pw = 11.2 * rbDepth(st.y), pw2 = pw * 0.92; st.sh.style.width = pw2 + "%"; st.sh.style.left = (st.x + (pw - pw2) / 2) + "%"; st.sh.style.bottom = (st.y - 0.5) + "%"; st.sh.style.zIndex = String(9 - Math.round(st.y / 4)); }
     });
     if (rbTick > 5) { rbTick = 0; rbInit(); var dirty = false;
       town.rb.forEach(function (it, idx) { var d = RB_ITEMS[it.k]; if (d && d.grow) { var el = rbLayer.querySelector("[data-idx='" + idx + "']"); if (el && +el.dataset.stage !== cottonStage(it)) dirty = true; } });
