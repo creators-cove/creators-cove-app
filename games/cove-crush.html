@@ -42,7 +42,7 @@
         }
       }
       * { box-sizing: border-box; }
-      html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; overscroll-behavior: none; }
+      html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       html, body { margin: 0; padding: 0; }
       body {
         font-family: "Nunito", system-ui, sans-serif;
@@ -1088,6 +1088,47 @@
       }
       function saveProgress() {
         try { window.localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); } catch (e) { /* ignore */ }
+        backupProgress();
+      }
+
+      /* ---- Shelf safety net: progress backs up under the farm Save Code,
+         so a deleted home-screen icon or a new browser never wipes it.
+         A fresh start never overwrites a real backup, and a restore only
+         ever adopts a shelf copy that holds more than the phone's. ---- */
+      var SHELF_URL = "https://enabled-platypus-167183.upstash.io";
+      var SHELF_KEY = "gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg";
+      function shelfCode() { try { return localStorage.getItem("cove-farm-savecode"); } catch (e) { return null; } }
+      function shelfApi(cmd) {
+        return fetch(SHELF_URL, { method: "POST", headers: { "Authorization": "Bearer " + SHELF_KEY, "Content-Type": "application/json" }, body: JSON.stringify(cmd) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { return j ? j.result : null; });
+      }
+      function progressCleared(p) { var n = 0; for (var k in (p.stars || {})) n++; return n; }
+      function progressFresh(p) { return (!p || p.unlocked <= 1) && progressCleared(p) === 0; }
+      var crushBackupTimer = null;
+      function backupProgress() {
+        var code = shelfCode();
+        if (!code || progressFresh(progress)) return;
+        clearTimeout(crushBackupTimer);
+        crushBackupTimer = setTimeout(function () {
+          shelfApi(["SET", "crush:" + code, JSON.stringify(progress)]).catch(function () {});
+        }, 1500);
+      }
+      function restoreProgress() {
+        var code = shelfCode();
+        if (!code || !progressFresh(progress)) return Promise.resolve(false);
+        return shelfApi(["GET", "crush:" + code]).then(function (r) {
+          if (!r) return false;
+          try {
+            var p = JSON.parse(r);
+            if (!p || typeof p.unlocked !== "number" || progressCleared(p) <= 0) return false;
+            progress.unlocked = Math.max(1, Math.min(LEVELS.length + 1, Math.floor(p.unlocked)));
+            progress.stars = {};
+            for (var k in (p.stars || {})) { var v = parseInt(p.stars[k], 10); if (v >= 1 && v <= 3) progress.stars[k] = v; }
+            saveProgress();
+            return true;
+          } catch (e) { return false; }
+        }).catch(function () { return false; });
       }
       function levelConfig(l) {
         if (l >= 1 && l <= LEVELS.length) return LEVELS[l - 1];
@@ -1957,8 +1998,14 @@
       if (typeof document !== "undefined") {
         initDom();
         loadProgress();
-        startLevel(Math.min(progress.unlocked, LEVELS.length));
-        showScreen("map");
+        var bootDone = false;
+        var bootNow = function () {
+          if (bootDone) return; bootDone = true;
+          startLevel(Math.min(progress.unlocked, LEVELS.length));
+          showScreen("map");
+        };
+        setTimeout(bootNow, 2000);
+        restoreProgress().then(function () { bootNow(); });
       }
       if (typeof window !== "undefined") {
         window.CoveCrush = {
