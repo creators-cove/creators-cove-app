@@ -896,13 +896,27 @@
       }
       var PRAISE_VOICE = ["crush3d/voice/praise-sweet.mp3", "crush3d/voice/praise-splashy.mp3", "crush3d/voice/praise-golden.mp3", "crush3d/voice/praise-legendary.mp3"];
       var praiseAudio = [];
-      function sfxVoice(tier) {
-        if (!soundOn) return;
+      function duckTune() {
         if (tuneAudio && !tuneAudio.paused) {
           tuneAudio.volume = 0.12;
           var dk = ++tuneDuckToken;
           setTimeout(function () { if (dk === tuneDuckToken && tuneAudio) tuneAudio.volume = 0.42; }, 1700);
         }
+      }
+      var shoutAudio = null;
+      function sfxShout() {
+        if (!soundOn) return;
+        duckTune();
+        try {
+          if (!shoutAudio) { shoutAudio = new Audio("crush3d/voice/cove-crush.mp3"); shoutAudio.preload = "auto"; }
+          shoutAudio.currentTime = 0;
+          var p = shoutAudio.play();
+          if (p && p.catch) p.catch(function () {});
+        } catch (e) {}
+      }
+      function sfxVoice(tier) {
+        if (!soundOn) return;
+        duckTune();
         try {
           if (!praiseAudio[tier]) { praiseAudio[tier] = new Audio(PRAISE_VOICE[tier]); praiseAudio[tier].preload = "auto"; }
           var au = praiseAudio[tier];
@@ -940,7 +954,7 @@
       var tuneAudio = null, tuneDuckToken = 0;
       function getTune() {
         if (!tuneAudio) {
-          tuneAudio = new Audio("crush3d/tune.mp3");
+          tuneAudio = new Audio("crush3d/tune.wav");
           tuneAudio.loop = true;
           tuneAudio.volume = 0.42;
           tuneAudio.preload = "auto";
@@ -1391,6 +1405,7 @@
         showScreen("game");
         if (objective === "jelly") setDisplay("Level " + l + " — clear all the jelly in " + moves + " moves!");
         else setDisplay("Level " + l + " — " + target + " pts in " + moves + " moves!");
+        sfxShout();
         render();
       }
 
