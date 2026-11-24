@@ -448,6 +448,10 @@
       .map-area.board3 {
         background: #bfeef5 url("crush3d/map-bg-c.jpg") center 30% / cover no-repeat;
       }
+      .map-wrap.board4 { margin-top: 20px; }
+      .map-area.board4 {
+        background: #ffe3f4 url("crush3d/map-bg-d.jpg") center 30% / cover no-repeat;
+      }
       .map-node {
         border: 3px solid #ffffff;
         box-shadow: 0 5px 12px rgba(60, 20, 50, 0.4), inset 0 -4px 8px rgba(0,0,0,0.22), inset 0 3px 5px rgba(255,255,255,0.55);
@@ -609,6 +613,12 @@
         <h2>🏖️ Board 3 · The Beach</h2>
         <p class="map-sub">The boardwalk ends at the sand! The trail runs up the shore to the lighthouse — and every stretch you clear opens up more of your own Beach in Village 2.</p>
         <div class="map-area board3" id="mapArea3"></div>
+      </section>
+
+      <section class="map-wrap board4" id="mapSection4" style="display:none" aria-label="Board 4 level map">
+        <h2>🌈 Board 4 · Rainbow Land</h2>
+        <p class="map-sub">Past the beach, the path turns to sparkles — welcome to unicorn country! The trail winds up the rainbow meadow to the Rainbow Castle.</p>
+        <div class="map-area board4" id="mapArea4"></div>
       </section>
 
       <section class="panel" aria-label="Your session">
@@ -1157,7 +1167,25 @@
         { target: 14800, moves: 32 },
         { objective: "jelly", jelly: 40, moves: 34, target: 10800 },
         { target: 15400, moves: 34, mask: "diamond" },
-        { objective: "jelly", jelly: 38, moves: 36, target: 11000, mask: "heart" }
+        { objective: "jelly", jelly: 38, moves: 36, target: 11000, mask: "heart" },
+        { target: 16000, moves: 30 },
+        { objective: "jelly", jelly: 36, moves: 32, target: 11400, mask: "cross" },
+        { target: 16600, moves: 30, mask: "diamond" },
+        { objective: "jelly", jelly: 38, moves: 32, target: 11800 },
+        { target: 17200, moves: 32, mask: "heart" },
+        { objective: "jelly", jelly: 36, moves: 32, target: 12200, mask: "diamond" },
+        { target: 17800, moves: 32 },
+        { objective: "jelly", jelly: 40, moves: 34, target: 12600, mask: "cross" },
+        { target: 18400, moves: 32, mask: "diamond" },
+        { objective: "jelly", jelly: 38, moves: 34, target: 13000, mask: "heart" },
+        { target: 19000, moves: 34 },
+        { objective: "jelly", jelly: 42, moves: 34, target: 13400, mask: "diamond" },
+        { target: 19600, moves: 34, mask: "cross" },
+        { objective: "jelly", jelly: 40, moves: 36, target: 13800 },
+        { target: 20200, moves: 34, mask: "heart" },
+        { objective: "jelly", jelly: 44, moves: 36, target: 14200, mask: "cross" },
+        { target: 20800, moves: 36, mask: "diamond" },
+        { objective: "jelly", jelly: 42, moves: 38, target: 14600, mask: "heart" }
       ];
       var SAVE_KEY = "cove-crush-progress-v1";
       var progress = { unlocked: 1, stars: {} };
@@ -1283,7 +1311,7 @@
         el.overlay = $("overlay"); el.winnerCard = $("winnerCard");
         el.overlayBtn = $("overlayBtn");
         el.readouts = $("readouts"); el.jellyMeter = $("jellyMeter"); el.jellyVal = $("jellyVal");
-        el.gameSection = $("gameSection"); el.mapSection = $("mapSection"); el.mapArea = $("mapArea"); el.mapSection2 = $("mapSection2"); el.mapArea2 = $("mapArea2"); el.mapSection3 = $("mapSection3"); el.mapArea3 = $("mapArea3");
+        el.gameSection = $("gameSection"); el.mapSection = $("mapSection"); el.mapArea = $("mapArea"); el.mapSection2 = $("mapSection2"); el.mapArea2 = $("mapArea2"); el.mapSection3 = $("mapSection3"); el.mapArea3 = $("mapArea3"); el.mapSection4 = $("mapSection4"); el.mapArea4 = $("mapArea4");
         el.praise = $("praise"); el.praiseWord = $("praiseWord");
         el.confetti = $("confetti"); el.crushBanner = $("crushBanner");
         el.fxLayer = $("fxLayer");
@@ -1464,13 +1492,15 @@
         if (el.mapSection) el.mapSection.style.display = which === "map" ? "" : "none";
         if (el.mapSection2) el.mapSection2.style.display = which === "map" ? "" : "none";
         if (el.mapSection3) el.mapSection3.style.display = which === "map" ? "" : "none";
+        if (el.mapSection4) el.mapSection4.style.display = which === "map" ? "" : "none";
         if (which === "map") buildMap();
       }
 
       function buildMap() {
         renderMapInto(el.mapArea, 1, 18);
         renderMapInto(el.mapArea2, 19, 36);
-        renderMapInto(el.mapArea3, 37, LEVELS.length);
+        renderMapInto(el.mapArea3, 37, 54);
+        renderMapInto(el.mapArea4, 55, LEVELS.length);
         var cur = document.querySelector(".map-node.current");
         if (cur && el.mapSection && el.mapSection.style.display !== "none") {
           setTimeout(function () { try { cur.scrollIntoView({ block: "center" }); } catch (e) {} }, 60);
