@@ -444,6 +444,10 @@
       .map-area.board2 {
         background: #f7e3c8 url("crush3d/map-bg-b.jpg") center 30% / cover no-repeat;
       }
+      .map-wrap.board3 { margin-top: 20px; }
+      .map-area.board3 {
+        background: #bfeef5 url("crush3d/map-bg-c.jpg") center 30% / cover no-repeat;
+      }
       .map-node {
         border: 3px solid #ffffff;
         box-shadow: 0 5px 12px rgba(60, 20, 50, 0.4), inset 0 -4px 8px rgba(0,0,0,0.22), inset 0 3px 5px rgba(255,255,255,0.55);
@@ -536,6 +540,12 @@
         <h2>🍬 Board 2 · The Gingerbread Boardwalk</h2>
         <p class="map-sub">You finished the Boardwalk Path — the trail climbs into gingerbread country. Same Sprocket, steeper hills!</p>
         <div class="map-area board2" id="mapArea2"></div>
+      </section>
+
+      <section class="map-wrap board3" id="mapSection3" style="display:none" aria-label="Board 3 level map">
+        <h2>🏖️ Board 3 · The Beach</h2>
+        <p class="map-sub">The boardwalk ends at the sand! The trail runs up the shore to the lighthouse — and every stretch you clear opens up more of your own Beach in Village 2.</p>
+        <div class="map-area board3" id="mapArea3"></div>
       </section>
 
       <section class="panel" aria-label="Your session">
@@ -1066,7 +1076,25 @@
         { target: 9400, moves: 28, mask: "cross" },
         { objective: "jelly", jelly: 36, moves: 32, target: 7400 },
         { target: 10200, moves: 30, mask: "diamond" },
-        { objective: "jelly", jelly: 36, moves: 34, target: 7600, mask: "heart" }
+        { objective: "jelly", jelly: 36, moves: 34, target: 7600, mask: "heart" },
+        { target: 10600, moves: 30 },
+        { objective: "jelly", jelly: 32, moves: 30, target: 8000 },
+        { target: 11200, moves: 30, mask: "cross" },
+        { objective: "jelly", jelly: 34, moves: 32, target: 8400, mask: "diamond" },
+        { target: 11800, moves: 30 },
+        { objective: "jelly", jelly: 30, moves: 30, target: 8800, mask: "heart" },
+        { target: 12400, moves: 30, mask: "diamond" },
+        { objective: "jelly", jelly: 36, moves: 32, target: 9200 },
+        { target: 13000, moves: 30, mask: "cross" },
+        { objective: "jelly", jelly: 34, moves: 32, target: 9600, mask: "heart" },
+        { target: 13600, moves: 32 },
+        { objective: "jelly", jelly: 38, moves: 34, target: 10000, mask: "diamond" },
+        { target: 14200, moves: 32, mask: "heart" },
+        { objective: "jelly", jelly: 36, moves: 32, target: 10400, mask: "cross" },
+        { target: 14800, moves: 32 },
+        { objective: "jelly", jelly: 40, moves: 34, target: 10800 },
+        { target: 15400, moves: 34, mask: "diamond" },
+        { objective: "jelly", jelly: 38, moves: 36, target: 11000, mask: "heart" }
       ];
       var SAVE_KEY = "cove-crush-progress-v1";
       var progress = { unlocked: 1, stars: {} };
@@ -1192,7 +1220,7 @@
         el.overlay = $("overlay"); el.winnerCard = $("winnerCard");
         el.overlayBtn = $("overlayBtn");
         el.readouts = $("readouts"); el.jellyMeter = $("jellyMeter"); el.jellyVal = $("jellyVal");
-        el.gameSection = $("gameSection"); el.mapSection = $("mapSection"); el.mapArea = $("mapArea"); el.mapSection2 = $("mapSection2"); el.mapArea2 = $("mapArea2");
+        el.gameSection = $("gameSection"); el.mapSection = $("mapSection"); el.mapArea = $("mapArea"); el.mapSection2 = $("mapSection2"); el.mapArea2 = $("mapArea2"); el.mapSection3 = $("mapSection3"); el.mapArea3 = $("mapArea3");
         el.praise = $("praise"); el.praiseWord = $("praiseWord");
         el.confetti = $("confetti"); el.crushBanner = $("crushBanner");
         el.boardFrame = $("boardFrame");
@@ -1371,12 +1399,14 @@
         if (el.gameSection) el.gameSection.style.display = which === "game" ? "" : "none";
         if (el.mapSection) el.mapSection.style.display = which === "map" ? "" : "none";
         if (el.mapSection2) el.mapSection2.style.display = which === "map" ? "" : "none";
+        if (el.mapSection3) el.mapSection3.style.display = which === "map" ? "" : "none";
         if (which === "map") buildMap();
       }
 
       function buildMap() {
         renderMapInto(el.mapArea, 1, 18);
-        renderMapInto(el.mapArea2, 19, LEVELS.length);
+        renderMapInto(el.mapArea2, 19, 36);
+        renderMapInto(el.mapArea3, 37, LEVELS.length);
         var cur = document.querySelector(".map-node.current");
         if (cur && el.mapSection && el.mapSection.style.display !== "none") {
           setTimeout(function () { try { cur.scrollIntoView({ block: "center" }); } catch (e) {} }, 60);

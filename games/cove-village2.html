@@ -29,6 +29,8 @@
   #sp-nova { position: absolute; cursor: pointer; -webkit-tap-highlight-color: transparent; filter: drop-shadow(0 6px 5px rgba(0,0,0,.3)); z-index: 7; }
   #rbLayer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
   #rbLayer img { position: absolute; pointer-events: auto; -webkit-tap-highlight-color: transparent; }
+  #beachLayer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+  #beachLayer img { position: absolute; pointer-events: auto; -webkit-tap-highlight-color: transparent; }
   #sceneWrap.big { position: fixed; inset: 0; z-index: 70; overflow: auto; background: #08303f; -webkit-overflow-scrolling: touch; }
   #sceneWrap.big #scene { width: 320%; max-width: none; margin: max(0px, calc((100vh - 213.33vw) / 2)) 0 0; }
   #sceneWrap.big #rbBigBtn { position: fixed; top: 10px; right: 10px; }
@@ -112,6 +114,7 @@
   <button id="tabBoard">🎡 The Boardwalk</button>
   <button id="tabRainbow">🌈 Rainbow World</button>
   <button id="tabRainbowLot">🏡 My Rainbow Land</button>
+  <button id="tabBeach">🔒 The Beach</button>
 </div>
 <div id="ladderStrip"><button id="ladderBtn">🪜 Town Ladder</button><button id="funBtn">🎁 Town Fun</button></div>
 <div id="sceneWrap">
@@ -123,6 +126,7 @@
   <img class="town" id="bgLane" src="village2/lane.jpg" alt="Neighbor Lane: a cobblestone lane between beach cottages with mailboxes and bunting, running down to the sea" style="display:none">
   <img class="town" id="bgRainbow" src="village2/rainbow.jpg" alt="Rainbow World: a whole other world of rainbow trees, candy cottages, a sparkle pond and a rainbow waterfall" style="display:none">
   <img class="town" id="bgRainbowLot" src="village2/rainbowlot.jpg" alt="My Rainbow Land: your own empty sparkle meadow under the rainbow, ready to build on" style="display:none">
+  <img class="town" id="bgBeach" src="village2/beach.jpg" alt="The Beach: your own stretch of golden shore and turquoise sea, earned in Cove Crush" style="display:none">
   <div id="dusk"></div>
   <div id="beam"></div>
   <div id="winGlow"></div>
@@ -163,6 +167,7 @@
   <img class="sprite" id="sp-sprocket" src="village2/sprocket.png" alt="Sprocket" style="left:86%;bottom:28%;height:16%;animation-delay:1s">
   <img id="sp-nova" src="village2/nova.png" alt="Nova the unicorn" style="display:none;left:26%;bottom:10%;height:20%">
   <div id="rbLayer" style="display:none"></div>
+  <div id="beachLayer" style="display:none"></div>
   <div id="gull"><svg viewBox="0 0 40 18" width="54" height="24"><path d="M2 13 Q10 3 20 11 Q30 3 38 13" stroke="#ffffff" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg></div>
   <div id="bubble"></div>
   <button id="rbBigBtn" style="display:none">⛶ Big view</button>
@@ -222,6 +227,10 @@
   <div class="row" id="dirRainbowLot" style="display:none">
     <button id="rbShopBtn2">🏠 Build &amp; Decorate</button>
     <button id="rbBackBtn">🌈 Back to Rainbow World</button>
+  </div>
+  <div class="row" id="dirBeach" style="display:none">
+    <button id="beachBuildBtn">🏖️ Beach Treasures</button>
+    <button id="beachTownBtn">🏘️ Town Square</button>
   </div>
   <div id="dirLane" style="display:none"><div id="laneDirInner"></div></div>
 </div>
@@ -290,11 +299,14 @@ var SUBS = {
   board: "The Boardwalk — sea air and string lights",
   lane: "Neighbor Lane — your neighbors live here",
   rainbow: "Rainbow World — a whole other world, through the rainbow",
-  rainbowlot: "My Rainbow Land — your own plot through the rainbow"
+  rainbowlot: "My Rainbow Land — your own plot through the rainbow",
+  beach: "Your own stretch of shore, earned in Cove Crush"
 };
 var townNameSet = !!document.getElementById("townSub").textContent.match(/COVE-/);
 function setScene(name) {
-  var street = name === "street", lot = name === "lot", board = name === "board", townS = name === "town", lane = name === "lane", rainbow = name === "rainbow", rainbowlot = name === "rainbowlot";
+  if (name === "beach" && !beachUnlocked()) { toast("🔒 The Beach opens when you've cleared 24 Cove Crush levels — you're at " + crushCleared() + ". The boardwalk ends at the sand!"); return; }
+  if (name === "beach" && typeof visitMode !== "undefined" && visitMode) { toast("🏖️ Your own Beach is back at your town."); return; }
+  var street = name === "street", lot = name === "lot", board = name === "board", townS = name === "town", lane = name === "lane", rainbow = name === "rainbow", rainbowlot = name === "rainbowlot", beach = name === "beach";
   document.getElementById("scene").classList.toggle("street", street);
   document.getElementById("bgTown").style.display = townS ? "block" : "none";
   document.getElementById("bgStreet").style.display = street ? "block" : "none";
@@ -303,6 +315,7 @@ function setScene(name) {
   document.getElementById("bgLane").style.display = lane ? "block" : "none";
   document.getElementById("bgRainbow").style.display = rainbow ? "block" : "none";
   document.getElementById("bgRainbowLot").style.display = rainbowlot ? "block" : "none";
+  document.getElementById("bgBeach").style.display = beach ? "block" : "none";
   document.getElementById("zonesTown").style.display = townS ? "block" : "none";
   document.getElementById("zonesStreet").style.display = street ? "block" : "none";
   document.getElementById("zonesBoard").style.display = board ? "block" : "none";
@@ -317,8 +330,11 @@ function setScene(name) {
   document.getElementById("dirLane").style.display = lane ? "block" : "none";
   document.getElementById("dirRainbow").style.display = rainbow ? "flex" : "none";
   document.getElementById("dirRainbowLot").style.display = rainbowlot ? "flex" : "none";
+  document.getElementById("dirBeach").style.display = beach ? "flex" : "none";
   document.getElementById("sp-nova").style.display = rainbow ? "block" : "none";
   document.getElementById("rbLayer").style.display = rainbowlot ? "block" : "none";
+  document.getElementById("beachLayer").style.display = beach ? "block" : "none";
+  if (beach) renderBeach();
   document.getElementById("rbBigBtn").style.display = rainbowlot ? "block" : "none";
   if (!rainbowlot && typeof exitBig === "function") exitBig();
   if (rainbowlot && typeof rbBoot === "function") rbBoot();
@@ -329,16 +345,18 @@ function setScene(name) {
   document.getElementById("tabLane").classList.toggle("active", lane);
   document.getElementById("tabRainbow").classList.toggle("active", rainbow);
   document.getElementById("tabRainbowLot").classList.toggle("active", rainbowlot);
+  document.getElementById("tabBeach").classList.toggle("active", beach);
   document.getElementById("dirTitle").textContent = lot ? "🏡 Your Lots — tap a chip below the picture to switch lots; drag your things wherever you want them" : "📍 Around Town — tap a place, or tap the girls in the picture";
   if (lane) document.getElementById("dirTitle").textContent = "🛤️ Neighbor Lane — tap a neighbor in the picture to visit their lots";
   if (rainbow) document.getElementById("dirTitle").textContent = "🌈 Rainbow World — tap a place, tap the girls, and don't forget to say hello to Nova";
   if (rainbowlot) document.getElementById("dirTitle").textContent = "🏡 My Rainbow Land — this plot is all yours: build your houses, plant your cotton candy, let your unicorns roam";
+  if (beach) document.getElementById("dirTitle").textContent = "🏖️ The Beach — your own stretch of shore, earned in Cove Crush. Drag your treasures anywhere on the sand";
   if (street) document.getElementById("dusk").style.display = "none"; else applyDusk();
   if (rainbow) document.getElementById("dusk").style.display = "none";
   if (rainbowlot) document.getElementById("dusk").style.display = "none";
   if (!townNameSet) document.getElementById("townSub").textContent = SUBS[name];
-  document.querySelectorAll(".sprite").forEach(function (el) { el.style.display = (lot || lane || rainbowlot) ? "none" : "block"; });
-  if (!lot && !lane && !rainbowlot) {
+  document.querySelectorAll(".sprite").forEach(function (el) { el.style.display = (lot || lane || rainbowlot || beach) ? "none" : "block"; });
+  if (!lot && !lane && !rainbowlot && !beach) {
     var pos = POS[name];
     Object.keys(pos).forEach(function (who) {
       var el = document.getElementById("sp-" + who), p = pos[who];
@@ -359,6 +377,7 @@ document.getElementById("tabLot").addEventListener("click", function () { startM
 document.getElementById("tabBoard").addEventListener("click", function () { startMusic(); if (!sceneUnlocked("board")) { lockedTap("board"); return; } setScene("board"); });
 document.getElementById("tabRainbow").addEventListener("click", function () { startMusic(); setScene("rainbow"); });
 document.getElementById("tabRainbowLot").addEventListener("click", function () { startMusic(); setScene("rainbowlot"); });
+document.getElementById("tabBeach").addEventListener("click", function () { startMusic(); setScene("beach"); });
 document.getElementById("tabLane").addEventListener("click", function () { startMusic(); if (typeof neighborCount === "function" && neighborCount() >= 3) setScene("lane"); else if (typeof openLanePanel === "function") openLanePanel(); });
 
 function showPlace(key) {
@@ -777,6 +796,8 @@ function rbSell(idx) {
 document.getElementById("rbShopBtn2").addEventListener("click", function () { startMusic(); rbShop(); });
 document.getElementById("rbGoLandBtn").addEventListener("click", function () { startMusic(); setScene("rainbowlot"); });
 document.getElementById("rbBackBtn").addEventListener("click", function () { startMusic(); setScene("rainbow"); });
+document.getElementById("beachTownBtn").addEventListener("click", function () { startMusic(); setScene("town"); });
+document.getElementById("beachBuildBtn").addEventListener("click", function () { startMusic(); beachOpen(); });
 document.getElementById("bflyBtn").addEventListener("click", function () { startMusic(); bflyPanel(); });
 function bflyPanel() {
   rbInit();
@@ -1006,6 +1027,88 @@ var ART_KEY = "cove-userart-v1", ART_MAX = 6;
 function artStore() { try { return JSON.parse(localStorage.getItem(ART_KEY) || "{}"); } catch (e) { return {}; } }
 function artSave(map) { try { localStorage.setItem(ART_KEY, JSON.stringify(map)); return true; } catch (e) { return false; } }
 function artEsc(t) { return String(t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+/* ---- The Beach: a stretch of shore earned in Cove Crush (Board 3 country).
+   Opens at 24 cleared levels; a new treasure every 6 levels after, up to the
+   Lighthouse at 54. Free, one of a kind, never sold — it just fills up. ---- */
+var BEACH_ITEMS = {
+  sandcastle: { name: "Sandcastle", img: "bc-sandcastle", crush: 24, h: 15, sw: 10.2 },
+  umbrella: { name: "Beach Umbrella", img: "bc-umbrella", crush: 30, h: 16, sw: 8.2 },
+  tiki: { name: "Tiki Torches", img: "bc-tiki", crush: 36, h: 13, sw: 6.3 },
+  lifeguard: { name: "Lifeguard Chair", img: "bc-lifeguard", crush: 42, h: 17, sw: 5.9 },
+  hut: { name: "Beach Hut", img: "bc-hut", crush: 48, h: 20, sw: 14.9 },
+  lighthouse: { name: "Beach Lighthouse", img: "bc-lighthouse", crush: 54, h: 25, sw: 7.3 }
+};
+var BEACH_ORDER = ["sandcastle", "umbrella", "tiki", "lifeguard", "hut", "lighthouse"];
+function beachUnlocked() { return crushCleared() >= 24; }
+function paintBeachTab() { var t = document.getElementById("tabBeach"); if (t) t.textContent = beachUnlocked() ? "🏖️ The Beach" : "🔒 The Beach"; }
+function beachPlaced(k) { return (town.beach || []).some(function (e) { return e.k === k; }); }
+function renderBeach() {
+  var layer = document.getElementById("beachLayer"); if (!layer) return;
+  if (!town.beach) town.beach = [];
+  layer.innerHTML = "";
+  town.beach.forEach(function (e, idx) {
+    var d = BEACH_ITEMS[e.k]; if (!d) return;
+    var dep = rbDepth(e.y), sW = d.sw * dep, shW = sW * 0.92;
+    var sh = document.createElement("div");
+    sh.className = "rb-shadow"; sh.dataset.idx = idx;
+    sh.style.width = shW + "%"; sh.style.left = (e.x + (sW - shW) / 2) + "%"; sh.style.bottom = (e.y - 0.6) + "%"; sh.style.zIndex = String(9 - Math.round(e.y / 4));
+    layer.appendChild(sh);
+    var img = document.createElement("img");
+    img.src = "village2/" + d.img + ".png"; img.alt = d.name; img.className = "rb-item"; img.dataset.idx = idx; img.draggable = false;
+    img.style.height = (d.h * dep) + "%"; img.style.left = e.x + "%"; img.style.bottom = e.y + "%"; img.style.zIndex = String(10 - Math.round(e.y / 4));
+    layer.appendChild(img);
+  });
+}
+var beachDrag = null;
+document.getElementById("beachLayer").addEventListener("pointerdown", function (e) {
+  var t = e.target;
+  if (!t.classList || !t.classList.contains("rb-item")) return;
+  if (typeof visitMode !== "undefined" && visitMode) return;
+  e.preventDefault();
+  var scene = document.getElementById("scene").getBoundingClientRect();
+  var it0 = town.beach[+t.dataset.idx]; var d0 = it0 && BEACH_ITEMS[it0.k];
+  beachDrag = { idx: +t.dataset.idx, el: t, moved: false, baseH: d0 ? d0.h : 14, swBase: d0 ? d0.sw : 8, sh: document.getElementById("beachLayer").querySelector(".rb-shadow[data-idx='" + t.dataset.idx + "']"),
+    gx: (e.clientX - scene.left) / scene.width * 100 - parseFloat(t.style.left),
+    gy: (scene.bottom - e.clientY) / scene.height * 100 - parseFloat(t.style.bottom) };
+  try { t.setPointerCapture(e.pointerId); } catch (err) {}
+});
+document.getElementById("beachLayer").addEventListener("pointermove", function (e) {
+  if (!beachDrag) return;
+  var scene = document.getElementById("scene").getBoundingClientRect();
+  var x = (e.clientX - scene.left) / scene.width * 100 - beachDrag.gx;
+  var y = (scene.bottom - e.clientY) / scene.height * 100 - beachDrag.gy;
+  x = Math.max(0, Math.min(93, x)); y = Math.max(1, Math.min(55, y));
+  if (Math.abs(x - parseFloat(beachDrag.el.style.left)) > 0.4 || Math.abs(y - parseFloat(beachDrag.el.style.bottom)) > 0.4) beachDrag.moved = true;
+  beachDrag.el.style.left = x + "%"; beachDrag.el.style.bottom = y + "%"; beachDrag.el.style.zIndex = String(10 - Math.round(y / 4)); beachDrag.el.style.height = (beachDrag.baseH * rbDepth(y)) + "%";
+  if (beachDrag.sh) { var sW = beachDrag.swBase * rbDepth(y), shW2 = sW * 0.92; beachDrag.sh.style.width = shW2 + "%"; beachDrag.sh.style.left = (x + (sW - shW2) / 2) + "%"; beachDrag.sh.style.bottom = (y - 0.6) + "%"; beachDrag.sh.style.zIndex = String(9 - Math.round(y / 4)); }
+  beachDrag.x = x; beachDrag.y = y;
+});
+document.getElementById("beachLayer").addEventListener("pointerup", function () {
+  if (!beachDrag) return;
+  var d = beachDrag; beachDrag = null;
+  if (d.moved) { var it = town.beach[d.idx]; if (it) { it.x = Math.round(d.x * 10) / 10; it.y = Math.round(d.y * 10) / 10; saveTown(); renderBeach(); } }
+  else { var it2 = town.beach[d.idx]; if (it2 && BEACH_ITEMS[it2.k]) toast("🏖️ " + BEACH_ITEMS[it2.k].name + " — earned at Cove Crush Level " + BEACH_ITEMS[it2.k].crush); }
+});
+function beachOpen() {
+  var cleared = crushCleared();
+  var html = "<p>Your own stretch of shore, earned in <b>Cove Crush</b> — nothing to buy and nothing to sell, it just fills up as you climb. You've cleared <b>" + cleared + "</b> levels.</p>";
+  BEACH_ORDER.forEach(function (k) {
+    var d = BEACH_ITEMS[k], placed = beachPlaced(k), un = cleared >= d.crush;
+    html += "<div class='rb-shoprow'><img src='village2/" + d.img + ".png' alt=''><div class='rb-shopinfo'><b>" + (un ? "" : "🔒 ") + d.name + "</b><span>" + (placed ? "On your beach ✓" : un ? "Earned — ready to place!" : "Clear Cove Crush Level " + d.crush) + "</span></div>" + (un && !placed ? "<button class='rb-buy' onclick='beachPlace(\"" + k + "\")'>Place</button>" : "") + "</div>";
+  });
+  rbOpen("🏖️ Beach Treasures", html);
+}
+function beachPlace(k) {
+  if (beachPlaced(k) || crushCleared() < BEACH_ITEMS[k].crush) return;
+  var spots = { sandcastle: [22, 14], umbrella: [42, 20], tiki: [60, 15], lifeguard: [72, 24], hut: [30, 36], lighthouse: [80, 40] };
+  var s = spots[k] || [50, 20];
+  if (!town.beach) town.beach = [];
+  town.beach.push({ k: k, x: s[0], y: s[1] });
+  saveTown(); renderBeach(); beachOpen();
+  toast("🏖️ " + BEACH_ITEMS[k].name + " placed — drag it anywhere on the sand!");
+}
+paintBeachTab();
 
 /* ---- Crush Rewards: candy decorations earned by clearing Cove Crush levels.
    Crush and Village 2 share this phone's local storage, so progress just reads across. ---- */
@@ -1602,6 +1705,7 @@ function townRich(t) {
   try {
     [1, 2, 3].forEach(function (k) { if (t.free && t.free[k]) n += t.free[k].length; });
     if (t.rb) n += t.rb.length * 2;
+    if (t.beach) n += t.beach.length * 2;
     if (t.pets) n += t.pets.length * 2;
     if (t.babies && t.babies.length) n += t.babies.length * 2;
     if (t.bfly) n += t.bfly.length;
