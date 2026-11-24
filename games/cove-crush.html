@@ -482,12 +482,19 @@
       .winner-card .wc-host { font-weight: 800; opacity: 0.95; margin: 10px 0 0; }
 
       /* ---------- Juice pass (Nov 24): floating scores, bursts, bubblier praise ---------- */
+      /* No cabinet (Kim, Nov 24: "I just don't like them") — the board
+         floats on the world it belongs to: each board's own map art
+         glows around it, changing with the section you're playing. */
       .board-frame {
-        background:
-          radial-gradient(circle at 6px 6px, rgba(255, 255, 255, 0.55) 2.2px, transparent 2.8px) 0 0 / 22px 22px,
-          linear-gradient(150deg, #ffd9a0, #ffb3c8 30%, #c9a7eb 62%, #a8e6d5);
-        box-shadow: inset 0 10px 22px rgba(90, 30, 80, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.2), 0 12px 30px rgba(150, 80, 160, 0.35);
+        border: none;
+        box-shadow: none;
+        padding: 12px;
+        background: #ffe9f6 center 30% / cover no-repeat;
       }
+      .board-frame.theme-1 { background-image: linear-gradient(rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.20)), url("crush3d/map-bg-a.jpg"); }
+      .board-frame.theme-2 { background-image: linear-gradient(rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.20)), url("crush3d/map-bg-b.jpg"); }
+      .board-frame.theme-3 { background-image: linear-gradient(rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.20)), url("crush3d/map-bg-c.jpg"); }
+      .board-frame.theme-4 { background-image: linear-gradient(rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.38)), url("crush3d/map-bg-d.jpg"); }
       .board-frame.bounce { animation: frameBounce 0.5s ease; }
       @keyframes frameBounce {
         0% { transform: scale(1); }
@@ -1669,6 +1676,10 @@
       function startLevel(l) {
         if (busy) return;
         level = l;
+        if (el.boardFrame) {
+          el.boardFrame.classList.remove("theme-1", "theme-2", "theme-3", "theme-4");
+          el.boardFrame.classList.add("theme-" + (l <= 18 ? 1 : l <= 36 ? 2 : l <= 54 ? 3 : 4));
+        }
         var cfg = levelConfig(l);
         target = cfg.target; moves = cfg.moves; score = 0;
         objective = cfg.objective || "score";
