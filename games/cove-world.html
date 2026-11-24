@@ -2384,7 +2384,7 @@
         if (!saveCode || restoringFarm) return;
         var pet = null;
         try { pet = JSON.parse(window.localStorage.getItem("cove-pet-v1") || "null"); } catch (e) { pet = null; }
-        var payload = { v: 1, ts: Date.now(), code: farmCode, name: farmName, farm: state, pet: pet };
+        var payload = { v: 1, ts: Date.now(), code: farmCode, name: farmName, farm: state, pet: pet, neighbors: loadNeighbors() };
         if (useKeepalive) {
           try {
             fetch(COVE_API_URL, { method: "POST", headers: { "Authorization": "Bearer " + COVE_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(["SET", "save:" + saveCode, JSON.stringify(payload)]), keepalive: true }).catch(function () { /* ignore */ });
@@ -2433,6 +2433,7 @@
             if (data.name) window.localStorage.setItem("cove-farm-name", data.name);
             window.localStorage.setItem(SAVECODE_KEY, code);
             if (data.pet) window.localStorage.setItem("cove-pet-v1", JSON.stringify(data.pet));
+            if (data.neighbors) mergeNeighbors(data.neighbors);
             window.localStorage.setItem("cove-restored-welcome", "1");
             if (usedPrev) window.localStorage.setItem("cove-restored-prev", "1");
           } catch (e) { /* ignore */ }
@@ -2607,6 +2608,20 @@
       }
       function saveNeighbors(list) {
         try { window.localStorage.setItem(NEIGHBORS_KEY, JSON.stringify(list)); } catch (e) { /* ignore */ }
+        scheduleBackup(2500);
+      }
+      /* Union-merge a restored list into this phone's: a neighbor from
+         either side survives, and the fresher entry wins a conflict. */
+      function mergeNeighbors(incoming) {
+        if (!incoming || !incoming.length) return;
+        var byCode = {};
+        loadNeighbors().forEach(function (n) { if (n && n.code) byCode[n.code] = n; });
+        incoming.forEach(function (n) {
+          if (n && n.code && (!byCode[n.code] || (n.last || 0) > (byCode[n.code].last || 0))) byCode[n.code] = n;
+        });
+        var merged = Object.keys(byCode).map(function (k) { return byCode[k]; });
+        merged.sort(function (a, b) { return (b.last || 0) - (a.last || 0); });
+        try { window.localStorage.setItem(NEIGHBORS_KEY, JSON.stringify(merged.slice(0, 24))); } catch (e) { /* ignore */ }
       }
       function rememberNeighbor(code, name) {
         if (!code || code === farmCode) return;
