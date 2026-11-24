@@ -93,22 +93,24 @@
       }
       .display {
         margin: 12px 2px 0; height: 56px; overflow: hidden;
-        background: #081f2c; border: 2px solid rgba(255, 201, 60, 0.5);
-        border-radius: 14px; color: #ffe9a8;
+        background: rgba(255, 255, 255, 0.88); border: 2px solid rgba(255, 255, 255, 0.95);
+        border-radius: 14px; color: #17384a;
+        box-shadow: 0 3px 10px rgba(60, 30, 60, 0.18);
         display: flex; align-items: center; justify-content: center; text-align: center;
         font-family: "Fredoka", sans-serif; font-weight: 600;
         font-size: clamp(1rem, 4.6vw, 1.25rem); padding: 8px 12px; line-height: 1.2;
       }
-      .display.big { color: var(--gold); }
+      .display.big { color: #a87408; }
       .readouts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
       .meter {
-        background: #081f2c; border: 2px solid rgba(255, 201, 60, 0.45); border-radius: 12px;
-        padding: 6px 10px; text-align: center; color: var(--cream); height: 64px; overflow: hidden;
+        background: rgba(255, 255, 255, 0.88); border: 2px solid rgba(255, 255, 255, 0.95); border-radius: 12px;
+        padding: 6px 10px; text-align: center; color: #17384a; height: 64px; overflow: hidden;
+        box-shadow: 0 3px 10px rgba(60, 30, 60, 0.18);
       }
-      .meter .lbl { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #ffd76a; }
+      .meter .lbl { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #a87408; }
       .meter .val { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.45rem; line-height: 1.15; }
       .meter .val small { font-size: 0.85rem; opacity: 0.8; }
-      .progress { height: 12px; background: #081f2c; border: 2px solid rgba(255,201,60,.45); border-radius: 999px; margin-top: 12px; overflow: hidden; }
+      .progress { height: 12px; background: rgba(255, 255, 255, 0.55); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 999px; margin-top: 12px; overflow: hidden; }
       .progress i { display: block; height: 100%; background: linear-gradient(90deg, #ffe08a, var(--gold)); width: 0%; transition: width 0.4s ease; }
       /* ---------- Board ---------- */
       .board-frame {
