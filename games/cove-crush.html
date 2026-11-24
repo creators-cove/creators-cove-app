@@ -175,6 +175,7 @@
       }
       .overlay.open { display: flex; align-items: flex-start; justify-content: center; }
       .winner-card {
+        position: relative;
         background: linear-gradient(180deg, #0d5a74, #0b3d52); color: var(--cream);
         border: 3px solid var(--gold); border-radius: 24px; max-width: 430px; width: 100%;
         padding: 22px 18px; text-align: center; box-shadow: var(--shadow); margin: auto 0;
@@ -183,6 +184,10 @@
       .winner-card .sub { letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.7rem; font-weight: 800; opacity: 0.85; margin: 0; }
       .winner-card .wc-amount { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 2.2rem; color: #ffe9a8; margin: 8px 0 0; }
       .winner-card .wc-detail { font-weight: 700; opacity: 0.9; margin: 2px 0 0; }
+      .winner-card .wc-shells { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.55rem; color: #ffe9a8; margin: 10px 0 0; animation: shellPop 0.55s ease 1.35s both; }
+      @keyframes shellPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.18); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+      .fx-shell { position: absolute; bottom: 70px; z-index: 3; pointer-events: none; animation: shellFloat 1.5s ease-out both; }
+      @keyframes shellFloat { 0% { transform: translateY(0) rotate(0deg); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-120px) rotate(40deg); opacity: 0; } }
       .overlay-wrap { width: 100%; max-width: 430px; margin: auto 0; }
       .close-row { max-width: 430px; width: 100%; margin: 12px auto 0; }
       .close-btn {
@@ -633,7 +638,7 @@
 
       <section class="panel" aria-label="Your session">
         <h2>Your session</h2>
-        <p>Best score this visit: <strong id="bestVal">0</strong> &nbsp;·&nbsp; Levels cleared: <strong id="levelsVal">0</strong> &nbsp;·&nbsp; Biggest chain: <strong id="chainVal">0</strong></p>
+        <p>Best score this visit: <strong id="bestVal">0</strong> &nbsp;·&nbsp; Levels cleared: <strong id="levelsVal">0</strong> &nbsp;·&nbsp; Biggest chain: <strong id="chainVal">0</strong> &nbsp;·&nbsp; Trophy shells: <strong id="shellsVal">🐚 0</strong></p>
       </section>
 
       <section class="panel" aria-label="How to play">
@@ -643,6 +648,7 @@
         <p>Some levels ask you to <strong>clear the jelly</strong> instead of chasing points — match candies sitting on the blue jelly squares to melt it away before your moves run out. Win with moves to spare and Sprocket spends them on a <strong>Shell Crush</strong> bonus round of free blasts!</p>
         <p>🎵 The <strong>Cove Crush tune</strong> plays while you play — and it dips down on its own whenever Sprocket talks, so you never miss a word of his bragging.</p>
         <p>🏆 <strong>Crush Rewards:</strong> clearing levels earns candy decorations for your cottage or shop lot in <strong>Village 2</strong> — a Lollipop Tree at level 3, a Candy Awning at 12, all the way up to the Candy Cottage at 18. Find them at the top of Build &amp; Decorate on your lot. They're free — you earned them.</p>
+        <p>🐚 <strong>Trophy shells:</strong> every star you earn on a level pays a trophy shell — barely pass for 1, crush it for 3. They are a collection to fill (216 in all), just for the glory — they never touch your farm shells.</p>
         <p>🍬 <strong>Board 2:</strong> finish all 18 levels and the map keeps going — 18 more levels up the <strong>Gingerbread Boardwalk</strong>, with thicker jelly and steeper targets.</p>
         <p>Reach the target before you run out of moves to clear the level. Follow the <strong>Boardwalk Path</strong> on the map to replay any level you have unlocked. If there are no moves left, tap <strong>Shuffle</strong> to mix the board up.</p>
         <div class="legend">
@@ -1198,7 +1204,8 @@
         { objective: "jelly", jelly: 42, moves: 38, target: 14600, mask: "heart" }
       ];
       var SAVE_KEY = "cove-crush-progress-v1";
-      var progress = { unlocked: 1, stars: {} };
+      var progress = { unlocked: 1, stars: {}, shells: 0 };
+      function starSum() { var n = 0; for (var k in progress.stars) n += progress.stars[k] || 0; return n; }
       function loadProgress() {
         try {
           var raw = window.localStorage.getItem(SAVE_KEY);
@@ -1212,6 +1219,7 @@
                 if (v >= 1 && v <= 3) progress.stars[k] = v;
               }
             }
+            progress.shells = (typeof p.shells === "number" && isFinite(p.shells)) ? Math.max(0, Math.floor(p.shells)) : starSum();
           }
         } catch (e) { /* storage unavailable — progress just won't persist */ }
       }
@@ -1254,6 +1262,7 @@
             progress.unlocked = Math.max(1, Math.min(LEVELS.length + 1, Math.floor(p.unlocked)));
             progress.stars = {};
             for (var k in (p.stars || {})) { var v = parseInt(p.stars[k], 10); if (v >= 1 && v <= 3) progress.stars[k] = v; }
+            progress.shells = (typeof p.shells === "number" && isFinite(p.shells)) ? Math.max(0, Math.floor(p.shells)) : starSum();
             saveProgress();
             return true;
           } catch (e) { return false; }
@@ -1317,7 +1326,7 @@
         el.scoreVal = $("scoreVal"); el.targetVal = $("targetVal");
         el.movesVal = $("movesVal"); el.levelVal = $("levelVal");
         el.progressBar = $("progressBar"); el.bestVal = $("bestVal");
-        el.levelsVal = $("levelsVal"); el.chainVal = $("chainVal");
+        el.levelsVal = $("levelsVal"); el.chainVal = $("chainVal"); el.shellsVal = $("shellsVal");
         el.overlay = $("overlay"); el.winnerCard = $("winnerCard");
         el.overlayBtn = $("overlayBtn");
         el.readouts = $("readouts"); el.jellyMeter = $("jellyMeter"); el.jellyVal = $("jellyVal");
@@ -1479,6 +1488,7 @@
         el.bestVal.textContent = bestScore;
         el.levelsVal.textContent = levelsCleared;
         el.chainVal.textContent = bestChain;
+        if (el.shellsVal) el.shellsVal.textContent = "🐚 " + (progress.shells || 0) + " / " + (LEVELS.length * 3);
       }
 
       function setDisplay(msg, big) {
@@ -2042,15 +2052,21 @@
           over = true;
           levelsCleared++;
           var stars = starsForLevel();
-          if (stars > (progress.stars[level] || 0)) progress.stars[level] = stars;
+          var prevStars = progress.stars[level] || 0;
+          var award = Math.max(0, stars - prevStars);
+          if (stars > prevStars) progress.stars[level] = stars;
+          if (award > 0) {
+            progress.shells = (progress.shells || 0) + award;
+            if (el.shellsVal) el.shellsVal.textContent = "🐚 " + progress.shells + " / " + (LEVELS.length * 3);
+          }
           if (level + 1 > progress.unlocked) progress.unlocked = Math.min(LEVELS.length + 1, level + 1);
           saveProgress();
           finalLevel = level >= LEVELS.length;
           if (moves > 0) {
             var spareMoves = moves;
-            shellCrush().then(function () { showWinPanel(stars, spareMoves); });
+            shellCrush().then(function () { showWinPanel(stars, spareMoves, award); });
           } else {
-            showWinPanel(stars, 0);
+            showWinPanel(stars, 0, award);
           }
           return;
         }
@@ -2115,9 +2131,28 @@
         setTimeout(function () { layer.innerHTML = ""; }, 4200);
       }
 
-      function showWinPanel(stars, spareMoves) {
+      function shellBurst(card, award) {
+        if (!card) return;
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        var n = 10 + award * 5;
+        for (var i = 0; i < n; i++) {
+          var s = document.createElement("span");
+          s.className = "fx-shell";
+          s.textContent = "\uD83D\uDC1A";
+          s.style.left = (6 + Math.random() * 86) + "%";
+          s.style.fontSize = (1 + Math.random() * 0.9).toFixed(2) + "rem";
+          s.style.animationDelay = (Math.random() * 0.3).toFixed(2) + "s";
+          card.appendChild(s);
+        }
+        setTimeout(function () {
+          var shells = card.querySelectorAll(".fx-shell");
+          for (var j = 0; j < shells.length; j++) shells[j].remove();
+        }, 2400);
+      }
+
+      function showWinPanel(stars, spareMoves, award) {
         sfxWin();
-        burstConfetti(30);
+        burstConfetti(stars >= 3 ? 70 : 30);
         celebrateWin();
         if (el.winnerCard) {
           var starHtml = "";
@@ -2127,6 +2162,10 @@
             '<p class="sub">Cove Crush</p><h2>🎉 Level ' + level + ' cleared!</h2>' +
             '<div class="wc-stars">' + starHtml + '</div>' +
             '<div class="wc-amount">' + score + ' points</div>' +
+            (award > 0
+              ? '<p class="wc-shells">\uD83D\uDC1A +' + award + ' trophy shell' + (award > 1 ? 's' : '') + '!</p>' +
+                '<p class="wc-detail">Trophy shells: \uD83D\uDC1A ' + (progress.shells || 0) + ' of ' + (LEVELS.length * 3) + ' — pure glory, not farm money.</p>'
+              : '<p class="wc-detail">No new trophy shells — beat your own stars on this level to earn more.</p>') +
             '<p class="wc-detail">' + (objective === "jelly" ? "All the jelly is gone" : "Target was " + target) + (spareMoves > 0 ? ' — Shell Crush turned your ' + spareMoves + ' spare moves into bonus blasts!' : ' — cleared right down to the last move!') + '</p>' +
             '<p class="wc-host">Sprocket: &ldquo;' + WIN_LINES[level % WIN_LINES.length] + '&rdquo;</p>' +
             '<p class="wc-detail">That clear is just for you — enjoy it!</p>';
@@ -2139,6 +2178,7 @@
             })(s);
           }
         }
+        if (award > 0) setTimeout(function () { shellBurst(el.winnerCard, award); }, 1450);
         if (el.overlayBtn) el.overlayBtn.textContent = finalLevel ? "🗺️ Back to map" : "Next level";
         if (el.overlay) el.overlay.classList.add("open");
         setDisplay("🎉 Level " + level + " cleared!", true);
