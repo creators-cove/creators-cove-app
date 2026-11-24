@@ -296,7 +296,51 @@ function loadState() {
   state.stars = parseInt(state.stars, 10) || 0;
   state.totalStars = Math.max(parseInt(state.totalStars, 10) || 0, state.stars);
 }
-function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {} }
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {} backupDrama(); }
+
+/* ---- Shelf safety net: the whole Drama state backs up under the farm
+   Save Code, so a deleted icon or new browser never wipes the story.
+   A fresh start never overwrites a real backup, and a restore only
+   ever adopts a shelf copy that holds more than the phone's. ---- */
+var SHELF_URL = "https://enabled-platypus-167183.upstash.io";
+var SHELF_KEY = "gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg";
+function shelfCode() { try { return localStorage.getItem("cove-farm-savecode"); } catch (e) { return null; } }
+function shelfApi(cmd) {
+  return fetch(SHELF_URL, { method: "POST", headers: { "Authorization": "Bearer " + SHELF_KEY, "Content-Type": "application/json" }, body: JSON.stringify(cmd) })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { return j ? j.result : null; });
+}
+function dramaFresh(s) {
+  if (!s) return true;
+  if ((parseInt(s.totalStars, 10) || 0) > 0 || (parseInt(s.epSeen, 10) || 0) > 0) return false;
+  if (Array.isArray(s.board) && s.board.some(function (t) { return !!t; })) return false;
+  if (s.studio && Object.keys(s.studio).length > 0) return false;
+  return true;
+}
+var dramaBackupTimer = null;
+function backupDrama() {
+  var code = shelfCode();
+  if (!code || dramaFresh(state)) return;
+  clearTimeout(dramaBackupTimer);
+  dramaBackupTimer = setTimeout(function () {
+    shelfApi(["SET", "drama:" + code, JSON.stringify(state)]).catch(function () {});
+  }, 1500);
+}
+function restoreDrama() {
+  var code = shelfCode();
+  if (!code || !dramaFresh(state)) return Promise.resolve(false);
+  return shelfApi(["GET", "drama:" + code]).then(function (r) {
+    if (!r) return false;
+    try {
+      var p = JSON.parse(r);
+      if (!p || typeof p !== "object" || dramaFresh(p)) return false;
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(p)); } catch (e) { return false; }
+      loadState();
+      try { renderGens(); renderAll(); } catch (e) {}
+      return true;
+    } catch (e) { return false; }
+  }).catch(function () { return false; });
+}
 
 /* ============ SHELLS WALLET (shared with the farm) ============ */
 function farmState() { try { return JSON.parse(localStorage.getItem("cove-farm-village-v1")); } catch (e) { return null; } }
@@ -754,6 +798,7 @@ function renderAll() { renderHUD(); renderStudio(); renderOrders(); renderBoard(
 
 /* ============ BOOT ============ */
 loadState();
+restoreDrama();
 while (state.orders.length < 3) state.orders.push(genOrder());
 claimBank();
 renderGens();
