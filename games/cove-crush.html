@@ -233,9 +233,9 @@
       .readouts.jelly-on .meter .val { font-size: 1.12rem; }
       /* ---------- Polish pass: dimensional pieces, personalities, buttons ---------- */
       .tile { box-shadow: inset 0 -3px 0 rgba(9, 50, 70, 0.14), 0 3px 7px rgba(0, 0, 0, 0.38); }
-      .tile img.candy-img { filter: saturate(1.07) contrast(1.05) brightness(1.02); }
+      .tile img.candy-img { filter: saturate(1.22) contrast(1.06) brightness(1.04); }
       @keyframes bombPulse {
-        from { filter: saturate(1.07) contrast(1.05) brightness(1.02); }
+        from { filter: saturate(1.22) contrast(1.06) brightness(1.04); }
         to { filter: saturate(1.07) contrast(1.05) brightness(1.3); }
       }
       /* One light source for every piece: same shine, same shade, same rim. */
@@ -253,8 +253,8 @@
       @keyframes starBreathe { from { transform: scale(1.01); } to { transform: scale(1.05); } }
       .tile.t2 img.candy-img { animation: pearlShimmer 3.8s ease-in-out infinite alternate; }
       @keyframes pearlShimmer {
-        from { filter: saturate(1.07) contrast(1.05) brightness(1.02); }
-        to { filter: saturate(1.1) contrast(1.05) brightness(1.17); }
+        from { filter: saturate(1.22) contrast(1.06) brightness(1.04); }
+        to { filter: saturate(1.26) contrast(1.06) brightness(1.2); }
       }
       .tile.t3 img.candy-img { animation: paletteBob 3.1s ease-in-out infinite alternate; }
       @keyframes paletteBob { from { transform: translateY(0) scale(1.05); } to { transform: translateY(-2.5px) scale(1.05); } }
@@ -476,8 +476,60 @@
       .wc-stars .star.lit { opacity: 1; filter: none; animation: starPop 0.35s ease; }
       @keyframes starPop { 0% { transform: scale(0.3) rotate(-30deg); } 60% { transform: scale(1.4) rotate(8deg); } 100% { transform: scale(1); } }
       .winner-card .wc-host { font-weight: 800; opacity: 0.95; margin: 10px 0 0; }
+
+      /* ---------- Juice pass (Nov 24): floating scores, bursts, bubblier praise ---------- */
+      .board-frame {
+        background: linear-gradient(155deg, #ff6fb5 0%, #7a4fa3 42%, #0d5a74 100%);
+        box-shadow: inset 0 10px 22px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(255, 255, 255, 0.14), 0 12px 30px rgba(122, 79, 163, 0.4);
+      }
+      .tile.pop { animation: tilePop 0.22s ease-in forwards; }
+      @keyframes tilePop {
+        0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+        35% { transform: scale(1.3); opacity: 1; filter: brightness(1.9); }
+        100% { transform: scale(0.45); opacity: 0; filter: brightness(1.4); }
+      }
+      .tile.drop-in { animation: tileDrop 0.32s cubic-bezier(0.28, 0.84, 0.42, 1) both; }
+      @keyframes tileDrop {
+        0% { transform: translateY(-36%) scale(1.05); opacity: 0.25; }
+        55% { transform: translateY(3%) scale(0.95, 1.05); opacity: 1; }
+        76% { transform: translateY(-2%) scale(1.04, 0.96); }
+        100% { transform: translateY(0) scale(1); opacity: 1; }
+      }
+      .praise img { width: 86px; height: 86px; }
+      .praise .word {
+        font-size: clamp(2.4rem, 11.5vw, 4.2rem);
+        background: linear-gradient(180deg, #fff6c8 5%, #ffd93c 48%, #ff9f2e 95%);
+        -webkit-background-clip: text; background-clip: text;
+        color: transparent; -webkit-text-fill-color: transparent; text-shadow: none;
+        filter: drop-shadow(0 3px 0 #a85e00) drop-shadow(0 9px 18px rgba(0, 0, 0, 0.5));
+      }
+      @keyframes praisePop {
+        0% { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+        16% { transform: scale(1.32) rotate(3deg); opacity: 1; }
+        28% { transform: scale(0.94) rotate(-1deg); }
+        40% { transform: scale(1.07) rotate(0deg); }
+        55% { transform: scale(1); }
+        80% { opacity: 1; }
+        100% { transform: scale(1.09) translateY(-14px); opacity: 0; }
+      }
+      .fxlayer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 5; }
+      .fx-score {
+        position: absolute; transform: translate(-50%, -50%); white-space: nowrap;
+        font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.3rem; color: #fff;
+        text-shadow: 0 2px 0 #b96a00, 0 4px 10px rgba(0, 0, 0, 0.5);
+        animation: fxRise 0.85s ease-out forwards;
+      }
+      .fx-score.big { font-size: 2.1rem; color: #ffd93c; text-shadow: 0 2px 0 #b96a00, 0 0 18px rgba(255, 201, 60, 0.8), 0 5px 12px rgba(0, 0, 0, 0.5); }
+      @keyframes fxRise {
+        0% { opacity: 0; transform: translate(-50%, -30%) scale(0.5) rotate(var(--tilt, 0deg)); }
+        16% { opacity: 1; transform: translate(-50%, -62%) scale(1.18) rotate(var(--tilt, 0deg)); }
+        30% { transform: translate(-50%, -70%) scale(1) rotate(var(--tilt, 0deg)); }
+        100% { opacity: 0; transform: translate(-50%, -200%) scale(1) rotate(var(--tilt, 0deg)); }
+      }
+      .fx-p { position: absolute; width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 6px rgba(255, 255, 255, 0.65); animation: fxFly 0.6s ease-out forwards; }
+      @keyframes fxFly { to { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.2); opacity: 0; } }
       @media (prefers-reduced-motion: reduce) {
-        .tile.pop, .tile.shake, .tile.drop-in, .tile.bomb img.candy-img, .map-node.current, .crush-banner span { animation: none; }
+        .tile.pop, .tile.shake, .tile.drop-in, .tile.bomb img.candy-img, .map-node.current, .crush-banner span, .fx-score, .fx-p { animation: none; }
       }
     </style>
   </head>
@@ -517,6 +569,7 @@
 
         <div class="board-frame" id="boardFrame">
           <div class="board" id="board" role="grid" aria-label="Cove Crush board, 8 by 8"></div>
+          <div class="fxlayer" id="fxLayer"></div>
           <div class="praise" id="praise"><div class="praise-inner"><img src="crush3d/sprocket.png" alt="Sprocket" /><span class="word" id="praiseWord">Sweet!</span></div></div>
           <div class="confetti" id="confetti"></div>
           <div class="crush-banner" id="crushBanner"><span>🐚 SHELL CRUSH!</span></div>
@@ -1223,6 +1276,7 @@
         el.gameSection = $("gameSection"); el.mapSection = $("mapSection"); el.mapArea = $("mapArea"); el.mapSection2 = $("mapSection2"); el.mapArea2 = $("mapArea2"); el.mapSection3 = $("mapSection3"); el.mapArea3 = $("mapArea3");
         el.praise = $("praise"); el.praiseWord = $("praiseWord");
         el.confetti = $("confetti"); el.crushBanner = $("crushBanner");
+        el.fxLayer = $("fxLayer");
         el.boardFrame = $("boardFrame");
         if (el.board) {
           var suppressClickUntil = 0;
@@ -1524,6 +1578,49 @@
         }
       }
 
+      var FX_COLORS = ["#ff9d7a", "#ffb02e", "#ffe3f1", "#c77dff", "#8fd0ff", "#2ee6a8"];
+      function fxClear(cells, pts) {
+        if (!el.fxLayer || !el.board) return;
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        var br = el.board.getBoundingClientRect();
+        var fr = el.fxLayer.getBoundingClientRect();
+        if (!br.width) return;
+        var cw = br.width / COLS, ch = br.height / ROWS;
+        var ox = br.left - fr.left, oy = br.top - fr.top;
+        var keys = Object.keys(cells);
+        if (!keys.length) return;
+        var sr = 0, sc = 0, i, k, p, r, c;
+        for (i = 0; i < keys.length; i++) { p = keys[i].split(","); sr += +p[0]; sc += +p[1]; }
+        var cx = ox + (sc / keys.length + 0.5) * cw, cy = oy + (sr / keys.length + 0.5) * ch;
+        if (pts > 0) {
+          var s = document.createElement("div");
+          s.className = "fx-score" + (pts >= 600 ? " big" : "");
+          s.textContent = "+" + pts;
+          s.style.left = cx + "px"; s.style.top = cy + "px";
+          s.style.setProperty("--tilt", (Math.random() * 10 - 5) + "deg");
+          el.fxLayer.appendChild(s);
+          setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 900);
+        }
+        var step = keys.length > 26 ? Math.ceil(keys.length / 26) : 1;
+        for (i = 0; i < keys.length; i += step) {
+          p = keys[i].split(","); r = +p[0]; c = +p[1];
+          var t = board[r] && board[r][c];
+          var col = FX_COLORS[t && typeof t.type === "number" ? t.type : (i % 6)];
+          for (var j = 0; j < 3; j++) {
+            var d = document.createElement("i");
+            d.className = "fx-p";
+            d.style.background = col;
+            d.style.left = (ox + (c + 0.5) * cw + (Math.random() * 10 - 5)) + "px";
+            d.style.top = (oy + (r + 0.5) * ch + (Math.random() * 10 - 5)) + "px";
+            var ang = Math.random() * Math.PI * 2, dist = 14 + Math.random() * 30;
+            d.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+            d.style.setProperty("--dy", (Math.sin(ang) * dist - 12) + "px");
+            el.fxLayer.appendChild(d);
+            (function (node) { setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 650); })(d);
+          }
+        }
+      }
+
       function startLevel(l) {
         if (busy) return;
         level = l;
@@ -1603,7 +1700,7 @@
           sfxBombZap();
           setDisplay("💥 Double Stripe! +" + gained2, true);
           showPraise(2);
-          await clearCells(cleared2);
+          await clearCells(cleared2, gained2);
           await cascade(1);
         } else if (usesSpecial) {
           var bombInvolved = a.special === "bomb" || b.special === "bomb";
@@ -1636,7 +1733,7 @@
             sfxPop(6);
             setDisplay("🌈 Rainbow wave! +" + gained, true);
           }
-          await clearCells(cleared);
+          await clearCells(cleared, gained);
           await cascade(1);
         } else {
           await cascade(1);
@@ -1728,6 +1825,7 @@
             showPraise(tier);
           }
           markTiles(cells, "pop");
+          fxClear(cells, gained);
           await sleep(180);
           hitJelly(cells);
           for (var k in cells) {
@@ -1760,6 +1858,7 @@
             setDisplay("💥 Wrapped blast — again! +" + gained2, true);
             sfxBoom();
             markTiles(again, "pop");
+            fxClear(again, gained2);
             await sleep(200);
             hitJelly(again);
             for (var k4 in again) {
@@ -1777,8 +1876,9 @@
         return chains;
       }
 
-      async function clearCells(cells) {
+      async function clearCells(cells, pts) {
         markTiles(cells, "pop");
+        fxClear(cells, pts || Object.keys(cells).length * 20);
         await sleep(180);
         hitJelly(cells);
         for (var k in cells) {
@@ -1829,7 +1929,7 @@
           setDisplay("🐚 Shell Crush blast! +" + gained, true);
           sfxPop(3 + blasts);
           burstConfetti(10);
-          await clearCells(cells);
+          await clearCells(cells, gained);
           await cascade(1);
           render();
           await sleep(120);
