@@ -15,9 +15,9 @@
         --sea-top: #8fe0f2;
         --sea-mid: #2a9db8;
         --sea-deep: #0d5a74;
-        --cabinet: #0b3d52;
-        --cabinet-2: #082c3d;
-        --cabinet-edge: #f2b33d;
+        --cabinet: #c4639d;
+        --cabinet-2: #5d4396;
+        --cabinet-edge: #ffe3a3;
         --gold: #ffc93c;
         --gold-deep: #e89b0c;
         --coral: #ff6f61;
@@ -33,8 +33,8 @@
           --sea-top: #0a2e44;
           --sea-mid: #0d4a63;
           --sea-deep: #061e2e;
-          --cabinet: #0a2f42;
-          --cabinet-2: #051c29;
+          --cabinet: #a04a82;
+          --cabinet-2: #3d2566;
           --panel: rgba(10, 43, 60, 0.96);
           --panel-ink: #f3e9d2;
           --cell-bg: #fdf6e0;
@@ -479,9 +479,19 @@
 
       /* ---------- Juice pass (Nov 24): floating scores, bursts, bubblier praise ---------- */
       .board-frame {
-        background: linear-gradient(155deg, #ff6fb5 0%, #7a4fa3 42%, #0d5a74 100%);
-        box-shadow: inset 0 10px 22px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(255, 255, 255, 0.14), 0 12px 30px rgba(122, 79, 163, 0.4);
+        background:
+          radial-gradient(circle at 6px 6px, rgba(255, 255, 255, 0.55) 2.2px, transparent 2.8px) 0 0 / 22px 22px,
+          linear-gradient(150deg, #ffd9a0, #ffb3c8 30%, #c9a7eb 62%, #a8e6d5);
+        box-shadow: inset 0 10px 22px rgba(90, 30, 80, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.2), 0 12px 30px rgba(150, 80, 160, 0.35);
       }
+      .board-frame.bounce { animation: frameBounce 0.5s ease; }
+      @keyframes frameBounce {
+        0% { transform: scale(1); }
+        30% { transform: scale(1.018) rotate(0.4deg); }
+        55% { transform: scale(0.995); }
+        100% { transform: scale(1); }
+      }
+      .side-btn { background: linear-gradient(180deg, #7fd4e6, #4aa8c0); }
       .tile.pop { animation: tilePop 0.22s ease-in forwards; }
       @keyframes tilePop {
         0% { transform: scale(1); opacity: 1; filter: brightness(1); }
@@ -529,7 +539,7 @@
       .fx-p { position: absolute; width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 6px rgba(255, 255, 255, 0.65); animation: fxFly 0.6s ease-out forwards; }
       @keyframes fxFly { to { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.2); opacity: 0; } }
       @media (prefers-reduced-motion: reduce) {
-        .tile.pop, .tile.shake, .tile.drop-in, .tile.bomb img.candy-img, .map-node.current, .crush-banner span, .fx-score, .fx-p { animation: none; }
+        .tile.pop, .tile.shake, .tile.drop-in, .tile.bomb img.candy-img, .map-node.current, .crush-banner span, .fx-score, .fx-p, .board-frame.bounce { animation: none; }
       }
     </style>
   </head>
@@ -1555,6 +1565,11 @@
         el.praise.classList.remove("show");
         void el.praise.offsetWidth;
         el.praise.classList.add("show");
+        if (el.boardFrame) {
+          el.boardFrame.classList.remove("bounce");
+          void el.boardFrame.offsetWidth;
+          el.boardFrame.classList.add("bounce");
+        }
         if (praiseTimer) clearTimeout(praiseTimer);
         praiseTimer = setTimeout(function () {
           el.praise.style.display = "none";
