@@ -223,6 +223,36 @@
       }
       .tile.striped-row::after { background: repeating-linear-gradient(0deg, rgba(255,255,255,0) 0 6px, rgba(255,255,255,0.8) 6px 10px); }
       .tile.striped-col::after { background: repeating-linear-gradient(90deg, rgba(255,255,255,0) 0 6px, rgba(255,255,255,0.8) 6px 10px); }
+      /* Big-boom FX: wrapped combos and the Sprinkle Bomb blow up TOWARD you */
+      .big-boom {
+        position: absolute; border-radius: 50%; pointer-events: none; z-index: 40;
+        transform: translate(-50%, -50%) scale(0.25);
+        background:
+          radial-gradient(circle, rgba(255,255,255,0.95) 0 12%, rgba(255,214,90,0.85) 26%, rgba(255,140,40,0.45) 48%, rgba(255,120,30,0) 68%),
+          repeating-conic-gradient(from 0deg, rgba(255,190,60,0.75) 0deg 9deg, rgba(255,190,60,0) 9deg 24deg);
+        -webkit-mask-image: radial-gradient(circle, #000 0 55%, transparent 70%);
+        mask-image: radial-gradient(circle, #000 0 55%, transparent 70%);
+        animation: boomZoom 0.6s cubic-bezier(0.17, 0.67, 0.35, 1) forwards;
+      }
+      @keyframes boomZoom {
+        0% { transform: translate(-50%, -50%) scale(0.25) rotate(0deg); opacity: 1; }
+        55% { opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(3.4) rotate(24deg); opacity: 0; }
+      }
+      .boom-flash {
+        position: absolute; inset: 0; pointer-events: none; z-index: 39; border-radius: 18px;
+        background: radial-gradient(circle at var(--fx, 50%) var(--fy, 50%), rgba(255,240,190,0.85), rgba(255,210,90,0.25) 55%, rgba(255,210,90,0) 78%);
+        animation: boomFlash 0.45s ease-out forwards;
+      }
+      @keyframes boomFlash { from { opacity: 1; } to { opacity: 0; } }
+      .board-shake { animation: boardShake 0.42s ease-in-out; }
+      @keyframes boardShake {
+        0%, 100% { transform: translate(0, 0); }
+        20% { transform: translate(-6px, 3px) rotate(-0.6deg); }
+        40% { transform: translate(6px, -3px) rotate(0.6deg); }
+        60% { transform: translate(-4px, -2px); }
+        80% { transform: translate(4px, 2px); }
+      }
       .tile.wrapped::after {
         content: ""; position: absolute; inset: 0; border-radius: 12px; z-index: 3; pointer-events: none;
         background:
@@ -1689,6 +1719,38 @@
         }
       }
 
+      /* The coming-at-you explosion for wrapped combos and the Sprinkle
+         Bomb (Kim, Nov 24: "like coming at u explosion"). */
+      function bigBoom(r, c) {
+        if (!el.fxLayer || !el.board) return;
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        var br = el.board.getBoundingClientRect();
+        var fr = el.fxLayer.getBoundingClientRect();
+        if (!br.width || !fr.width) return;
+        var cw = br.width / COLS, ch = br.height / ROWS;
+        var x = br.left - fr.left + (c + 0.5) * cw, y = br.top - fr.top + (r + 0.5) * ch;
+        var flash = document.createElement("div");
+        flash.className = "boom-flash";
+        flash.style.setProperty("--fx", (x / fr.width * 100) + "%");
+        flash.style.setProperty("--fy", (y / fr.height * 100) + "%");
+        el.fxLayer.appendChild(flash);
+        setTimeout(function () { if (flash.parentNode) flash.parentNode.removeChild(flash); }, 480);
+        var boom = document.createElement("div");
+        boom.className = "big-boom";
+        var size = Math.max(cw, ch) * 2.4;
+        boom.style.width = size + "px"; boom.style.height = size + "px";
+        boom.style.left = x + "px"; boom.style.top = y + "px";
+        el.fxLayer.appendChild(boom);
+        setTimeout(function () { if (boom.parentNode) boom.parentNode.removeChild(boom); }, 640);
+        var frame = el.boardFrame || el.board;
+        if (frame) {
+          frame.classList.remove("board-shake");
+          void frame.offsetWidth;
+          frame.classList.add("board-shake");
+          setTimeout(function () { frame.classList.remove("board-shake"); }, 460);
+        }
+      }
+
       function startLevel(l) {
         if (busy) return;
         level = l;
@@ -1796,7 +1858,7 @@
             blast1 = expandWithSpecials(board, blast1);
             var gainedW = Object.keys(blast1).length * 20;
             score += gainedW;
-            sfxBoom();
+            sfxBoom(); bigBoom(oPos[0], oPos[1]);
             setDisplay("💥💥 Double Wrapped! +" + gainedW, true);
             showPraise(3);
             await clearCells(blast1, gainedW);
@@ -1822,7 +1884,7 @@
             var gainedX = Object.keys(cross).length * 20;
             score += gainedX;
             if (score > bestScore) bestScore = score;
-            sfxBombZap(); sfxBoom();
+            sfxBombZap(); sfxBoom(); bigBoom(wPos[0], wPos[1]);
             setDisplay("💥 Wrapped Stripe! +" + gainedX, true);
             showPraise(3);
             await clearCells(cross, gainedX);
@@ -1853,6 +1915,7 @@
           if (score > bestScore) bestScore = score;
           if (bombInvolved) {
             sfxBombZap();
+            bigBoom(board[r1][c1] && board[r1][c1].special === "bomb" ? r1 : r2, board[r1][c1] && board[r1][c1].special === "bomb" ? c1 : c2);
             setDisplay(bothBombs ? "💣💣 DOUBLE BOMB! +" + gained : "💣 Sprinkle Bomb! +" + gained, true);
             showPraise(bothBombs ? 3 : 2);
           } else {
