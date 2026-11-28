@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Cove Storybook — Creator's Cove</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Nunito", system-ui, sans-serif; color: #17384a; background: linear-gradient(180deg, #8fe0f2 0%, #2a9db8 46%, #0d5a74 100%); min-height: 100vh; padding: 0 14px 44px; }
+  .cove-back-btn { display: inline-block; min-height: 48px; line-height: 48px; padding: 0 18px; margin: 12px 0 0; border-radius: 999px; background: #fff; color: #12303e; font-weight: 800; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  main { max-width: 560px; margin: 0 auto; }
+  h1 { font-family: "Fredoka", sans-serif; color: #ffc93c; text-align: center; margin: 14px 0 2px; font-size: clamp(1.9rem, 8vw, 2.6rem); text-shadow: 0 3px 0 rgba(0,0,0,.25); }
+  .sub { text-align: center; color: #ffe9a8; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; font-size: .8rem; margin: 0 0 16px; }
+  .book { background: rgba(255,248,234,.96); border-radius: 24px; padding: 16px; box-shadow: 0 18px 40px rgba(4,40,56,.35); }
+  .page-img { width: 100%; height: 260px; object-fit: cover; border-radius: 16px; border: 3px solid #f2b33d; display: block; }
+  .page-num { text-align: center; font-weight: 800; color: #7a5b00; margin: 12px 0 4px; letter-spacing: .15em; font-size: .8rem; }
+  .page-text { font-size: 1.12rem; line-height: 1.65; font-weight: 600; min-height: 150px; margin: 4px 2px 10px; }
+  .controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .controls button { min-height: 52px; padding: 8px 18px; border-radius: 999px; border: 2px solid #e89b0c; background: linear-gradient(180deg, #ffe08a, #ffc93c); color: #4a2c00; font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 1rem; cursor: pointer; box-shadow: 0 3px 0 #e89b0c; }
+  .controls button:active { transform: translateY(2px); box-shadow: 0 1px 0 #e89b0c; }
+  .controls button.ghost { background: #fff; border-color: #cfe3ea; color: #17384a; box-shadow: none; }
+  .dots { display: flex; gap: 6px; justify-content: center; margin-top: 14px; }
+  .dots i { width: 10px; height: 10px; border-radius: 50%; background: #cfe3ea; }
+  .dots i.on { background: #e89b0c; }
+  .note { text-align: center; color: #ffe9a8; font-weight: 700; margin-top: 16px; }
+</style>
+</head>
+<body>
+<a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+<main>
+  <h1>📖 Cove Storybook</h1>
+  <p class="sub">Stories from the Salty Canvas</p>
+  <div class="book">
+    <img class="page-img" id="pageImg" src="village2/beach.jpg" alt="Story illustration" />
+    <p class="page-num" id="pageNum">Page 1 of 6</p>
+    <p class="page-text" id="pageText"></p>
+    <div class="controls">
+      <button type="button" class="ghost" id="prevBtn">← Back</button>
+      <button type="button" id="listenBtn">🔊 Listen</button>
+      <button type="button" id="nextBtn">Next →</button>
+    </div>
+    <div class="controls" style="margin-top:8px">
+      <button type="button" class="ghost" id="readAllBtn">▶ Read the whole story</button>
+    </div>
+    <div class="dots" id="dots"></div>
+  </div>
+  <p class="note">New Cove stories will land here — read along or just listen. 🎧</p>
+</main>
+<audio id="narrator" preload="metadata"></audio>
+<script>
+  var PAGES = [
+    { img: "village2/beach.jpg", audio: "storybook/page1.mp3", text: "The Night the Lighthouse Went Out. It was the first chilly night of the season at Creator's Cove, and the girls were closing up the Salty Canvas when Sandy stopped in the doorway. \u201CLook,\u201D she whispered. Out past the boardwalk, the lighthouse beam was gone." },
+    { img: "village2/boardwalk.jpg", audio: "storybook/page2.mp3", text: "\u201CA lighthouse doesn't just quit,\u201D said Kim, grabbing the big flashlight. Trish pulled her purple scarf tighter. \u201CUnless something chewed the wire. Or someone borrowed the light.\u201D Gladys was already sketching a map of the path in her notebook." },
+    { img: "crush3d/map-bg-a.jpg", audio: "storybook/page3.mp3", text: "The four of them walked the boardwalk with Sprocket rolling behind, his little headlamp bobbing. The tide was high and the whole beach smelled like salt and woodsmoke. Halfway there, they heard it: a tiny, worried beep, beep, beep from the rocks below." },
+    { img: "village2/bc-lighthouse.png", audio: "storybook/page4.mp3", text: "Down on the rocks sat the lighthouse keeper's cat, Biscuit, with one paw stuck in a tangle of old fishing line, right beside the lighthouse's battery box. The line had pulled the cable loose. \u201CMystery solved,\u201D said Trish. \u201CThe light didn't quit. It got unplugged by a cat.\u201D" },
+    { img: "village2/rainbowlot.jpg", audio: "storybook/page5.mp3", text: "Gladys freed Biscuit's paw while Sprocket held the flashlight steady, very proud of his one job. Kim reconnected the cable, Sandy held the cat like a baby, and Trish counted down from three. Click. The beam swept out over the water, bright as ever." },
+    { img: "crush3d/map-bg-d.jpg", audio: "storybook/page6.mp3", text: "On the walk home, the beam followed them like it was saying thanks. Back at the studio, Kim painted the whole night while it was still fresh: four friends, one small robot, one cat, and a light that came back because somebody bothered to go look. The end." }
+  ];
+  var page = 0, readAll = false;
+  var audio = document.getElementById("narrator");
+  function render() {
+    document.getElementById("pageImg").src = PAGES[page].img;
+    document.getElementById("pageText").textContent = PAGES[page].text;
+    document.getElementById("pageNum").textContent = "Page " + (page + 1) + " of " + PAGES.length;
+    document.getElementById("dots").innerHTML = PAGES.map(function (_, i) { return '<i class="' + (i === page ? "on" : "") + '"></i>'; }).join("");
+    document.getElementById("prevBtn").disabled = page === 0;
+    document.getElementById("nextBtn").textContent = page === PAGES.length - 1 ? "↺ Start over" : "Next →";
+  }
+  function playPage() {
+    audio.src = PAGES[page].audio;
+    audio.play().catch(function () {});
+    document.getElementById("listenBtn").textContent = "⏸ Pause";
+  }
+  audio.addEventListener("pause", function () { document.getElementById("listenBtn").textContent = "🔊 Listen"; });
+  audio.addEventListener("ended", function () {
+    if (readAll && page < PAGES.length - 1) { page++; render(); playPage(); }
+    else { readAll = false; document.getElementById("readAllBtn").textContent = "▶ Read the whole story"; }
+  });
+  document.getElementById("listenBtn").addEventListener("click", function () {
+    if (!audio.paused) { audio.pause(); readAll = false; return; }
+    playPage();
+  });
+  document.getElementById("readAllBtn").addEventListener("click", function () {
+    readAll = true; page = 0; render(); playPage();
+    this.textContent = "📖 Reading…";
+  });
+  document.getElementById("nextBtn").addEventListener("click", function () {
+    audio.pause(); readAll = false;
+    page = page === PAGES.length - 1 ? 0 : page + 1;
+    render();
+  });
+  document.getElementById("prevBtn").addEventListener("click", function () {
+    audio.pause(); readAll = false;
+    if (page > 0) page--;
+    render();
+  });
+  document.addEventListener("visibilitychange", function () { if (document.hidden) audio.pause(); });
+  window.addEventListener("pagehide", function () { audio.pause(); });
+  render();
+</script>
+<script>
+(function () { try { var d = new Date(); var day = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); var H = { "Authorization": "Bearer gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg", "Content-Type": "application/json" }; fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "cove-storybook", 1]), keepalive: true }).catch(function () {}); fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "_total", 1]), keepalive: true }).catch(function () {}); } catch (e) {} })();
+</script>
+</body>
+</html>

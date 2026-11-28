@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Cove Kitchen — Creator's Cove</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Nunito", system-ui, sans-serif; color: #17384a; background: linear-gradient(180deg, #8fe0f2 0%, #2a9db8 46%, #0d5a74 100%); min-height: 100vh; padding: 0 14px 44px; }
+  .cove-back-btn { display: inline-block; min-height: 48px; line-height: 48px; padding: 0 18px; margin: 12px 0 0; border-radius: 999px; background: #fff; color: #12303e; font-weight: 800; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  main { max-width: 560px; margin: 0 auto; }
+  h1 { font-family: "Fredoka", sans-serif; color: #ffc93c; text-align: center; margin: 14px 0 2px; font-size: clamp(1.9rem, 8vw, 2.6rem); text-shadow: 0 3px 0 rgba(0,0,0,.25); }
+  .sub { text-align: center; color: #ffe9a8; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; font-size: .8rem; margin: 0 0 16px; }
+  .card { background: rgba(255,248,234,.96); border-radius: 22px; padding: 16px; box-shadow: 0 14px 32px rgba(4,40,56,.3); margin-bottom: 14px; }
+  .card h2 { font-family: "Fredoka", sans-serif; margin: 0 0 10px; font-size: 1.25rem; }
+  .big-num { font-family: "Fredoka", sans-serif; font-size: 2.4rem; color: #0d5a74; text-align: center; }
+  .bar { height: 16px; background: #dceef3; border-radius: 999px; overflow: hidden; margin: 10px 0 6px; }
+  .bar > div { height: 100%; background: linear-gradient(90deg, #2a9db8, #ffc93c); width: 0%; transition: width .5s; }
+  .bar > div.over { background: linear-gradient(90deg, #e05252, #ff9a5a); }
+  .center { text-align: center; font-weight: 800; }
+  .goal-row { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+  input, select { padding: 12px; border-radius: 12px; border: 2px solid #cfe3ea; font: inherit; font-weight: 700; }
+  input[type="number"] { width: 110px; }
+  .btn { min-height: 50px; padding: 8px 18px; border-radius: 999px; border: 2px solid #e89b0c; background: linear-gradient(180deg, #ffe08a, #ffc93c); color: #4a2c00; font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 1rem; cursor: pointer; box-shadow: 0 3px 0 #e89b0c; }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #e89b0c; }
+  .btn.ghost { background: #fff; border-color: #cfe3ea; color: #17384a; box-shadow: none; }
+  .quick { display: flex; flex-wrap: wrap; gap: 8px; }
+  .quick button { min-height: 44px; padding: 6px 12px; border-radius: 999px; border: 2px solid #cfe3ea; background: #fff; font-weight: 800; cursor: pointer; }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .add-row input[type="text"] { flex: 1; min-width: 150px; }
+  .entry { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 10px; background: #fff; margin-bottom: 7px; font-weight: 700; }
+  .entry button { border: none; background: #ffe3e3; color: #b3261e; border-radius: 999px; width: 36px; height: 36px; font-weight: 900; cursor: pointer; }
+  .water { display: flex; gap: 6px; justify-content: center; font-size: 1.7rem; }
+  .water button { background: none; border: none; font-size: 1.7rem; cursor: pointer; opacity: .3; padding: 2px; }
+  .water button.on { opacity: 1; }
+  .idea { background: #fff; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-weight: 700; }
+  .idea small { display: block; opacity: .75; font-weight: 600; }
+  .week-row { display: flex; justify-content: space-between; padding: 6px 4px; font-weight: 700; border-bottom: 1px dashed #cfe3ea; }
+  .note { text-align: center; color: #ffe9a8; font-weight: 700; font-size: .9rem; }
+</style>
+</head>
+<body>
+<a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+<main>
+  <h1>🥗 Cove Kitchen</h1>
+  <p class="sub">Meals · Calories · Water</p>
+
+  <section class="card">
+    <h2>Today</h2>
+    <div class="big-num"><span id="totalCal">0</span> <span style="font-size:1.1rem">/ <span id="goalCal">2000</span> cal</span></div>
+    <div class="bar"><div id="calBar"></div></div>
+    <p class="center" id="remainLine">2000 left for today</p>
+    <div class="goal-row">
+      <label style="font-weight:800">Daily goal</label>
+      <input type="number" id="goalInput" min="800" max="6000" step="50" value="2000" />
+      <button type="button" class="btn ghost" id="goalBtn">Set</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Add food</h2>
+    <div class="quick" id="quickRow"></div>
+    <div class="add-row">
+      <input type="text" id="foodName" placeholder="Food name" maxlength="40" />
+      <input type="number" id="foodCal" placeholder="Cal" min="1" max="5000" />
+      <button type="button" class="btn" id="addBtn">Add</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Today's log</h2>
+    <div id="logList"></div>
+    <p class="center" id="emptyLog">Nothing logged yet — tap a food above to start.</p>
+  </section>
+
+  <section class="card">
+    <h2>Water today</h2>
+    <div class="water" id="waterRow"></div>
+    <p class="center" id="waterLine">0 of 8 glasses</p>
+  </section>
+
+  <section class="card">
+    <h2>Meal ideas</h2>
+    <div id="ideas"></div>
+    <button type="button" class="btn ghost" id="ideaBtn" style="width:100%">🎲 Shuffle ideas</button>
+  </section>
+
+  <section class="card">
+    <h2>Your week</h2>
+    <div id="weekList"></div>
+  </section>
+
+  <p class="note">A friendly tracker for everyday planning — not medical advice. Talk to your doctor about what's right for you.</p>
+</main>
+<script>
+  var QUICK = [["Egg", 70], ["Toast", 80], ["Chicken breast", 165], ["Beef patty", 250], ["Rice cup", 200], ["Corn", 130], ["Green beans", 45], ["Carrots", 50], ["Apple", 95], ["Banana", 105], ["Peanut butter spoon", 95], ["Cheese slice", 110], ["Milk cup", 120], ["Soda can", 140], ["Coffee", 5], ["Salad bowl", 150]];
+  var IDEAS = [
+    ["Scrambled eggs + toast", "Quick protein start, about 220 cal", 220],
+    ["Chicken + corn + green beans", "Filling plate, about 420 cal", 420],
+    ["Beef patty + carrots", "Hearty and simple, about 380 cal", 380],
+    ["Turkey sandwich", "Easy lunch, about 350 cal", 350],
+    ["Rice bowl + veggies", "Light and warm, about 400 cal", 400],
+    ["Ham + peas + potatoes", "Comfort plate, about 480 cal", 480],
+    ["Big salad + chicken", "Crunchy and fresh, about 320 cal", 320],
+    ["Bean soup + roll", "Cozy bowl, about 390 cal", 390],
+    ["Oatmeal + banana", "Slow morning fuel, about 280 cal", 280],
+    ["Egg sandwich", "Anytime meal, about 300 cal", 300]
+  ];
+  var KEY = "cove-kitchen-v1";
+  function load() { try { return JSON.parse(window.localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } }
+  function save(s) { try { window.localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  function dayKey(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  var state = load();
+  if (!state.goal) state.goal = 2000;
+  if (!state.days) state.days = {};
+  var today = dayKey(new Date());
+  if (!state.days[today]) state.days[today] = { entries: [], water: 0 };
+  function day() { return state.days[today]; }
+  function total() { return day().entries.reduce(function (n, e) { return n + e.cal; }, 0); }
+  function render() {
+    var t = total();
+    document.getElementById("totalCal").textContent = t;
+    document.getElementById("goalCal").textContent = state.goal;
+    document.getElementById("goalInput").value = state.goal;
+    var pct = Math.min(100, Math.round(t / state.goal * 100));
+    var bar = document.getElementById("calBar");
+    bar.style.width = pct + "%";
+    bar.className = t > state.goal ? "over" : "";
+    document.getElementById("remainLine").textContent = t <= state.goal ? (state.goal - t) + " left for today" : (t - state.goal) + " over today's goal — tomorrow's a new day";
+    var list = document.getElementById("logList");
+    list.innerHTML = "";
+    day().entries.forEach(function (e, i) {
+      var d = document.createElement("div");
+      d.className = "entry";
+      d.innerHTML = "<span>" + e.name + "</span><span>" + e.cal + " cal</span>";
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = "✕"; b.setAttribute("aria-label", "Remove " + e.name);
+      b.addEventListener("click", function () { day().entries.splice(i, 1); save(state); render(); });
+      d.appendChild(b);
+      list.appendChild(d);
+    });
+    document.getElementById("emptyLog").style.display = day().entries.length ? "none" : "";
+    var w = document.getElementById("waterRow");
+    w.innerHTML = "";
+    for (var i = 0; i < 8; i++) {
+      (function (idx) {
+        var b = document.createElement("button");
+        b.type = "button"; b.textContent = "💧";
+        b.className = idx < day().water ? "on" : "";
+        b.setAttribute("aria-label", "Glass " + (idx + 1));
+        b.addEventListener("click", function () { day().water = day().water === idx + 1 ? idx : idx + 1; save(state); render(); });
+        w.appendChild(b);
+      })(i);
+    }
+    document.getElementById("waterLine").textContent = day().water + " of 8 glasses";
+    var wk = document.getElementById("weekList");
+    wk.innerHTML = "";
+    for (var k = 6; k >= 0; k--) {
+      var d = new Date(); d.setDate(d.getDate() - k);
+      var key = dayKey(d);
+      var dd = state.days[key];
+      var tot = dd ? dd.entries.reduce(function (n, e) { return n + e.cal; }, 0) : 0;
+      var row = document.createElement("div");
+      row.className = "week-row";
+      row.innerHTML = "<span>" + (k === 0 ? "Today" : d.toLocaleDateString(undefined, { weekday: "short" })) + "</span><span>" + tot + " cal · 💧 " + (dd ? dd.water : 0) + "</span>";
+      wk.appendChild(row);
+    }
+  }
+  function addFood(name, cal) {
+    name = String(name || "").trim().slice(0, 40);
+    cal = parseInt(cal, 10);
+    if (!name || !cal || cal < 1) return;
+    day().entries.push({ name: name, cal: cal });
+    save(state); render();
+  }
+  var qr = document.getElementById("quickRow");
+  QUICK.forEach(function (q) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = q[0] + " · " + q[1];
+    b.addEventListener("click", function () { addFood(q[0], q[1]); });
+    qr.appendChild(b);
+  });
+  document.getElementById("addBtn").addEventListener("click", function () {
+    addFood(document.getElementById("foodName").value, document.getElementById("foodCal").value);
+    document.getElementById("foodName").value = "";
+    document.getElementById("foodCal").value = "";
+  });
+  document.getElementById("goalBtn").addEventListener("click", function () {
+    var g = parseInt(document.getElementById("goalInput").value, 10);
+    if (g >= 800 && g <= 6000) { state.goal = g; save(state); render(); }
+  });
+  function showIdeas() {
+    var pool = IDEAS.slice();
+    var picks = [];
+    while (picks.length < 3 && pool.length) picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    var box = document.getElementById("ideas");
+    box.innerHTML = "";
+    picks.forEach(function (idea) {
+      var d = document.createElement("div");
+      d.className = "idea";
+      d.innerHTML = idea[0] + "<small>" + idea[1] + "</small>";
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "btn ghost"; b.textContent = "Log it · " + idea[2] + " cal";
+      b.style.marginTop = "6px";
+      b.addEventListener("click", function () { addFood(idea[0], idea[2]); });
+      d.appendChild(b);
+      box.appendChild(d);
+    });
+  }
+  document.getElementById("ideaBtn").addEventListener("click", showIdeas);
+  showIdeas();
+  render();
+</script>
+<script>
+(function () { try { var d = new Date(); var day = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); var H = { "Authorization": "Bearer gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg", "Content-Type": "application/json" }; fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "cove-kitchen", 1]), keepalive: true }).catch(function () {}); fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "_total", 1]), keepalive: true }).catch(function () {}); } catch (e) {} })();
+</script>
+</body>
+</html>
