@@ -405,6 +405,7 @@
         <div>
           <div class="who" id="cheerWho">Kim</div>
           <div class="say" id="cheerSay">Welcome to your farm! Plant something and let's get growing. 🌱</div>
+          <button type="button" class="btn gold" id="hintBtn" style="margin-top:8px">💡 What next?</button>
         </div>
       </div>
 
@@ -886,6 +887,34 @@
         who.textContent = g.who + (g.img ? "" : " 🤖");
         say.textContent = line || g.lines[Math.floor(Math.random() * g.lines.length)];
       }
+      function farmHint() {
+        var now = Date.now();
+        var ready = 0, withered = 0, empty = 0, thirsty = 0;
+        state.plots.forEach(function (p) {
+          var st = plotStage(p, now);
+          if (st === "ready") ready++;
+          else if (st === "withered") withered++;
+          else if (st === "empty") empty++;
+          else if (p.crop && !p.watered) thirsty++;
+        });
+        var banked = 0;
+        state.buildings.forEach(function (b) { if (b.owned) banked += bankedNow(b, now); });
+        if (ready) { setCheer("kim", "💡 " + ready + (ready === 1 ? " crop is" : " crops are") + " ready — tap the glowing plots to harvest!"); return; }
+        if (banked >= 20) { setCheer("sandy", "💡 Your village baskets hold 🐚 " + banked + " — tap a building to collect!"); return; }
+        if (withered) { setCheer("trish", "💡 A crop withered — tap it to clear the plot and plant fresh."); return; }
+        var growing = {};
+        state.plots.forEach(function (p) { if (p.crop) growing[p.crop] = true; });
+        for (var i = 0; i < state.orders.length; i++) {
+          var o = state.orders[i];
+          if (!growing[o.crop] && CROPS[o.crop]) { setCheer(o.girl || "kim", "💡 An order needs " + CROPS[o.crop].name + " — plant some and the bonus is yours!"); return; }
+        }
+        if (empty) { setCheer("gladys", "💡 " + empty + (empty === 1 ? " plot is" : " plots are") + " empty — tap one to plant. Carrots are quickest!"); return; }
+        if (thirsty) { setCheer("kim", "💡 Tap a growing crop to water it — it grows twice as fast."); return; }
+        for (var j = 0; j < BUILDINGS.length; j++) {
+          if (!state.buildings[j].owned && state.shells >= BUILDINGS[j].cost) { setCheer("sandy", "💡 You can afford " + BUILDINGS[j].name + " — build it and the village earns more!"); return; }
+        }
+        setCheer("kim", "💡 Everything's growing and earning. Sit back — the farm's doing its job. 🌻");
+      }
       function cheerForCrop(cropKey) {
         var g = GIRL_FOR_CROP[cropKey];
         if (g) setCheer(g);
@@ -984,8 +1013,10 @@
         }
       }
 
+      var hintBound = false;
       function render() {
         var now = Date.now();
+        if (!hintBound) { var hb = document.getElementById("hintBtn"); if (hb) { hb.addEventListener("click", farmHint); hintBound = true; } }
         checkMilestones();
         document.getElementById("shellCount").textContent = state.shells;
         document.getElementById("villageLevel").textContent = villageLevel();
