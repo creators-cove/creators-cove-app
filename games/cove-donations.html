@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Cove Donations — Creator's Cove</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Nunito", system-ui, sans-serif; color: #17384a; background: linear-gradient(180deg, #8fe0f2 0%, #2a9db8 46%, #0d5a74 100%); min-height: 100vh; padding: 0 14px 44px; }
+  .cove-back-btn { display: inline-block; min-height: 48px; line-height: 48px; padding: 0 18px; margin: 12px 0 0; border-radius: 999px; background: #fff; color: #12303e; font-weight: 800; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  main { max-width: 560px; margin: 0 auto; }
+  h1 { font-family: "Fredoka", sans-serif; color: #ffc93c; text-align: center; margin: 14px 0 2px; font-size: clamp(1.9rem, 8vw, 2.6rem); text-shadow: 0 3px 0 rgba(0,0,0,.25); }
+  .sub { text-align: center; color: #ffe9a8; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; font-size: .8rem; margin: 0 0 16px; }
+  .card { background: rgba(255,248,234,.96); border-radius: 22px; padding: 16px; box-shadow: 0 14px 32px rgba(4,40,56,.3); margin-bottom: 14px; }
+  .card h2 { font-family: "Fredoka", sans-serif; margin: 0 0 10px; font-size: 1.25rem; }
+  .chart { display: flex; align-items: flex-end; gap: 14px; height: 150px; padding: 0 8px; border-bottom: 3px solid #cfe3ea; }
+  .col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .col .amt { font-weight: 900; font-size: .85rem; margin-bottom: 4px; }
+  .col .bar { width: 100%; max-width: 90px; border-radius: 10px 10px 0 0; min-height: 4px; }
+  .labels { display: flex; gap: 14px; padding: 6px 8px 0; }
+  .labels span { flex: 1; text-align: center; font-weight: 800; font-size: .78rem; }
+  .stats { display: flex; gap: 8px; text-align: center; margin-top: 12px; }
+  .stats div { flex: 1; background: #fff; border-radius: 12px; padding: 10px 4px; }
+  .stats b { display: block; font-size: 1.2rem; color: #0d5a74; }
+  .stats span { font-size: .75rem; font-weight: 800; opacity: .75; }
+  label { font-weight: 800; display: block; margin: 10px 0 4px; }
+  input, select { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #cfe3ea; font: inherit; font-weight: 700; background: #fff; }
+  .row2 { display: flex; gap: 8px; }
+  .row2 > div { flex: 1; }
+  .btn { min-height: 50px; padding: 8px 20px; border-radius: 999px; border: 2px solid #e89b0c; background: linear-gradient(180deg, #ffe08a, #ffc93c); color: #4a2c00; font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 1rem; cursor: pointer; box-shadow: 0 3px 0 #e89b0c; width: 100%; margin-top: 12px; }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #e89b0c; }
+  .btn.ghost { background: #fff; border-color: #cfe3ea; color: #17384a; box-shadow: none; }
+  .entry { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 10px; background: #fff; margin-bottom: 7px; font-weight: 700; font-size: .92rem; }
+  .tag { font-size: .68rem; font-weight: 900; padding: 3px 8px; border-radius: 999px; }
+  .tag.Cash { background: #d9f2e2; color: #157347; }
+  .tag.Prize { background: #dce9ff; color: #2456a6; }
+  .tag.Supplies { background: #ffe9c9; color: #9a6200; }
+  .tag.Shipping { background: #f3dcff; color: #7a2ea0; }
+  .entry button { border: none; background: #ffe3e3; color: #b3261e; border-radius: 999px; width: 34px; height: 34px; font-weight: 900; cursor: pointer; flex: none; }
+  .note { text-align: center; color: #ffe9a8; font-weight: 700; font-size: .9rem; }
+</style>
+</head>
+<body>
+<a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+<main>
+  <h1>💝 Cove Donations</h1>
+  <p class="sub">Keeping the Giveaways Going</p>
+
+  <section class="card">
+    <h2>Donation breakdown</h2>
+    <div class="chart" id="chart"></div>
+    <div class="labels"><span>💵 Cash</span><span>🎁 Prizes</span><span>🎨 Supplies</span><span>📦 Shipping</span></div>
+    <div class="stats">
+      <div><b id="statCount">0</b><span>donations</span></div>
+      <div><b id="statTotal">$0</b><span>total value</span></div>
+      <div><b id="statDonors">0</b><span>donors</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Log a donation</h2>
+    <div class="row2">
+      <div><label for="fDate">Date</label><input type="date" id="fDate" /></div>
+      <div><label for="fType">Type</label>
+        <select id="fType"><option>Cash</option><option>Prize</option><option>Supplies</option><option>Shipping</option></select></div>
+    </div>
+    <label for="fDonor">Donor</label>
+    <input type="text" id="fDonor" list="donorList" placeholder="Who gave it?" maxlength="50" />
+    <datalist id="donorList"></datalist>
+    <label for="fWhat">What was it for?</label>
+    <input type="text" id="fWhat" placeholder="e.g. Coloring books to send out" maxlength="80" />
+    <label for="fAmt">Value ($)</label>
+    <input type="number" id="fAmt" min="0" step="0.01" placeholder="0.00" />
+    <button type="button" class="btn" id="addBtn">Add donation</button>
+  </section>
+
+  <section class="card">
+    <h2>Donation ledger</h2>
+    <div id="ledger"></div>
+    <p id="emptyLedger" style="text-align:center;font-weight:800">No donations logged yet.</p>
+    <button type="button" class="btn ghost" id="csvBtn">⬇ Export CSV</button>
+  </section>
+
+  <p class="note">A record keeper for the Cove's giveaways — thank-yous matter as much as totals.</p>
+</main>
+<script>
+  var DONORS = ["Laurie Farrar", "Connie Wilson Craven", "Aimee Michon", "Lisa Spain Makowski", "Janine Rogers", "Wanda Michelle Rodriguez", "Yvonne Davenport Sparhawk", "Susan Mercer", "Glenda Bailey", "Sharon Bennett", "Alesha Moore", "Rock Inman Inspirations"];
+  var TYPES = ["Cash", "Prize", "Supplies", "Shipping"];
+  var COLORS = { Cash: "#2fbf71", Prize: "#3b82f6", Supplies: "#f5b301", Shipping: "#a259e6" };
+  var KEY = "cove-donations-v1";
+  function load() { try { var s = JSON.parse(window.localStorage.getItem(KEY) || "null"); if (s) return s; } catch (e) {} return { entries: [{ date: "2026-11-22", type: "Cash", donor: "Laurie Farrar", what: "Coloring books to send out", amt: 120 }] }; }
+  function save(s) { try { window.localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  var state = load();
+  save(state);
+  function money(n) { return "$" + n.toFixed(2).replace(/\.00$/, ""); }
+  function render() {
+    var totals = { Cash: 0, Prize: 0, Supplies: 0, Shipping: 0 };
+    var donors = {};
+    state.entries.forEach(function (e) { totals[e.type] = (totals[e.type] || 0) + e.amt; if (e.donor) donors[e.donor] = 1; });
+    var max = Math.max(1, totals.Cash, totals.Prize, totals.Supplies, totals.Shipping);
+    var chart = document.getElementById("chart");
+    chart.innerHTML = "";
+    TYPES.forEach(function (t) {
+      var col = document.createElement("div"); col.className = "col";
+      col.innerHTML = '<span class="amt">' + money(totals[t]) + '</span><div class="bar" style="height:' + Math.max(3, Math.round(totals[t] / max * 110)) + 'px;background:' + COLORS[t] + '"></div>';
+      chart.appendChild(col);
+    });
+    document.getElementById("statCount").textContent = state.entries.length;
+    document.getElementById("statTotal").textContent = money(TYPES.reduce(function (n, t) { return n + totals[t]; }, 0));
+    document.getElementById("statDonors").textContent = Object.keys(donors).length;
+    var led = document.getElementById("ledger");
+    led.innerHTML = "";
+    var sorted = state.entries.slice().sort(function (a, b) { return b.date.localeCompare(a.date); });
+    sorted.forEach(function (e) {
+      var d = document.createElement("div"); d.className = "entry";
+      d.innerHTML = "<span>" + e.date + ' <span class="tag ' + e.type + '">' + e.type.toUpperCase() + "</span><br>" + e.donor + (e.what ? " — " + e.what : "") + "</span><span>" + money(e.amt) + "</span>";
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = "✕"; b.setAttribute("aria-label", "Remove entry");
+      b.addEventListener("click", function () { state.entries.splice(state.entries.indexOf(e), 1); save(state); render(); });
+      d.appendChild(b);
+      led.appendChild(d);
+    });
+    document.getElementById("emptyLedger").style.display = state.entries.length ? "none" : "";
+    var dl = document.getElementById("donorList");
+    dl.innerHTML = "";
+    DONORS.concat(Object.keys(donors)).filter(function (v, i, a) { return a.indexOf(v) === i; }).forEach(function (n) {
+      var o = document.createElement("option"); o.value = n; dl.appendChild(o);
+    });
+  }
+  document.getElementById("fDate").value = new Date().toISOString().slice(0, 10);
+  document.getElementById("addBtn").addEventListener("click", function () {
+    var donor = document.getElementById("fDonor").value.trim().slice(0, 50);
+    var amt = parseFloat(document.getElementById("fAmt").value) || 0;
+    if (!donor) return;
+    state.entries.push({ date: document.getElementById("fDate").value || new Date().toISOString().slice(0, 10), type: document.getElementById("fType").value, donor: donor, what: document.getElementById("fWhat").value.trim().slice(0, 80), amt: Math.max(0, amt) });
+    save(state); render();
+    document.getElementById("fWhat").value = "";
+    document.getElementById("fAmt").value = "";
+  });
+  document.getElementById("csvBtn").addEventListener("click", function () {
+    var rows = [["Date", "Type", "Donor", "Purpose", "Value"]].concat(state.entries.map(function (e) { return [e.date, e.type, e.donor, e.what, e.amt.toFixed(2)]; }));
+    var csv = rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(","); }).join("\n");
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = "cove-donations.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  render();
+</script>
+<script>
+(function () { try { var d = new Date(); var day = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); var H = { "Authorization": "Bearer gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg", "Content-Type": "application/json" }; fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "cove-donations", 1]), keepalive: true }).catch(function () {}); fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "_total", 1]), keepalive: true }).catch(function () {}); } catch (e) {} })();
+</script>
+</body>
+</html>
