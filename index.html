@@ -322,6 +322,10 @@
       .lobby-name { position:absolute; left:0; right:0; bottom:0; background:rgba(10,6,20,.88); color:#fff; font-weight:800; font-size:13px; text-align:center; padding:5px 2px; }
       .lobby-tile.hide { display:none; }
       @media (prefers-reduced-motion: reduce) { .lobby-uni, .lobby-uni img, .lobby-tile img.art, .lobby-tile::after, .lobby-shells .plus { animation:none !important; } }
+      .draw-card { border:3px solid #d9a441; }
+      .draw-wall { margin-top:10px; }
+      .draw-wall div { padding:6px 0; border-top:1px dashed #d9c9a8; }
+
 
 
       .game-body {
@@ -772,6 +776,15 @@
 
         <!-- TAB 4: GIVEAWAYS -->
         <section id="tab-giveaways" class="tab-content" aria-label="Giveaways">
+          <div class="card draw-card">
+            <h3>🎁 Weekly Cove Drawing</h3>
+            <p>Enter once a week, right here in the app. Every Monday the app draws one winner for <strong>500 shells</strong> for their farm. Nothing to mail, nothing to download — the shells land on your farm.</p>
+            <p id="drawStatus">Checking this week's drawing…</p>
+            <button class="btn" id="drawEnter" type="button" style="display:none">Enter this week</button>
+            <button class="btn" id="drawClaim" type="button" style="display:none">Claim my 500 shells</button>
+            <div class="draw-wall" id="drawWall"></div>
+          </div>
+
           <div class="card">
             <h3>🎁 Cove Giveaways</h3>
             <p>Our giveaways are part of the fun in the group — sponsor prizes, the daily Question of the Day, and special challenges all through the week.</p>
@@ -879,6 +892,77 @@
               t.classList.toggle('hide', cat !== 'all' && t.getAttribute('data-cat') !== cat);
             });
           });
+        });
+      })();
+
+
+      // Weekly Cove Drawing (self-running)
+      (function () {
+        var API_URL = "https://enabled-platypus-167183.upstash.io", API_KEY = "gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg";
+        function api(cmd) {
+          return fetch(API_URL, { method: "POST", headers: { Authorization: "Bearer " + API_KEY, "Content-Type": "application/json" }, body: JSON.stringify(cmd) })
+            .then(function (r) { return r.json(); }).then(function (j) { return j.result; }).catch(function () { return null; });
+        }
+        function mondayOf(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); var day = (x.getDay() + 6) % 7; x.setDate(x.getDate() - day); return x; }
+        function fmt(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+        var now = new Date(); var thisMon = mondayOf(now); var lastMon = new Date(thisMon); lastMon.setDate(lastMon.getDate() - 7);
+        var thisWeek = fmt(thisMon), lastWeek = fmt(lastMon);
+        var code = localStorage.getItem('cove-farm-code') || '';
+        var name = localStorage.getItem('cove-farm-name') || code;
+        var statusEl = document.getElementById('drawStatus');
+        var enterBtn = document.getElementById('drawEnter');
+        var claimBtn = document.getElementById('drawClaim');
+        function renderWall() {
+          api(["LRANGE", "drawwins", "0", "3"]).then(function (wins) {
+            var wall = document.getElementById('drawWall');
+            if (!wins || !wins.length) { wall.innerHTML = '<div>No winners yet — the first drawing is next Monday.</div>'; return; }
+            wall.innerHTML = '<strong>Recent winners</strong>' + wins.map(function (w) {
+              var parts = String(w).split('|');
+              return '<div>🏆 ' + (parts[2] || parts[1] || 'A Cove member') + ' — week of ' + parts[0] + '</div>';
+            }).join('');
+          });
+        }
+        function maybeDraw() {
+          return api(["GET", "drawwin:" + lastWeek]).then(function (win) {
+            if (win) return win;
+            return api(["HGETALL", "draw:" + lastWeek]).then(function (entries) {
+              if (!entries || !entries.length) return null;
+              var fields = []; for (var i = 0; i < entries.length; i += 2) fields.push([entries[i], entries[i + 1]]);
+              var pick = fields[Math.floor(Math.random() * fields.length)];
+              var val = pick[0] + '|' + (pick[1] || pick[0]);
+              return api(["SET", "drawwin:" + lastWeek, val, "NX"]).then(function (ok) {
+                if (ok === 'OK') return api(["LPUSH", "drawwins", lastWeek + '|' + val]).then(function () { return api(["LTRIM", "drawwins", "0", "7"]); }).then(function () { return val; });
+                return api(["GET", "drawwin:" + lastWeek]);
+              });
+            });
+          });
+        }
+        maybeDraw().then(function (lastWin) {
+          renderWall();
+          if (lastWin && code && String(lastWin).split('|')[0] === code && !localStorage.getItem('draw-claimed:' + lastWeek)) {
+            statusEl.textContent = 'You won last week\'s drawing!';
+            claimBtn.style.display = '';
+          }
+          if (!code) { statusEl.textContent = 'Play Cove Farm & Village first to get your farm code, then come back to enter.'; return; }
+          api(["HEXISTS", "draw:" + thisWeek, code]).then(function (entered) {
+            if (entered) { statusEl.textContent = 'You\'re in for this week. The drawing runs Monday.'; }
+            else { statusEl.textContent = 'This week\'s drawing is open.'; enterBtn.style.display = ''; }
+          });
+        });
+        enterBtn.addEventListener('click', function () {
+          api(["HSET", "draw:" + thisWeek, code, name]).then(function () {
+            enterBtn.style.display = 'none';
+            statusEl.textContent = 'You\'re in for this week. The drawing runs Monday.';
+          });
+        });
+        claimBtn.addEventListener('click', function () {
+          try {
+            var farm = JSON.parse(localStorage.getItem('cove-farm-village-v1') || 'null');
+            if (farm && typeof farm.shells === 'number') { farm.shells += 500; localStorage.setItem('cove-farm-village-v1', JSON.stringify(farm)); }
+          } catch (e) {}
+          localStorage.setItem('draw-claimed:' + lastWeek, '1');
+          claimBtn.style.display = 'none';
+          statusEl.textContent = '500 shells added to your farm.';
         });
       })();
 
