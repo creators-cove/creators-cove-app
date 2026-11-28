@@ -119,6 +119,26 @@
       .win-card p { font-weight: 700; }
       .win-card button { width: 100%; min-height: 52px; border-radius: 14px; border: none; cursor: pointer; background: var(--cream); color: var(--ink); font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 1.05rem; margin-top: 12px; }
       @media (prefers-reduced-motion: reduce) { .card.hint { animation: none; } }
+      .card.deal-in { animation: dealIn .38s ease both; }
+      @keyframes dealIn { from { transform: translateY(-26px) scale(.92); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+      .card.flip-in { animation: flipIn .32s ease both; }
+      @keyframes flipIn { from { transform: rotateY(88deg); } to { transform: rotateY(0); } }
+      .theme-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+      .theme-row button { min-height: 44px; padding: 6px 14px; border-radius: 999px; border: 2px solid rgba(255,248,234,.6); background: rgba(255,248,234,.12); color: var(--cream); font-family: "Fredoka", sans-serif; font-weight: 600; cursor: pointer; }
+      .theme-row button.on { background: var(--gold); color: #4a2c00; border-color: var(--gold-deep); }
+      .stats-line { text-align: center; color: #ffe9a8; font-weight: 800; margin: 0 0 8px; font-size: .95rem; }
+      .trophies { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+      .trophy { background: rgba(255,248,234,.12); border: 2px solid rgba(255,248,234,.35); border-radius: 999px; padding: 4px 10px; color: var(--cream); font-size: .8rem; font-weight: 800; opacity: .45; }
+      .trophy.earned { opacity: 1; border-color: var(--gold); background: rgba(255,201,60,.2); }
+      body.theme-sunset { background: radial-gradient(ellipse at 50% -5%, rgba(255,190,120,.35), rgba(0,0,0,0) 55%), linear-gradient(180deg, #ffb37a 0%, #e56b6f 48%, #7a3b69 100%); }
+      body.theme-sunset .card.back { background-image: linear-gradient(135deg, #ff9a5a, #e0527a 55%, #7a3b69); }
+      body.theme-christmas { background: radial-gradient(ellipse at 50% -5%, rgba(255,233,168,.25), rgba(0,0,0,0) 55%), linear-gradient(180deg, #2e7d5b 0%, #1d5c46 50%, #123c2e 100%); }
+      body.theme-christmas .card.back { background-image: linear-gradient(135deg, #c62828, #2e7d5b 60%, #f2b33d); }
+      body.theme-rainbow { background: radial-gradient(ellipse at 50% -5%, rgba(255,255,255,.3), rgba(0,0,0,0) 55%), linear-gradient(180deg, #7ad0f5 0%, #a78bfa 50%, #f59ec4 100%); }
+      body.theme-rainbow .card.back { background-image: linear-gradient(135deg, #ff6f61, #ffc93c 30%, #7dff9e 55%, #4fc3f7 80%, #b388ff); }
+      .cascade-card { position: absolute; width: 44px; height: 62px; border-radius: 6px; background: #fffdf6; border: 2px solid #e8dcc0; display: flex; align-items: center; justify-content: center; font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.1rem; pointer-events: none; animation: cascadeBounce 1.6s ease-in infinite; }
+      @keyframes cascadeBounce { 0% { transform: translateY(-70px) rotate(-8deg); } 55% { transform: translateY(46vh) rotate(6deg); } 72% { transform: translateY(38vh) rotate(-4deg); } 88% { transform: translateY(44vh) rotate(3deg); } 100% { transform: translateY(46vh) rotate(0); } }
+      @media (prefers-reduced-motion: reduce) { .card.deal-in, .card.flip-in, .cascade-card { animation: none !important; } }
     </style>
   </head>
   <body>
@@ -162,10 +182,21 @@
 
       <div class="controls">
         <button id="newBtn" type="button">New Game</button>
+        <button id="dailyBtn" type="button">📅 Daily Deal</button>
+        <button id="drawBtn" type="button" class="ghost">Draw 1</button>
         <button id="undoBtn" type="button" disabled>Undo</button>
         <button id="hintBtn" type="button">Hint</button>
+        <button id="autoBtn" type="button" class="ghost">Auto-finish</button>
       </div>
 
+      <p class="stats-line" id="statsLine">Wins 0 · Streak 0</p>
+      <div class="trophies" id="trophies"></div>
+      <div class="theme-row" id="themeRow">
+        <button type="button" data-theme="wave">🌊 Cove Wave</button>
+        <button type="button" data-theme="sunset">🌅 Sunset</button>
+        <button type="button" data-theme="christmas">🎄 Christmas</button>
+        <button type="button" data-theme="rainbow">🌈 Rainbow</button>
+      </div>
       <div class="display" id="display" role="status" aria-live="polite">Tap the stock to draw a card. Tap a card, then tap where it goes!</div>
 
       <div class="top-row">
@@ -459,6 +490,41 @@
       function checkWin(state) { return totalFoundations(state) === 52; }
 
       var state, selected, undoStack, moves, seconds, timerId, started;
+      var drawCount = 1, isDaily = false, justDealt = false, lastFlippedCol = -1;
+      try { drawCount = parseInt(window.localStorage.getItem("cove-sol-draw") || "1", 10) === 3 ? 3 : 1; } catch (e) {}
+      function solStats() { try { return JSON.parse(window.localStorage.getItem("cove-sol-stats") || "{}"); } catch (e) { return {}; } }
+      function saveSolStats(st) { try { window.localStorage.setItem("cove-sol-stats", JSON.stringify(st)); } catch (e) {} }
+      function todayKey() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+      function renderStats() {
+        var st = solStats();
+        var el = document.getElementById("statsLine");
+        if (el) el.textContent = "Wins " + (st.wins || 0) + " · Streak " + (st.streak || 0) + (st.best ? " · Best " + Math.floor(st.best / 60) + ":" + String(st.best % 60).padStart(2, "0") : "") + (st.dailyDay === todayKey() ? " · Daily won today ✓" : "");
+        var tr = document.getElementById("trophies");
+        if (tr) {
+          var badges = [["🏆 First Win", (st.wins || 0) >= 1], ["⭐ 5 Wins", (st.wins || 0) >= 5], ["🔥 3-Day Streak", (st.streak || 0) >= 3], ["📅 Daily Winner", (st.dailyWins || 0) >= 1], ["⚡ Speedy Win", !!st.speedy]];
+          tr.innerHTML = badges.map(function (b) { return '<span class="trophy' + (b[1] ? " earned" : "") + '">' + b[0] + "</span>"; }).join("");
+        }
+      }
+      function recordWin() {
+        var st = solStats();
+        st.wins = (st.wins || 0) + 1;
+        var today = todayKey();
+        var y = new Date(); y.setDate(y.getDate() - 1);
+        var yKey = y.getFullYear() + "-" + String(y.getMonth() + 1).padStart(2, "0") + "-" + String(y.getDate()).padStart(2, "0");
+        st.streak = st.lastWinDay === today ? (st.streak || 1) : (st.lastWinDay === yKey ? (st.streak || 0) + 1 : 1);
+        st.lastWinDay = today;
+        if (!st.best || seconds < st.best) st.best = seconds;
+        if (seconds > 0 && seconds < 300) st.speedy = true;
+        if (isDaily) { st.dailyWins = (st.dailyWins || 0) + 1; st.dailyDay = today; }
+        saveSolStats(st); renderStats();
+      }
+      function seededShuffle(a, seedStr) {
+        var h = 2166136261;
+        for (var i = 0; i < seedStr.length; i++) { h ^= seedStr.charCodeAt(i); h = Math.imul(h, 16777619); }
+        function rnd() { h = Math.imul(h ^ (h >>> 15), 2246822519); h ^= h >>> 13; return ((h >>> 0) % 100000) / 100000; }
+        for (var j = a.length - 1; j > 0; j--) { var k = Math.floor(rnd() * (j + 1)); var t = a[j]; a[j] = a[k]; a[k] = t; }
+        return a;
+      }
 
       function snapshot() {
         return JSON.parse(JSON.stringify({ tableau: state.tableau, foundations: state.foundations, stock: state.stock, waste: state.waste }));
@@ -474,8 +540,9 @@
         state.stock = snap.stock; state.waste = snap.waste;
       }
 
-      function deal() {
-        var deck = shuffle(makeDeck());
+      function deal(seedStr) {
+        isDaily = !!seedStr;
+        var deck = seedStr ? seededShuffle(makeDeck(), seedStr) : shuffle(makeDeck());
         state = { tableau: [[],[],[],[],[],[],[]], foundations: [[],[],[],[]], stock: [], waste: [] };
         for (var col = 0; col < 7; col++) {
           for (var i = 0; i <= col; i++) {
@@ -489,8 +556,10 @@
         var b = document.getElementById("undoBtn"); if (b) b.disabled = true;
         var o = document.getElementById("overlay"); if (o) o.classList.remove("open");
         stopTimer();
-        setDisplay("Tap the stock to draw a card. Tap a card, then tap where it goes!");
+        justDealt = true;
+        setDisplay(isDaily ? "Today's Daily Deal — same cards for everyone today. Good luck!" : "Tap the stock to draw a card. Tap a card, then tap where it goes!");
         render();
+        justDealt = false;
       }
       function setDisplay(msg) {
         var d = document.getElementById("display");
@@ -514,7 +583,7 @@
 
       function flipTop(col) {
         var pile = state.tableau[col];
-        if (pile.length && !pile[pile.length - 1].faceUp) { pile[pile.length - 1].faceUp = true; Sfx.flip(); }
+        if (pile.length && !pile[pile.length - 1].faceUp) { pile[pile.length - 1].faceUp = true; lastFlippedCol = col; Sfx.flip(); }
       }
       function clearSelection() { selected = null; render(); }
 
@@ -568,6 +637,8 @@
         if (checkWin(state)) {
           Sfx.win();
           stopTimer();
+          recordWin();
+          spawnCascade();
           var w = document.getElementById("winDetail");
           if (w) w.textContent = "All four foundations complete in " + moves + " moves and " +
             Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0") + "!";
@@ -582,9 +653,8 @@
       function drawStock() {
         if (state.stock.length) {
           pushUndo();
-          var c = state.stock.pop();
-          c.faceUp = true;
-          state.waste.push(c);
+          var c = null;
+          for (var n = 0; n < drawCount && state.stock.length; n++) { c = state.stock.pop(); c.faceUp = true; state.waste.push(c); }
           Sfx.flip();
           bumpMove(); startTimer(); selected = null;
           setDisplay("Drew a " + c.label + c.sym + ".");
@@ -782,6 +852,8 @@
           pile.forEach(function (card, idx) {
             var el = cardEl(card, "tableau", col, idx);
             el.style.top = (idx * 26) + "px";
+            if (justDealt) { el.classList.add("deal-in"); el.style.animationDelay = (col * 45 + idx * 30) + "ms"; }
+            if (col === lastFlippedCol && idx === pile.length - 1 && card.faceUp) el.classList.add("flip-in");
             colEl.appendChild(el);
           });
           colEl.addEventListener("click", function (e) {
@@ -793,17 +865,84 @@
         var mv = document.getElementById("moveVal"); if (mv) mv.textContent = String(moves);
       }
 
+      function spawnCascade() {
+        var o = document.getElementById("overlay");
+        if (!o) return;
+        o.querySelectorAll(".cascade-card").forEach(function (n) { n.remove(); });
+        var syms = ["♠", "♥", "♦", "♣"];
+        for (var i = 0; i < 22; i++) {
+          var c = document.createElement("div");
+          c.className = "cascade-card";
+          c.textContent = syms[i % 4];
+          c.style.color = (i % 4 === 1 || i % 4 === 2) ? "#e05252" : "#0c6370";
+          c.style.left = (4 + (i * 4.3) % 90) + "%";
+          c.style.top = "0";
+          c.style.animationDelay = (i * 0.09) + "s";
+          o.appendChild(c);
+        }
+      }
+      function autoFinish() {
+        var anyDown = state.tableau.some(function (p) { return p.some(function (c) { return !c.faceUp; }); });
+        if (anyDown || state.stock.length) { setDisplay("Auto-finish unlocks when every card is face-up and the stock is empty."); Sfx.thud(); return; }
+        var guard = 0;
+        while (!checkWin(state) && guard++ < 200) {
+          var moved = false;
+          if (state.waste.length) {
+            var w = state.waste[state.waste.length - 1];
+            for (var f = 0; f < 4; f++) if (canPlaceOnFoundation(w, state.foundations[f])) { pushUndo(); state.waste.pop(); state.foundations[f].push(w); moved = true; break; }
+          }
+          if (!moved) {
+            for (var col = 0; col < 7 && !moved; col++) {
+              var p = state.tableau[col];
+              if (!p.length) continue;
+              var card = p[p.length - 1];
+              for (var f2 = 0; f2 < 4; f2++) if (canPlaceOnFoundation(card, state.foundations[f2])) { pushUndo(); p.pop(); state.foundations[f2].push(card); moved = true; break; }
+            }
+          }
+          if (!moved) break;
+          bumpMove();
+        }
+        startTimer();
+        afterMove("Auto-finish sent them home!");
+      }
+      function applyTheme(name) {
+        document.body.classList.remove("theme-sunset", "theme-christmas", "theme-rainbow");
+        if (name !== "wave") document.body.classList.add("theme-" + name);
+        try { window.localStorage.setItem("cove-sol-theme", name); } catch (e) {}
+        document.querySelectorAll("#themeRow button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-theme") === name); });
+      }
       function bind() {
         var stock = document.getElementById("stockSlot");
         if (stock) stock.addEventListener("click", drawStock);
         var nb = document.getElementById("newBtn");
-        if (nb) nb.addEventListener("click", deal);
+        if (nb) nb.addEventListener("click", function () { deal(); });
         var ub = document.getElementById("undoBtn");
         if (ub) ub.addEventListener("click", undo);
         var hb = document.getElementById("hintBtn");
         if (hb) hb.addEventListener("click", showHint);
         var pa = document.getElementById("playAgainBtn");
-        if (pa) pa.addEventListener("click", deal);
+        if (pa) pa.addEventListener("click", function () { deal(); });
+        var db = document.getElementById("dailyBtn");
+        if (db) db.addEventListener("click", function () { deal("cove-daily-" + todayKey()); });
+        var drb = document.getElementById("drawBtn");
+        if (drb) {
+          drb.textContent = "Draw " + drawCount;
+          drb.addEventListener("click", function () {
+            drawCount = drawCount === 1 ? 3 : 1;
+            try { window.localStorage.setItem("cove-sol-draw", String(drawCount)); } catch (e) {}
+            drb.textContent = "Draw " + drawCount;
+            setDisplay("Now drawing " + drawCount + (drawCount === 1 ? " card" : " cards") + " at a time.");
+          });
+        }
+        var ab = document.getElementById("autoBtn");
+        if (ab) ab.addEventListener("click", autoFinish);
+        document.querySelectorAll("#themeRow button").forEach(function (b) {
+          b.addEventListener("click", function () { applyTheme(b.getAttribute("data-theme")); });
+        });
+        var savedTheme = "wave";
+        try { savedTheme = window.localStorage.getItem("cove-sol-theme") || "wave"; } catch (e) {}
+        applyTheme(savedTheme);
+        renderStats();
       }
       if (typeof document !== "undefined" && document.getElementById("tableau")) {
         bind();
