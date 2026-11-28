@@ -47,6 +47,7 @@
 <main>
   <h1>💝 Cove Donations</h1>
   <p class="sub">Keeping the Giveaways Going</p>
+  <p class="note" style="margin-bottom:14px">📅 The ledger starts January 1, 2027 — a fresh year, a fresh page.</p>
 
   <section class="card">
     <h2>Donation breakdown</h2>
@@ -90,7 +91,7 @@
   var TYPES = ["Cash", "Prize", "Supplies", "Shipping"];
   var COLORS = { Cash: "#2fbf71", Prize: "#3b82f6", Supplies: "#f5b301", Shipping: "#a259e6" };
   var KEY = "cove-donations-v1";
-  function load() { try { var s = JSON.parse(window.localStorage.getItem(KEY) || "null"); if (s) return s; } catch (e) {} return { entries: [{ date: "2026-11-22", type: "Cash", donor: "Laurie Farrar", what: "Coloring books to send out", amt: 120 }] }; }
+  function load() { try { var s = JSON.parse(window.localStorage.getItem(KEY) || "null"); if (s) return s; } catch (e) {} return { entries: [] }; }
   function save(s) { try { window.localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
   var state = load();
   save(state);
@@ -129,12 +130,15 @@
       var o = document.createElement("option"); o.value = n; dl.appendChild(o);
     });
   }
-  document.getElementById("fDate").value = new Date().toISOString().slice(0, 10);
+  var START = "2027-01-01";
+  var fd = document.getElementById("fDate");
+  fd.min = START;
+  fd.value = new Date().toISOString().slice(0, 10) < START ? START : new Date().toISOString().slice(0, 10);
   document.getElementById("addBtn").addEventListener("click", function () {
     var donor = document.getElementById("fDonor").value.trim().slice(0, 50);
     var amt = parseFloat(document.getElementById("fAmt").value) || 0;
     if (!donor) return;
-    state.entries.push({ date: document.getElementById("fDate").value || new Date().toISOString().slice(0, 10), type: document.getElementById("fType").value, donor: donor, what: document.getElementById("fWhat").value.trim().slice(0, 80), amt: Math.max(0, amt) });
+    state.entries.push({ date: (document.getElementById("fDate").value < START ? START : document.getElementById("fDate").value) || START, type: document.getElementById("fType").value, donor: donor, what: document.getElementById("fWhat").value.trim().slice(0, 80), amt: Math.max(0, amt) });
     save(state); render();
     document.getElementById("fWhat").value = "";
     document.getElementById("fAmt").value = "";
