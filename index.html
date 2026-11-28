@@ -291,6 +291,38 @@
             .thumb-crush { background: linear-gradient(135deg, #ff6f61, #ffc93c); }
             .thumb-jukebox { background: linear-gradient(135deg, #7a4fa3, #2a9db8); }
             .thumb-giftwrap { background: linear-gradient(135deg, #b23a48, #1d7a4f); }
+      /* Rainbow Land lobby (Nov 28, 2026) */
+      .lobby { background:#100a1c; border-radius:18px; padding:0 0 14px; margin:0 0 16px; overflow:hidden; border:3px solid #d9a441; }
+      .lobby-top { position:relative; height:190px; background:url('games/village2/rainbowlot.jpg') center 30%/cover no-repeat; overflow:hidden; }
+      .lobby-title { position:absolute; top:10px; left:0; right:0; text-align:center; color:#fff; font-size:26px; font-weight:800; text-shadow:0 2px 8px rgba(60,20,80,.65); margin:0; }
+      .lobby-uni { position:absolute; bottom:34px; width:74px; animation:lobbyWalk 34s linear infinite; will-change:transform; }
+      .lobby-uni img { width:100%; display:block; animation:lobbyBob 1.6s ease-in-out infinite alternate; }
+      .lobby-uni.rev img { transform:scaleX(-1); }
+      .lobby-uni.u1 { animation-delay:-4s; bottom:30px; }
+      .lobby-uni.u2 { animation-delay:-13s; bottom:52px; width:62px; }
+      .lobby-uni.u3 { animation-delay:-21s; bottom:36px; }
+      .lobby-uni.u4 { animation-delay:-28s; bottom:56px; width:60px; }
+      .lobby-uni.u5 { animation-delay:-9s; bottom:44px; width:68px; }
+      @keyframes lobbyWalk { from { transform:translateX(430px); } to { transform:translateX(-120px); } }
+      @keyframes lobbyBob { from { margin-top:0; } to { margin-top:-5px; } }
+      .lobby-shells { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); background:rgba(8,6,16,.88); color:#fff; border:2px solid #fff; border-radius:999px; padding:5px 16px; font-weight:800; font-size:15px; white-space:nowrap; }
+      .lobby-shells .plus { display:inline-block; background:#22c55e; color:#fff; border-radius:50%; width:20px; height:20px; line-height:20px; text-align:center; margin-left:8px; animation:lobbyPulse 1.6s ease-in-out infinite alternate; }
+      @keyframes lobbyPulse { from { transform:scale(1); } to { transform:scale(1.18); } }
+      .lobby-chips { display:flex; gap:8px; padding:12px 12px 4px; flex-wrap:wrap; }
+      .lobby-chip { border:2px solid #d9c9a8; background:#261c3a; color:#dcd0f0; border-radius:999px; padding:6px 14px; font-weight:800; font-size:13px; cursor:pointer; }
+      .lobby-chip.on { background:#22c55e; color:#fff; border-color:#22c55e; }
+      .lobby-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:10px 12px 4px; }
+      .lobby-tile { position:relative; display:block; border-radius:16px; overflow:hidden; border:3px solid #fff; aspect-ratio:1/1; background:#261c3a; text-decoration:none; }
+      .lobby-tile img.art { width:100%; height:100%; object-fit:cover; display:block; animation:lobbyZoom 5s ease-in-out infinite alternate; }
+      .lobby-tile img.contain { object-fit:contain; background:linear-gradient(135deg,#3b2a63,#17384a); }
+      .lobby-tile img.host { position:absolute; left:50%; top:6%; width:62%; transform:translateX(-50%); }
+      .lobby-tile::after { content:""; position:absolute; top:0; bottom:0; width:38%; background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.38),rgba(255,255,255,0)); animation:lobbyShine 3.6s ease-in-out infinite; }
+      @keyframes lobbyZoom { from { transform:scale(1); } to { transform:scale(1.07); } }
+      @keyframes lobbyShine { 0% { left:-45%; } 55% { left:110%; } 100% { left:110%; } }
+      .lobby-name { position:absolute; left:0; right:0; bottom:0; background:rgba(10,6,20,.88); color:#fff; font-weight:800; font-size:13px; text-align:center; padding:5px 2px; }
+      .lobby-tile.hide { display:none; }
+      @media (prefers-reduced-motion: reduce) { .lobby-uni, .lobby-uni img, .lobby-tile img.art, .lobby-tile::after, .lobby-shells .plus { animation:none !important; } }
+
 
       .game-body {
         padding: 16px 18px 18px;
@@ -379,7 +411,7 @@
     <div class="viewport">
       <div class="wrap">
         <!-- TAB 1: ANNOUNCEMENTS -->
-        <section id="tab-announcements" class="tab-content active" aria-label="Feed">
+        <section id="tab-announcements" class="tab-content" aria-label="Feed">
           <div class="card">
             <h3>📢 Welcome to the Cove! <span class="badge">NEW</span></h3>
             <p>We are thrilled to launch our brand new community app! Keep this saved to your phone's home screen for instant updates, fresh creative skits, and quick arcade games.</p>
@@ -508,7 +540,24 @@
         </section>
 
         <!-- TAB 3: ARCADE (GAMES) -->
-        <section id="tab-arcade" class="tab-content" aria-label="Arcade">
+        <section id="tab-arcade" class="tab-content active" aria-label="Arcade">
+          <div class="lobby" id="coveLobby">
+            <div class="lobby-top">
+              <p class="lobby-title">Creator's Cove</p>
+              <span class="lobby-uni u1 rev"><img src="games/village2/uni-sky.png" alt=""></span><span class="lobby-uni u2"><img src="games/village2/uni-mint.png" alt=""></span><span class="lobby-uni u3 rev"><img src="games/village2/uni-peach.png" alt=""></span><span class="lobby-uni u4"><img src="games/village2/uni-gold.png" alt=""></span><span class="lobby-uni u5 rev"><img src="games/village2/nova.png" alt=""></span>
+              <div class="lobby-shells"><span id="lobbyShells">🐚 —</span><span class="plus">+</span></div>
+            </div>
+            <div class="lobby-chips">
+              <button class="lobby-chip on" type="button" data-cat="all">ALL GAMES</button>
+              <button class="lobby-chip" type="button" data-cat="slots">SLOTS</button>
+              <button class="lobby-chip" type="button" data-cat="art">ART</button>
+              <button class="lobby-chip" type="button" data-cat="town">TOWN</button>
+            </div>
+            <div class="lobby-grid">
+              <a class="lobby-tile" data-cat="fun" href="games/cove-crush.html?v=29"><img class="art" src="games/crush3d/map-bg-a.jpg" alt=""><img class="host" src="games/crush3d/sprocket.png" alt=""><span class="lobby-name">Cove Crush</span></a><a class="lobby-tile" data-cat="slots" href="games/cove-luck.html?v=1"><img class="art" src="games/luck3d/sym-ornament.jpg" alt=""><span class="lobby-name">Cove Luck</span></a><a class="lobby-tile" data-cat="slots" href="games/cove-slots-3d.html?v=3"><img class="art" src="games/tumble3d/mascot.jpg" alt=""><span class="lobby-name">Slots 3D</span></a><a class="lobby-tile" data-cat="slots" href="games/cove-tumble-3d.html?v=3"><img class="art" src="games/tumble3d/sym-lollipop.jpg" alt=""><span class="lobby-name">Tumble 3D</span></a><a class="lobby-tile" data-cat="slots" href="games/cove-mermaid-3d.html?v=4"><img class="art" src="games/rips3d/pack-mermaid.jpg" alt=""><span class="lobby-name">Mermaid</span></a><a class="lobby-tile" data-cat="fun" href="games/cove-rips.html?v=11"><img class="art" src="games/rips3d/pack-crew.jpg" alt=""><span class="lobby-name">Cove Rips</span></a><a class="lobby-tile" data-cat="fun" href="games/cove-solitaire.html?v=5"><img class="art" src="games/solitaire3d/card-back.jpg" alt=""><span class="lobby-name">Solitaire</span></a><a class="lobby-tile" data-cat="town" href="games/cove-world.html?v=42"><img class="art" src="games/farm3d/bld-cottage.jpg" alt=""><span class="lobby-name">Farm</span></a><a class="lobby-tile" data-cat="town" href="games/cove-village2.html?v=35"><img class="art" src="games/village2/beach.jpg" alt=""><span class="lobby-name">Village 2</span></a><a class="lobby-tile" data-cat="fun" href="games/cove-merge.html?v=8"><img class="art" src="games/drama/ep1-poster.jpg" alt=""><span class="lobby-name">Drama Cove</span></a><a class="lobby-tile" data-cat="fun" href="games/cove-bingo.html?v=3"><img class="art" src="games/slots3d/sym-beachball.jpg" alt=""><span class="lobby-name">Cove Bingo</span></a><a class="lobby-tile" data-cat="fun" href="games/cove-quest.html?v=8"><img class="art contain" src="games/village2/hunt-chest.png" alt=""><span class="lobby-name">Cove Quest</span></a><a class="lobby-tile" data-cat="fun" href="games/cove-word.html?v=1"><img class="art" src="games/rips3d/canvas.jpg" alt=""><span class="lobby-name">Cove Word</span></a><a class="lobby-tile" data-cat="town" href="games/cove-pets.html?v=3"><img class="art" src="games/pets3d/kitten.jpg" alt=""><span class="lobby-name">Cove Pets</span></a><a class="lobby-tile" data-cat="town" href="games/cove-lounge.html?v=3"><img class="art" src="games/village2/boardwalk.jpg" alt=""><span class="lobby-name">Cove Lounge</span></a><a class="lobby-tile" data-cat="fun" href="games/cove-elf-watch.html?v=3"><img class="art" src="games/farm3d/decor-xmastree.jpg" alt=""><span class="lobby-name">Elf Watch</span></a><a class="lobby-tile" data-cat="fun" href="games/christmas-runner-game.html?v=4"><img class="art contain" src="games/runner3d/snowman.png" alt=""><span class="lobby-name">Christmas Dash</span></a><a class="lobby-tile" data-cat="art" href="games/cove-coloring-studio.html?v=3"><img class="art" src="games/coloring/page1.png" alt=""><span class="lobby-name">Coloring Studio</span></a><a class="lobby-tile" data-cat="fun" href="games/cove-champions.html?v=2"><img class="art" src="games/rips3d/goldstar.jpg" alt=""><span class="lobby-name">Champions</span></a><a class="lobby-tile" data-cat="art" href="games/cove-gift-wrap.html?v=2"><img class="art" src="games/giftwrap3d/box.jpg" alt=""><span class="lobby-name">Gift Wrap</span></a><a class="lobby-tile" data-cat="art" href="games/cove-mix-paint.html?v=2"><img class="art" src="games/rips3d/brush.jpg" alt=""><span class="lobby-name">Mix the Paint</span></a><a class="lobby-tile" data-cat="art" href="games/cove-glitter-sort.html?v=2"><img class="art" src="games/tumble3d/sym-ring.jpg" alt=""><span class="lobby-name">Glitter Sort</span></a><a class="lobby-tile" data-cat="art" href="games/cove-painting-puzzles.html?v=2"><img class="art" src="games/puzzle/p1.jpg" alt=""><span class="lobby-name">Painting Puzzles</span></a><a class="lobby-tile" data-cat="fun" href="games/cove-jukebox.html"><img class="art" src="games/slots3d/sym-palm.jpg" alt=""><span class="lobby-name">Jukebox</span></a><a class="lobby-tile" data-cat="town" href="games/cove-boardwalk.html?v=1"><img class="art" src="games/boardwalk/panorama.jpg" alt=""><span class="lobby-name">Boardwalk</span></a>
+            </div>
+          </div>
+
           <div class="card game-wrapper">
             <h3>🎮 Cove Catcher Arcade</h3>
             <p id="game-instructions">Catch the falling art stars to rack up your high score! Drag on the game, hold the buttons below, or use the arrow keys.</p>
@@ -772,7 +821,7 @@
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav" aria-label="Main">
-      <button class="nav-item active" type="button" data-tab="announcements" aria-current="page">
+      <button class="nav-item" type="button" data-tab="announcements">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" /></svg>
         Feed
       </button>
@@ -780,7 +829,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.9.9-1.9 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" /></svg>
         Cove TV
       </button>
-      <button class="nav-item" type="button" data-tab="arcade">
+      <button class="nav-item active" type="button" data-tab="arcade" aria-current="page">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S19.67 9 20.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" /></svg>
         Arcade
       </button>
@@ -811,6 +860,27 @@
       document.querySelectorAll('.nav-item').forEach(function (item) {
         item.addEventListener('click', function () { switchTab(item.getAttribute('data-tab'), item); });
       });
+
+
+      // Rainbow Land lobby: shell balance + category chips
+      (function () {
+        var el = document.getElementById('lobbyShells');
+        try {
+          var farm = JSON.parse(localStorage.getItem('cove-farm-village-v1') || 'null');
+          if (farm && typeof farm.shells === 'number') el.textContent = '🐚 ' + farm.shells.toLocaleString('en-US');
+          else el.textContent = '🐚 Play the Farm';
+        } catch (e) { el.textContent = '🐚 Play the Farm'; }
+        document.querySelectorAll('.lobby-chip').forEach(function (chip) {
+          chip.addEventListener('click', function () {
+            document.querySelectorAll('.lobby-chip').forEach(function (c) { c.classList.remove('on'); });
+            chip.classList.add('on');
+            var cat = chip.getAttribute('data-cat');
+            document.querySelectorAll('.lobby-tile').forEach(function (t) {
+              t.classList.toggle('hide', cat !== 'all' && t.getAttribute('data-cat') !== cat);
+            });
+          });
+        });
+      })();
 
       // Cove Catcher Arcade Game
       var canvas = document.getElementById('gameCanvas');
