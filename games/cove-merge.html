@@ -128,7 +128,17 @@
   .epitem .s { font-size: 12px; font-weight: 700; color: #8a6d1f; }
   #toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); background: #12303e; color: #fff8ec; padding: 11px 18px; border-radius: 999px; font-weight: 700; font-size: 14.5px; opacity: 0; pointer-events: none; transition: all .3s; z-index: 80; max-width: 92vw; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,.35); }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-</style>
+    .album { background:#fff8ec; border:2px solid #e8d9b8; border-radius:14px; padding:10px 12px; margin-top:10px; }
+    .album .at { font-weight:800; color:#6b4a1f; margin-bottom:6px; }
+    .arow { display:flex; align-items:center; gap:6px; margin:4px 0; }
+    .arow .an { width:52px; font-size:13px; font-weight:700; color:#6b4a1f; }
+    .aslot { width:38px; height:38px; border-radius:10px; background:#efe6d2; display:inline-flex; align-items:center; justify-content:center; color:#b09a6a; font-weight:800; }
+    .aslot.got { background:#fff; border:2px solid #d9a441; }
+    .aslot img { width:32px; height:32px; object-fit:contain; }
+    .acount { font-size:13px; color:#6b4a1f; margin-top:4px; }
+    .genwrap { display:inline-block; vertical-align:top; margin:0 4px; }
+    .genup { display:block; margin:4px auto 0; background:#d9a441; color:#fff; border:none; border-radius:999px; padding:5px 12px; font-weight:700; cursor:pointer; }
+  </style>
 </head>
 <body>
 <div class="wrap">
@@ -143,6 +153,8 @@
     <div class="pill">🐚 <span id="shellCount">0</span><small>shells (your farm wallet)</small></div>
     <div class="pill">⭐ <span id="starCount">0</span><small>story stars</small></div>
     <div class="pill">🧺 <span id="mergeCount">0</span><small>merges made</small></div>
+    <div class="pill">⚡ <span id="energyCount">60</span><small>energy</small></div>
+    <div class="pill">🔥 <span id="streakCount">0</span><small>day streak</small></div>
   </div>
 
   <div class="epbar">
@@ -163,6 +175,7 @@
   <div id="infobar"><span id="infoText">Tap a supply box below to get started, then merge two of a kind.</span></div>
 
   <div id="gens"></div>
+  <div id="album"></div>
 
   <p class="howto">How it works: tap a supply box and supplies pop onto the board. Tap any item, then tap an identical one to merge them into the next tier up. Fill the girls' orders to earn shells and ⭐ stars — stars unlock the next episode of the drama. Top-tier items sell for a nice pile of shells. New episodes play right in the studio box up top — tap the video, choose between the two options, and your pick goes straight up in the studio for good. Your studio will look like nobody else's.</p>
 </div>
@@ -232,7 +245,19 @@ var BUILD_TASKS = [
   { ep: 4, slot: "mural", who: "kim", title: "The Wall Mural", cost: 5, ph: "🖼️", prompt: "Fair Day is won and the studio wall is blank. Kim gets the mural pick — make it a good one.", options: [
     ["ribbon", "🏆", "Blue Ribbon Mural"], ["splash", "🎨", "Paint Splash Mural"], ["wave", "🌊", "Big Wave Mural"] ] },
   { ep: 5, slot: "finale", who: "sprocket", title: "The Finishing Touch", cost: 6, ph: "📮", prompt: "SPROCKET HAS PREPARED THREE FINISHING TOUCHES. ALL OF THEM ARE SAFE. PROBABLY.", options: [
-    ["mailbox", "📮", "Story Mailbox"], ["fountain", "🐚", "Shell Fountain"], ["masks", "🎭", "Drama Mask Planter"] ] }
+    ["mailbox", "📮", "Story Mailbox"], ["fountain", "🐚", "Shell Fountain"], ["masks", "🎭", "Drama Mask Planter"] ] },
+  { ep: 6, slot: "porch", who: "gladys", title: "The Porch Railing", cost: 7, ph: "🪜", prompt: "Season Two means a bigger studio. Gladys wants the porch railing sorted before Gwen sees it. Pick the style.", options: [
+    ["rope", "🪢", "Rope Railing"], ["drift", "🪵", "Driftwood Railing"], ["white", "🤍", "White Picket Railing"] ] },
+  { ep: 7, slot: "lights", who: "trish", title: "The String Lights", cost: 8, ph: "💡", prompt: "Trish says the studio needs evening light for late painting sessions. The leaves agree. Choose the lights.", options: [
+    ["bulb", "💡", "Warm Bulbs"], ["star2", "⭐", "Star Lights"], ["shell2", "🐚", "Shell Lights"] ] },
+  { ep: 8, slot: "bench", who: "sandy", title: "The Artist Bench", cost: 9, ph: "🪑", prompt: "Sandy needs somewhere to sit and supervise. Her words. Pick her bench.", options: [
+    ["teal", "🩵", "Teal Bench"], ["purple2", "💜", "Purple Bench"], ["wood", "🪑", "Wooden Bench"] ] },
+  { ep: 9, slot: "garden", who: "kim", title: "The Side Garden", cost: 10, ph: "🌷", prompt: "The side yard is bare dirt and Gwen keeps looking at it. Kim's pick: what grows there?", options: [
+    ["tulip", "🌷", "Tulips"], ["daisy", "🌼", "Daisies"], ["herb", "🌿", "Herb Garden"] ] },
+  { ep: 10, slot: "flag", who: "sprocket", title: "The Studio Flag", cost: 11, ph: "🚩", prompt: "SPROCKET HAS DESIGNED THREE FLAGS. ALL OF THEM ARE SAFE. ONE OF THEM IS A FLAG.", options: [
+    ["wave2", "🌊", "Wave Flag"], ["shell3", "🐚", "Shell Flag"], ["crown", "👑", "Crown Flag"] ] },
+  { ep: 11, slot: "trophy", who: "kim", title: "The Trophy Shelf", cost: 12, ph: "🏆", prompt: "Best in Show needs a home. Kim gets the final Season Two pick — where does the trophy live?", options: [
+    ["gold", "🏆", "Gold Shelf"], ["glass", "🪟", "Glass Case"], ["drift2", "🪵", "Driftwood Shelf"] ] }
 ];
 var EPISODES = [
   { at: 0, title: "Opening Day at the Salty Canvas", video: "drama/ep1.mp4", poster: "drama/ep1-poster.jpg", beats: [
@@ -273,7 +298,45 @@ var EPISODES = [
     ["gladys", "Girls. A new entry form just arrived for NEXT year's fair. Signed with one letter."],
     ["trish", "Just… 'G'."],
     ["sprocket", "I HAVE ALREADY WRAPPED IT. FOR SAFETY."],
-    [null, "Who is G? Find out next season… on Drama Cove. 🎭"] ] }
+    [null, "Who is G? Find out next season… on Drama Cove. 🎭"] ] },
+  { at: 105, title: "Season Two: The Letter G", beats: [
+    ["gladys", "I compared the handwriting on that entry form to every card in my recipe box. Nothing. Then Sprocket compared it to the fair records."],
+    ["sprocket", "MATCH FOUND. ENTRY FORM, 1987. NAME: G. GWEN. GWEN HARBOR."],
+    ["sandy", "Walter's SISTER? The one who moved away before I was born?"],
+    ["kim", "She won this fair three years running. Then she vanished mid-season and never entered again."],
+    [null, "Gwen Harbor is back. But why now — and what does she want with our studio?"] ] },
+  { at: 135, title: "The Woman at the Lighthouse", beats: [
+    ["trish", "I read the leaves again. The leaves say: somebody is watching the studio. The leaves also say it is Tuesday."],
+    ["sandy", "Walter says Gwen's been at the lighthouse for a month. A MONTH. And he didn't tell me."],
+    ["kim", "She's not watching us, Sandy. She's watching the mural wall. Every day at noon, same spot."],
+    ["gladys", "That wall used to hold the fair's champion paintings. Hers hung there last."],
+    [null, "Gwen isn't spying. She's remembering. But the new fair entries close Friday…"] ] },
+  { at: 170, title: "An Offer in Purple Ink", beats: [
+    ["kim", "A letter. Purple ink, perfect handwriting. 'Dear Salty Canvas: your mural wall is an embarrassment. I can fix that. — G'"],
+    ["sandy", "She called our wall an EMBARRASSMENT? I picked that mural!"],
+    ["gladys", "She also offered to repaint it for free. Champions don't do free, girls. Champions do leverage."],
+    ["trish", "The leaves say accept. The leaves have been right twice this year, which is a personal record."],
+    [null, "Accept Gwen's offer, or paint the wall themselves? The girls need your pick…"] ] },
+  { at: 210, title: "Paint and Old Scores", beats: [
+    ["kim", "She paints like the wall owes her money. I've never seen anyone work that fast."],
+    ["sandy", "She told me why she left. The fair judges picked a copycat over her original. She swore she'd never paint for judges again."],
+    ["gladys", "And yet here she is, painting OUR wall, in OUR studio, where judges walk every day."],
+    ["sprocket", "I HAVE WRAPPED HER PAINTBRUSHES. FOR SAFETY. SHE HAS UNWRAPPED THEM. TWICE."],
+    [null, "Old scores don't fade — they wait. And the fair judges just announced a surprise category…"] ] },
+  { at: 255, title: "The Surprise Category", beats: [
+    ["trish", "The surprise category is 'Harbor Light' — a painting of the lighthouse at dawn. Gwen went white as a sheet."],
+    ["sandy", "Walter says she painted that exact scene in 1987. It's the one the copycat stole."],
+    ["kim", "Then we paint it again. All of us. Her scene, our hands, one canvas. Nobody copies a whole studio."],
+    ["gladys", "I'll label the brushes. Sprocket, NO wrapping the canvas this time."],
+    ["sprocket", "…I WILL WRAP IT AFTER. FOR SAFETY."],
+    [null, "One canvas. Five painters. And a 40-year-old score to settle…"] ] },
+  { at: 305, title: "Harbor Light", beats: [
+    ["kim", "The judges stood in front of it for a full minute. Nobody breathed. I counted."],
+    ["sandy", "Gwen cried. Then she laughed. Then she signed it — all our names, hers last, in purple ink."],
+    ["gladys", "Best in Show. And the fair committee just offered Gwen the head judge seat for next year."],
+    ["trish", "The leaves say next season somebody new comes to the Cove. The leaves are smiling. That's new."],
+    ["sprocket", "I HAVE WRAPPED THE TROPHY. FOR SAFETY. IT IS VERY SAFE NOW."],
+    [null, "The Salty Canvas shines brighter than ever. Season Three is coming… on Drama Cove. 🎭"] ] }
 ];
 </script>
 <script>
@@ -282,7 +345,7 @@ var EPISODES = [
 var SAVE_KEY = "cove-drama-v1";
 var state = null;
 function defaultState() {
-  return { board: [], stars: 0, totalStars: 0, merges: 0, epSeen: 0, orders: [], bank: 0, muted: false, started: false, studio: {} };
+  return { board: [], stars: 0, totalStars: 0, merges: 0, epSeen: 0, orders: [], bank: 0, muted: false, started: false, studio: {}, energy: 60, energyTs: 0, genLvl: [1, 1, 1], seen: {}, albumDone: false, streak: { last: "", count: 0 } };
 }
 function loadState() {
   try { state = JSON.parse(localStorage.getItem(SAVE_KEY)) || defaultState(); }
@@ -293,6 +356,10 @@ function loadState() {
   }
   if (!Array.isArray(state.orders)) state.orders = [];
   if (!state.studio || typeof state.studio !== "object") state.studio = {};
+  if (typeof state.energy !== "number") state.energy = 60;
+  if (!Array.isArray(state.genLvl) || state.genLvl.length !== 3) state.genLvl = [1, 1, 1];
+  if (!state.seen || typeof state.seen !== "object") state.seen = {};
+  if (!state.streak || typeof state.streak !== "object") state.streak = { last: "", count: 0 };
   state.stars = parseInt(state.stars, 10) || 0;
   state.totalStars = Math.max(parseInt(state.totalStars, 10) || 0, state.stars);
 }
@@ -385,6 +452,58 @@ function toast(msg, ms) {
   toastTimer = setTimeout(function () { el.className = ""; }, ms || 2600);
 }
 
+
+/* ============ ENERGY / STREAK / ALBUM ============ */
+var ENERGY_MAX = 60, ENERGY_MS = 90000;
+function refreshEnergy() {
+  var now = Date.now();
+  if (!state.energyTs) { state.energyTs = now; return; }
+  var gained = Math.floor((now - state.energyTs) / ENERGY_MS);
+  if (gained > 0) { state.energy = Math.min(ENERGY_MAX, state.energy + gained); state.energyTs += gained * ENERGY_MS; }
+}
+function spendShells(n) {
+  var f = farmState();
+  if (f) { if ((parseInt(f.shells, 10) || 0) < n) return false; f.shells = (parseInt(f.shells, 10) || 0) - n; try { localStorage.setItem("cove-farm-village-v1", JSON.stringify(f)); } catch (e) {} return true; }
+  if ((state.bank || 0) < n) return false;
+  state.bank -= n; return true;
+}
+function markSeen(c, t) {
+  var k = c + ":" + t;
+  if (!state.seen[k]) { state.seen[k] = 1; checkAlbum(); }
+}
+function checkAlbum() {
+  if (state.albumDone) return;
+  var n = 0;
+  for (var c = 0; c < 3; c++) for (var t = 1; t <= 6; t++) if (state.seen[c + ":" + t]) n++;
+  if (n >= 18) { state.albumDone = true; addShells(200); toast("📖 Collection complete! Every item discovered — +🐚 200!"); sndSting(); }
+}
+function renderAlbum() {
+  var wrap = document.getElementById("album");
+  if (!wrap) return;
+  var n = 0, html = '<div class="album"><div class="at">📖 Collection Album</div><div class="arows">';
+  for (var c = 0; c < 3; c++) {
+    html += '<div class="arow"><span class="an">' + CHAINS[c].name + "</span>";
+    for (var t = 1; t <= 6; t++) {
+      var got = !!state.seen[c + ":" + t];
+      if (got) n++;
+      html += '<span class="aslot' + (got ? " got" : "") + '">' + (got ? '<img src="' + CHAINS[c].items[t - 1][2] + '" alt="">' : "?") + "</span>";
+    }
+    html += "</div>";
+  }
+  html += '</div><div class="acount">' + n + " / 18 discovered" + (state.albumDone ? " · complete! 🎉" : " · finish the album for 🐚200") + "</div></div>";
+  wrap.innerHTML = html;
+}
+function noteDeliveryDay() {
+  var today = new Date().toISOString().slice(0, 10);
+  if (state.streak.last === today) return;
+  var y = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  state.streak.count = state.streak.last === y ? state.streak.count + 1 : 1;
+  state.streak.last = today;
+  var bonus = Math.min(state.streak.count, 7) * 5;
+  addShells(bonus);
+  toast("🔥 Day " + state.streak.count + " streak! Daily bonus +🐚 " + bonus);
+}
+
 /* ============ ORDERS ============ */
 function boardCount(c, t) {
   var n = 0;
@@ -428,6 +547,7 @@ function deliver(idx) {
     }
   }
   addShells(o.reward);
+  noteDeliveryDay();
   state.stars += o.stars;
   state.totalStars = (state.totalStars || 0) + o.stars;
   state.orders[idx] = genOrder();
@@ -532,9 +652,15 @@ var SLOT_POS = {
   flowers: "left:9%;bottom:26px;",
   charm: "left:26%;bottom:34px;",
   mural: "right:9%;bottom:26px;",
-  finale: "left:50%;bottom:2px;transform:translateX(-50%);"
+  finale: "left:50%;bottom:2px;transform:translateX(-50%);",
+  porch: "left:4%;top:52px;",
+  lights: "right:4%;top:52px;",
+  bench: "left:4%;bottom:64px;",
+  garden: "right:4%;bottom:64px;",
+  flag: "left:50%;top:26px;transform:translateX(-50%);",
+  trophy: "right:26%;bottom:34px;"
 };
-var SLOT_LABEL = { sign: "Sign", awning: "Awning", flowers: "Window boxes", charm: "Door charm", mural: "Mural", finale: "Doorstep" };
+var SLOT_LABEL = { sign: "Sign", awning: "Awning", flowers: "Window boxes", charm: "Door charm", mural: "Mural", finale: "Doorstep", porch: "Porch", lights: "Lights", bench: "Bench", garden: "Garden", flag: "Flag", trophy: "Trophy shelf" };
 function taskOption(task, id) {
   for (var i = 0; i < task.options.length; i++) if (task.options[i][0] === id) return task.options[i];
   return null;
@@ -698,6 +824,7 @@ function clickCell(i) {
   if (!b) { state.board[i] = s; state.board[sel] = null; sel = -1; save(); renderAll(); return; }
   if (b.c === s.c && b.t === s.t && b.t < 6) {
     state.board[i] = { c: b.c, t: b.t + 1 };
+    markSeen(b.c, b.t + 1);
     state.board[sel] = null;
     state.merges++;
     sel = -1; popCell = i;
@@ -755,10 +882,13 @@ function renderHUD() {
   document.getElementById("shellCount").textContent = shells();
   document.getElementById("starCount").textContent = state.stars;
   document.getElementById("mergeCount").textContent = state.merges;
+  refreshEnergy();
+  document.getElementById("energyCount").textContent = state.energy;
+  document.getElementById("streakCount").textContent = state.streak.count;
   var unlocked = unlockedEpisodes();
   var label = document.getElementById("epLabel"), fill = document.getElementById("epFill");
   if (unlocked >= EPISODES.length) {
-    label.textContent = "🎭 Season One complete!";
+    label.textContent = "🎭 Every episode unlocked!";
     fill.style.width = "100%";
   } else {
     var cur = EPISODES[unlocked - 1] ? EPISODES[unlocked - 1].at : 0;
@@ -773,15 +903,35 @@ function renderGens() {
   var wrap = document.getElementById("gens");
   var html = "";
   for (var i = 0; i < GENS.length; i++) {
-    html += '<button class="gen" data-i="' + i + '"><img class="gimg" src="' + GENS[i].img + '" alt=""><div class="gn">' + GENS[i].name + '</div><div class="gt">tap for ' + GENS[i].tap + "</div></button>";
+    var lvl = state.genLvl[i];
+    html += '<div class="genwrap"><button class="gen" data-i="' + i + '"><img class="gimg" src="' + GENS[i].img + '" alt=""><div class="gn">' + GENS[i].name + " Lv" + lvl + '</div><div class="gt">⚡1 · tap for ' + GENS[i].tap + '</div></button>' +
+      (lvl < 3 ? '<button class="genup" data-i="' + i + '">Upgrade · 🐚' + (lvl === 1 ? 150 : 400) + "</button>" : '<div class="gt">max level</div>') + "</div>";
   }
   wrap.innerHTML = html;
   var btns = wrap.querySelectorAll(".gen");
   for (var j = 0; j < btns.length; j++) btns[j].addEventListener("click", function () { tapGen(parseInt(this.getAttribute("data-i"), 10), this); });
+  var ups = wrap.querySelectorAll(".genup");
+  for (var k = 0; k < ups.length; k++) ups[k].addEventListener("click", function () { upgradeGen(parseInt(this.getAttribute("data-i"), 10)); });
 }
 var genBusy = false;
+function upgradeGen(gi) {
+  var lvl = state.genLvl[gi];
+  if (lvl >= 3) return;
+  var cost = lvl === 1 ? 150 : 400;
+  if (!spendShells(cost)) { toast("Not enough shells — that upgrade costs 🐚" + cost); return; }
+  state.genLvl[gi] = lvl + 1;
+  save(); renderAll();
+  sndDeliver();
+  toast("⬆️ " + GENS[gi].name + " is now level " + (lvl + 1) + " — better supplies!");
+}
 function tapGen(gi, btn) {
   if (genBusy) return;
+  refreshEnergy();
+  if (state.energy < 1) {
+    if (spendShells(20)) { state.energy = Math.min(ENERGY_MAX, state.energy + 30); toast("⚡ Out of energy — refilled +30 for 🐚20!"); }
+    else { toast("⚡ Out of energy! It refills over time, or refill for 🐚20."); renderAll(); return; }
+  }
+  state.energy--;
   var empty = [];
   for (var i = 0; i < 28; i++) if (!state.board[i]) empty.push(i);
   if (!empty.length) { toast("The studio board is full — merge or sell something to make room!"); return; }
@@ -789,12 +939,15 @@ function tapGen(gi, btn) {
   if (btn) btn.disabled = true;
   setTimeout(function () { genBusy = false; if (btn) btn.disabled = false; }, 700);
   var cell = empty[Math.floor(Math.random() * empty.length)];
-  state.board[cell] = { c: GENS[gi].chain, t: Math.random() < 0.72 ? 1 : 2 };
+  var lvl = state.genLvl[gi], roll = Math.random();
+  var tier = lvl === 3 && roll < 0.12 ? 3 : roll < (lvl === 1 ? 0.72 : 0.5) ? 1 : 2;
+  state.board[cell] = { c: GENS[gi].chain, t: tier };
+  markSeen(GENS[gi].chain, tier);
   popCell = cell;
   sndSpawn();
   save(); renderAll();
 }
-function renderAll() { renderHUD(); renderStudio(); renderOrders(); renderBoard(); renderInfo(); renderStageBtn(); }
+function renderAll() { renderHUD(); renderStudio(); renderOrders(); renderBoard(); renderInfo(); renderStageBtn(); renderAlbum(); renderGens(); }
 
 /* ============ BOOT ============ */
 loadState();
