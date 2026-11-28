@@ -1,0 +1,2400 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Cove Crush</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --sea-top: #8fe0f2;
+        --sea-mid: #2a9db8;
+        --sea-deep: #0d5a74;
+        --cabinet: #c4639d;
+        --cabinet-2: #5d4396;
+        --cabinet-edge: #ffe3a3;
+        --gold: #ffc93c;
+        --gold-deep: #e89b0c;
+        --coral: #ff6f61;
+        --cream: #fff8ea;
+        --ink: #12303e;
+        --panel: rgba(255, 248, 234, 0.94);
+        --panel-ink: #17384a;
+        --cell-bg: #fffdf6;
+        --shadow: 0 18px 40px rgba(4, 40, 56, 0.35);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --sea-top: #0a2e44;
+          --sea-mid: #0d4a63;
+          --sea-deep: #061e2e;
+          --cabinet: #a04a82;
+          --cabinet-2: #3d2566;
+          --panel: rgba(10, 43, 60, 0.96);
+          --panel-ink: #f3e9d2;
+          --cell-bg: #fdf6e0;
+          --shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+        }
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Nunito", system-ui, sans-serif;
+        color: var(--panel-ink);
+        background:
+          radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.4), rgba(255,255,255,0) 60%),
+          linear-gradient(180deg, var(--sea-top) 0%, var(--sea-mid) 46%, var(--sea-deep) 100%);
+        min-height: 100vh;
+        padding: 0 14px 40px;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        -webkit-user-select: none; user-select: none;
+        -webkit-touch-callout: none;
+        overscroll-behavior: none; overflow-x: hidden;
+      }
+      .cove-back-btn{display:inline-block;min-height:48px;line-height:48px;padding:0 18px;margin:0;border-radius:999px;background:#ffffff;color:#12303e;font-weight:800;text-decoration:none;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;touch-action:manipulation;}
+      .cove-back-btn:active{transform:translateY(1px);}
+      .top-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-top:12px;}
+      .sound-btn{min-height:48px;min-width:64px;padding:0 14px;border-radius:999px;background:#ffffff;color:#12303e;font-weight:800;font-size:1rem;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);position:relative;z-index:9999;touch-action:manipulation;font-family:"Nunito",system-ui,sans-serif;}
+      .sound-btn:active{transform:translateY(1px);}
+      main { max-width: 560px; margin: 0 auto; }
+      /* No cabinet anywhere (Kim, Nov 24): the whole play screen floats
+         on the world it belongs to — the section's own art, washed soft
+         so the meters and candies stay easy to read. */
+      .machine {
+        background: #fdf3e3 center 30% / cover no-repeat;
+        border: none;
+        border-radius: 28px;
+        padding: 16px 14px 20px;
+        position: relative;
+        overflow: hidden;
+        margin-top: 12px;
+      }
+      #gameSection.theme-1 { background-image: linear-gradient(rgba(255, 250, 238, 0.52), rgba(255, 250, 238, 0.52)), url("crush3d/map-bg-a.jpg"); }
+      #gameSection.theme-2 { background-image: linear-gradient(rgba(255, 250, 238, 0.52), rgba(255, 250, 238, 0.52)), url("crush3d/map-bg-b.jpg"); }
+      #gameSection.theme-3 { background-image: linear-gradient(rgba(255, 250, 238, 0.52), rgba(255, 250, 238, 0.52)), url("crush3d/map-bg-c.jpg"); }
+      #gameSection.theme-4 { background-image: linear-gradient(rgba(255, 250, 244, 0.60), rgba(255, 250, 244, 0.60)), url("crush3d/map-bg-d.jpg"); }
+      .marquee { text-align: center; padding: 2px 0 0; }
+      .marquee h1 {
+        font-family: "Fredoka", sans-serif; font-weight: 700;
+        font-size: clamp(1.9rem, 8.5vw, 2.7rem); letter-spacing: 0.04em;
+        margin: 2px 0 0; color: var(--gold);
+        text-shadow: 0 2px 0 var(--gold-deep), 0 4px 14px rgba(0,0,0,0.45);
+      }
+      .marquee p {
+        margin: 0 0 4px; color: var(--cream); font-weight: 800;
+        letter-spacing: 0.22em; text-transform: uppercase; font-size: 0.7rem; opacity: 0.9;
+      }
+      .display {
+        margin: 12px 2px 0; height: 56px; overflow: hidden;
+        background: rgba(255, 255, 255, 0.88); border: 2px solid rgba(255, 255, 255, 0.95);
+        border-radius: 14px; color: #17384a;
+        box-shadow: 0 3px 10px rgba(60, 30, 60, 0.18);
+        display: flex; align-items: center; justify-content: center; text-align: center;
+        font-family: "Fredoka", sans-serif; font-weight: 600;
+        font-size: clamp(1rem, 4.6vw, 1.25rem); padding: 8px 12px; line-height: 1.2;
+      }
+      .display.big { color: #a87408; }
+      .readouts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
+      .meter {
+        background: rgba(255, 255, 255, 0.88); border: 2px solid rgba(255, 255, 255, 0.95); border-radius: 12px;
+        padding: 6px 10px; text-align: center; color: #17384a; height: 64px; overflow: hidden;
+        box-shadow: 0 3px 10px rgba(60, 30, 60, 0.18);
+      }
+      .meter .lbl { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #a87408; }
+      .meter .val { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.45rem; line-height: 1.15; }
+      .meter .val small { font-size: 0.85rem; opacity: 0.8; }
+      .progress { height: 12px; background: rgba(255, 255, 255, 0.55); border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 999px; margin-top: 12px; overflow: hidden; }
+      .progress i { display: block; height: 100%; background: linear-gradient(90deg, #ffe08a, var(--gold)); width: 0%; transition: width 0.4s ease; }
+      /* ---------- Board ---------- */
+      .board-frame {
+        margin-top: 14px; position: relative;
+        background: linear-gradient(180deg, #0a2f42, #0d5a74);
+        border-radius: 18px; border: 3px solid var(--cabinet-edge);
+        box-shadow: inset 0 10px 22px rgba(0, 0, 0, 0.45);
+        padding: 8px;
+        overflow: hidden;
+      }
+      .board {
+        display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); aspect-ratio: 1 / 1; gap: 5px;
+        touch-action: none; -webkit-user-select: none; user-select: none;
+        -webkit-touch-callout: none; overscroll-behavior: none;
+      }
+      .tile {
+        aspect-ratio: 1; border-radius: 12px; border: none; cursor: pointer;
+        background: var(--cell-bg); font-size: clamp(1.3rem, 6.5vw, 2rem); line-height: 1;
+        display: grid; place-items: center; padding: 0;
+        box-shadow: inset 0 -3px 0 rgba(9, 50, 70, 0.14), 0 2px 4px rgba(0,0,0,0.25);
+        transition: transform 0.12s ease, background 0.12s ease;
+        position: relative;
+        touch-action: none; -webkit-user-select: none; user-select: none;
+        -webkit-touch-callout: none; will-change: transform;
+      }
+      .tile:active { transform: scale(0.94); }
+      .tile.selected { outline: 3px solid var(--gold); outline-offset: -2px; transform: scale(1.08); z-index: 2; }
+      .tile.pop { animation: tilePop 0.15s ease-in forwards; }
+      @keyframes tilePop { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.05); opacity: 0; } }
+      .tile.shake { animation: tileShake 0.3s ease; }
+      @keyframes tileShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+      .tile.drop-in { animation: tileFade 0.15s ease both; }
+      @keyframes tileFade { 0% { opacity: 0; } 100% { opacity: 1; } }
+      .tile.striped-row { background: repeating-linear-gradient(0deg, #fffdf6 0 6px, #ffe9a8 6px 12px); }
+      .tile.striped-col { background: repeating-linear-gradient(90deg, #fffdf6 0 6px, #ffe9a8 6px 12px); }
+      .tile.rainbow { background: conic-gradient(#ff6f61, #ffc93c, #3d9970, #2a9db8, #7a4fa3, #ff6f61); }
+      .tile.rainbow span { filter: drop-shadow(0 0 4px #fff); }
+      /* ---------- Controls & panels ---------- */
+      .controls { display: flex; gap: 10px; margin-top: 16px; }
+      .side-btn {
+        flex: 1; min-height: 52px; border-radius: 999px; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none;
+        border: 2px solid rgba(255, 248, 234, 0.55); background: rgba(255, 248, 234, 0.1);
+        color: var(--cream); font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 0.95rem;
+      }
+      .side-btn.gold { border-color: var(--gold-deep); background: linear-gradient(180deg, #ffe08a, var(--gold)); color: #4a2c00; }
+      .side-btn:disabled { opacity: 0.4; cursor: default; }
+      .panel {
+        background: var(--panel); border-radius: 20px; margin-top: 16px;
+        padding: 16px 18px 18px; box-shadow: 0 10px 26px rgba(4, 40, 56, 0.22);
+      }
+      .panel h2 { font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 1.25rem; margin: 0 0 10px; color: var(--panel-ink); }
+      .panel p { margin: 0 0 8px; line-height: 1.5; font-weight: 600; }
+      .panel p:last-child { margin-bottom: 0; }
+      .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+      .legend div { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.92rem; }
+      .legend .emoji { font-size: 1.4rem; }
+      .note { font-size: 0.92rem; opacity: 0.85; }
+      /* ---------- Overlay ---------- */
+      .overlay {
+        position: fixed; inset: 0; z-index: 20; display: none;
+        background: rgba(4, 28, 40, 0.72); padding: 18px; overflow-y: auto;
+      }
+      .overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+      .winner-card {
+        position: relative;
+        background: linear-gradient(180deg, #0d5a74, #0b3d52); color: var(--cream);
+        border: 3px solid var(--gold); border-radius: 24px; max-width: 430px; width: 100%;
+        padding: 22px 18px; text-align: center; box-shadow: var(--shadow); margin: auto 0;
+      }
+      .winner-card h2 { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.9rem; color: var(--gold); margin: 8px 0 2px; }
+      .winner-card .sub { letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.7rem; font-weight: 800; opacity: 0.85; margin: 0; }
+      .winner-card .wc-amount { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 2.2rem; color: #ffe9a8; margin: 8px 0 0; }
+      .winner-card .wc-detail { font-weight: 700; opacity: 0.9; margin: 2px 0 0; }
+      .winner-card .wc-shells { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.55rem; color: #ffe9a8; margin: 10px 0 0; animation: shellPop 0.55s ease 1.35s both; }
+      @keyframes shellPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.18); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+      .fx-shell { position: absolute; bottom: 70px; z-index: 3; pointer-events: none; animation: shellFloat 1.5s ease-out both; }
+      @keyframes shellFloat { 0% { transform: translateY(0) rotate(0deg); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-120px) rotate(40deg); opacity: 0; } }
+      .overlay-wrap { width: 100%; max-width: 430px; margin: auto 0; }
+      .close-row { max-width: 430px; width: 100%; margin: 12px auto 0; }
+      .close-btn {
+        width: 100%; min-height: 52px; border-radius: 14px; border: none; cursor: pointer;
+        background: var(--cream); color: var(--ink); font-family: "Fredoka", sans-serif;
+        font-weight: 600; font-size: 1.05rem;
+      }
+
+      /* ---------- 3D candy tiles ---------- */
+      :root { --crush-cell: #005883; }
+      .tile { background: var(--crush-cell); overflow: hidden; }
+      .tile img.candy-img {
+        width: 100%; height: 100%; object-fit: cover; display: block;
+        border-radius: 12px; position: relative; z-index: 1; pointer-events: none;
+      }
+      .tile.blocked { background: transparent; box-shadow: none; cursor: default; }
+      .tile.blocked:active { transform: none; }
+      .tile .jelly {
+        position: absolute; inset: 0; border-radius: 12px; z-index: 0; pointer-events: none;
+        background: linear-gradient(160deg, #c9efff, #55aae2);
+        box-shadow: inset 0 0 0 3px rgba(255,255,255,0.95), inset 0 4px 7px rgba(255,255,255,0.95), inset 0 -7px 11px rgba(18,90,150,0.5);
+      }
+      .tile .jelly.j2 {
+        background: linear-gradient(160deg, #93d6ff, #2b83c6);
+        box-shadow: inset 0 0 0 3px rgba(255,255,255,0.95), inset 0 0 0 7px rgba(20,85,145,0.6), inset 0 -7px 11px rgba(8,55,105,0.55);
+      }
+      .tile.onjelly img.candy-img {
+        width: 80%; height: 80%; border-radius: 9px; position: relative; z-index: 1;
+        box-shadow: 0 2px 8px rgba(0,35,60,0.55), 0 0 0 2px rgba(255,255,255,0.35);
+      }
+      .tile.striped-row::after, .tile.striped-col::after {
+        content: ""; position: absolute; inset: 0; border-radius: 12px; z-index: 3; pointer-events: none;
+      }
+      .tile.striped-row::after { background: repeating-linear-gradient(0deg, rgba(255,255,255,0) 0 6px, rgba(255,255,255,0.8) 6px 10px); }
+      .tile.striped-col::after { background: repeating-linear-gradient(90deg, rgba(255,255,255,0) 0 6px, rgba(255,255,255,0.8) 6px 10px); }
+      /* Big-boom FX: wrapped combos and the Sprinkle Bomb blow up TOWARD you */
+      .big-boom {
+        position: absolute; border-radius: 50%; pointer-events: none; z-index: 40;
+        transform: translate(-50%, -50%) scale(0.25);
+        background:
+          radial-gradient(circle, rgba(255,255,255,0.95) 0 12%, rgba(255,214,90,0.85) 26%, rgba(255,140,40,0.45) 48%, rgba(255,120,30,0) 68%),
+          repeating-conic-gradient(from 0deg, rgba(255,190,60,0.75) 0deg 9deg, rgba(255,190,60,0) 9deg 24deg);
+        -webkit-mask-image: radial-gradient(circle, #000 0 55%, transparent 70%);
+        mask-image: radial-gradient(circle, #000 0 55%, transparent 70%);
+        animation: boomZoom 0.6s cubic-bezier(0.17, 0.67, 0.35, 1) forwards;
+      }
+      @keyframes boomZoom {
+        0% { transform: translate(-50%, -50%) scale(0.25) rotate(0deg); opacity: 1; }
+        55% { opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(3.4) rotate(24deg); opacity: 0; }
+      }
+      .boom-flash {
+        position: absolute; inset: 0; pointer-events: none; z-index: 39; border-radius: 18px;
+        background: radial-gradient(circle at var(--fx, 50%) var(--fy, 50%), rgba(255,240,190,0.85), rgba(255,210,90,0.25) 55%, rgba(255,210,90,0) 78%);
+        animation: boomFlash 0.45s ease-out forwards;
+      }
+      @keyframes boomFlash { from { opacity: 1; } to { opacity: 0; } }
+      .board-shake { animation: boardShake 0.42s ease-in-out; }
+      @keyframes boardShake {
+        0%, 100% { transform: translate(0, 0); }
+        20% { transform: translate(-6px, 3px) rotate(-0.6deg); }
+        40% { transform: translate(6px, -3px) rotate(0.6deg); }
+        60% { transform: translate(-4px, -2px); }
+        80% { transform: translate(4px, 2px); }
+      }
+      .tile.wrapped::after {
+        content: ""; position: absolute; inset: 0; border-radius: 12px; z-index: 3; pointer-events: none;
+        background:
+          linear-gradient(90deg, rgba(255,215,90,0) 37%, rgba(255,215,90,0.92) 37%, rgba(255,215,90,0.92) 63%, rgba(255,215,90,0) 63%),
+          linear-gradient(0deg, rgba(255,215,90,0) 37%, rgba(255,215,90,0.92) 37%, rgba(255,215,90,0.92) 63%, rgba(255,215,90,0) 63%);
+      }
+      .tile.wrapped::before {
+        content: ""; position: absolute; left: 50%; top: 50%; width: 36%; height: 36%;
+        transform: translate(-50%, -50%); border-radius: 50%; z-index: 4; pointer-events: none;
+        background: radial-gradient(circle at 35% 32%, #ffefa8, #e89b0c);
+        box-shadow: 0 1px 5px rgba(0,0,0,0.45);
+      }
+      .tile.bomb img.candy-img { animation: bombPulse 0.85s ease-in-out infinite alternate; }
+      @keyframes bombPulse { from { filter: brightness(1); } to { filter: brightness(1.28); } }
+      .readouts.jelly-on { grid-template-columns: repeat(4, 1fr); }
+      .readouts.jelly-on .meter .val { font-size: 1.12rem; }
+      /* ---------- Polish pass: dimensional pieces, personalities, buttons ---------- */
+      .tile { box-shadow: inset 0 -3px 0 rgba(9, 50, 70, 0.14), 0 3px 7px rgba(0, 0, 0, 0.38); }
+      .tile img.candy-img { filter: saturate(1.22) contrast(1.06) brightness(1.04); }
+      @keyframes bombPulse {
+        from { filter: saturate(1.22) contrast(1.06) brightness(1.04); }
+        to { filter: saturate(1.07) contrast(1.05) brightness(1.3); }
+      }
+      /* One light source for every piece: same shine, same shade, same rim. */
+      .tile .gloss {
+        position: absolute; inset: 0; border-radius: 12px; z-index: 2; pointer-events: none;
+        background:
+          radial-gradient(115% 85% at 30% 16%, rgba(255,255,255,0.40), rgba(255,255,255,0.10) 44%, rgba(255,255,255,0) 62%),
+          linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 46%, rgba(4,30,44,0.16) 100%);
+        box-shadow: inset 0 2px 3px rgba(255,255,255,0.55), inset 0 -5px 9px rgba(6,40,60,0.30), inset 0 0 0 1px rgba(255,255,255,0.16);
+      }
+      /* Personalities: each piece idles its own way */
+      .tile.t0 img.candy-img { animation: shellRock 3.4s ease-in-out infinite alternate; }
+      @keyframes shellRock { from { transform: rotate(-2deg) scale(1.07); } to { transform: rotate(2deg) scale(1.07); } }
+      .tile.t1 img.candy-img { animation: starBreathe 2.8s ease-in-out infinite alternate; }
+      @keyframes starBreathe { from { transform: scale(1.01); } to { transform: scale(1.05); } }
+      .tile.t2 img.candy-img { animation: pearlShimmer 3.8s ease-in-out infinite alternate; }
+      @keyframes pearlShimmer {
+        from { filter: saturate(1.22) contrast(1.06) brightness(1.04); }
+        to { filter: saturate(1.26) contrast(1.06) brightness(1.2); }
+      }
+      .tile.t3 img.candy-img { animation: paletteBob 3.1s ease-in-out infinite alternate; }
+      @keyframes paletteBob { from { transform: translateY(0) scale(1.05); } to { transform: translateY(-2.5px) scale(1.05); } }
+      .tile.t4 img.candy-img { animation: anchorSway 4.2s ease-in-out infinite alternate; transform-origin: 50% 12%; }
+      @keyframes anchorSway { from { transform: rotate(1.8deg) scale(1.07); } to { transform: rotate(-1.8deg) scale(1.07); } }
+      .tile.t5 img.candy-img { animation: waveDrift 3.6s ease-in-out infinite alternate; }
+      @keyframes waveDrift { from { transform: translateX(-1.6px) scale(1.04); } to { transform: translateX(1.6px) scale(1.04); } }
+      /* Buttons: one family — pill, gold for go, turquoise for the rest */
+      .side-btn {
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        background: linear-gradient(180deg, #3ec3dc, #1283a3);
+        color: #ffffff; text-shadow: 0 1px 2px rgba(4, 40, 56, 0.45);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(4, 40, 56, 0.18);
+      }
+      .side-btn.gold {
+        border-color: var(--gold-deep);
+        background: linear-gradient(180deg, #ffe08a, var(--gold));
+        color: #4a2c00; text-shadow: none;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -3px 0 rgba(146, 90, 0, 0.25);
+      }
+      .side-btn:active { transform: translateY(1px); }
+      .close-btn {
+        border-radius: 999px; border: 2px solid var(--gold-deep);
+        background: linear-gradient(180deg, #ffe08a, var(--gold)); color: #4a2c00;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -3px 0 rgba(146, 90, 0, 0.25);
+      }
+      #overlayMapBtn {
+        border-color: rgba(255, 255, 255, 0.35);
+        background: linear-gradient(180deg, #3ec3dc, #1283a3); color: #ffffff;
+        text-shadow: 0 1px 2px rgba(4, 40, 56, 0.45);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(4, 40, 56, 0.18);
+      }
+      .close-btn:active, #overlayMapBtn:active { transform: translateY(1px); }
+      .sound-btn, .cove-back-btn {
+        background: linear-gradient(180deg, #3ec3dc, #1283a3); color: #ffffff;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        text-shadow: 0 1px 2px rgba(4, 40, 56, 0.45);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(4, 40, 56, 0.18);
+      }
+      .controls { gap: 8px; }
+      .controls .side-btn { font-size: 0.85rem; white-space: nowrap; padding: 0 4px; }
+      /* Jelly counters: compact when the jelly meter joins the row */
+      .readouts.jelly-on { gap: 6px; }
+      .readouts.jelly-on .meter { height: 50px; padding: 3px 4px; border-radius: 10px; }
+      .readouts.jelly-on .meter .lbl { font-size: 0.56rem; letter-spacing: 0.1em; }
+      .readouts.jelly-on .meter .val { font-size: 1.02rem; line-height: 1.1; }
+      /* ---------- Jelly counter life ---------- */
+      .jelly-ico {
+        display: inline-block; width: 13px; height: 13px; margin-right: 4px; vertical-align: -1px;
+        border-radius: 4px 5px 4px 6px;
+        background: linear-gradient(160deg, rgba(185,238,255,0.95), rgba(70,160,220,0.9));
+        box-shadow: inset 0 1.5px 2px rgba(255,255,255,0.95), inset 0 -2.5px 4px rgba(25,100,155,0.55), 0 1px 3px rgba(0,0,0,0.4);
+        animation: jellyWobble 2.2s ease-in-out infinite;
+      }
+      @keyframes jellyWobble {
+        0%, 100% { transform: scale(1, 1); } 30% { transform: scale(1.12, 0.88); }
+        55% { transform: scale(0.94, 1.08); } 75% { transform: scale(1.04, 0.96); }
+      }
+      #jellyMeter.melt-pop { animation: meltPop 0.55s ease; }
+      @keyframes meltPop {
+        0% { transform: scale(1); }
+        35% { transform: scale(1.13); box-shadow: 0 0 0 3px rgba(255,201,60,0.8), 0 0 20px rgba(255,201,60,0.6); }
+        100% { transform: scale(1); }
+      }
+      #jellyMeter.almost .val { color: var(--gold); animation: almostPulse 0.8s ease-in-out infinite alternate; }
+      @keyframes almostPulse { from { transform: scale(1); } to { transform: scale(1.09); } }
+      /* ---------- Win celebration: pearls, bubbles, starfish + Sprocket ---------- */
+      #celebrate { position: fixed; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; }
+      #celebrate .cp {
+        position: absolute; bottom: 10%; border-radius: 50%; object-fit: cover;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+        animation: burstFly var(--dur, 2s) cubic-bezier(.17,.67,.35,1) forwards; opacity: 0;
+      }
+      #celebrate .cp.bub {
+        background: radial-gradient(circle at 32% 30%, rgba(255,255,255,0.95), rgba(160,225,250,0.35) 55%, rgba(90,180,220,0.22));
+        border: 1.5px solid rgba(255,255,255,0.75); box-shadow: inset 0 0 6px rgba(255,255,255,0.6);
+      }
+      @keyframes burstFly {
+        0% { transform: translate(0, 0) rotate(0deg) scale(0.5); opacity: 0; }
+        12% { opacity: 1; }
+        72% { opacity: 1; }
+        100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1); opacity: 0; }
+      }
+      #celebrate .sprocket-pop {
+        position: absolute; left: 50%; bottom: 5%; transform: translateX(-50%);
+        display: flex; align-items: flex-end; gap: 8px; max-width: 92vw;
+        animation: sprocketIn 0.45s cubic-bezier(.2,1.6,.4,1) both, sprocketOut 0.4s ease 3s forwards;
+      }
+      #celebrate .sprocket-pop img { width: 78px; height: 78px; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.45)); }
+      #celebrate .sprocket-pop .bubble {
+        position: relative; background: var(--cream); color: var(--ink);
+        font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 1rem; line-height: 1.3;
+        border-radius: 16px; padding: 10px 14px; margin-bottom: 16px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      }
+      #celebrate .sprocket-pop .bubble::after {
+        content: ""; position: absolute; left: -7px; bottom: 14px; width: 14px; height: 14px;
+        background: var(--cream); transform: rotate(45deg); border-radius: 3px;
+      }
+      @keyframes sprocketIn {
+        from { transform: translate(-50%, 46px) scale(0.7); opacity: 0; }
+        to { transform: translate(-50%, 0) scale(1); opacity: 1; }
+      }
+      @keyframes sprocketOut { to { transform: translate(-50%, 34px); opacity: 0; } }
+      @media (prefers-reduced-motion: reduce) {
+        .jelly-ico, #jellyMeter.melt-pop, #jellyMeter.almost .val { animation: none; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .tile.t0 img.candy-img, .tile.t1 img.candy-img, .tile.t2 img.candy-img,
+        .tile.t3 img.candy-img, .tile.t4 img.candy-img, .tile.t5 img.candy-img { animation: none; }
+      }
+
+      /* ---------- Praise, confetti, Shell Crush banner ---------- */
+      .praise { position: absolute; inset: 0; display: none; place-items: center; pointer-events: none; z-index: 6; }
+      .praise-inner { display: flex; align-items: center; gap: 10px; }
+      .praise.show .praise-inner { animation: praisePop 1.25s ease forwards; }
+      .praise img { width: 66px; height: 66px; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.45)); }
+      .praise .word {
+        font-family: "Fredoka", sans-serif; font-weight: 700;
+        font-size: clamp(2rem, 9vw, 3.1rem); color: var(--gold);
+        text-shadow: 0 3px 0 var(--gold-deep), 0 6px 18px rgba(0,0,0,0.55);
+      }
+      @keyframes praisePop {
+        0% { transform: scale(0.4) rotate(-6deg); opacity: 0; }
+        18% { transform: scale(1.16) rotate(2deg); opacity: 1; }
+        30% { transform: scale(1); }
+        78% { opacity: 1; }
+        100% { transform: scale(1.05) translateY(-10px); opacity: 0; }
+      }
+      .confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 7; }
+      .confetti i { position: absolute; top: -14px; width: 9px; height: 14px; border-radius: 2px; animation-name: confettiFall; animation-timing-function: linear; animation-fill-mode: forwards; }
+      @keyframes confettiFall { to { transform: translateY(580px) rotate(560deg); opacity: 0.9; } }
+      .crush-banner { position: absolute; inset: 0; display: none; place-items: center; z-index: 8; pointer-events: none; }
+      .crush-banner span {
+        font-family: "Fredoka", sans-serif; font-weight: 700; font-size: clamp(1.5rem, 7.5vw, 2.3rem);
+        color: var(--gold); background: rgba(4, 28, 40, 0.62); border: 3px solid var(--gold);
+        border-radius: 999px; padding: 10px 24px; text-shadow: 0 2px 0 var(--gold-deep);
+        animation: bannerPulse 0.45s ease-in-out infinite alternate;
+      }
+      @keyframes bannerPulse { from { transform: scale(1); } to { transform: scale(1.07); } }
+      /* ---------- Boardwalk path map ---------- */
+      .map-wrap {
+        margin-top: 16px; border-radius: 20px; padding: 16px 12px 10px;
+        background: linear-gradient(180deg, #ffedb8 0%, #ffd98f 42%, #a8e2f2 43%, #2a9db8 100%);
+        box-shadow: 0 10px 26px rgba(4, 40, 56, 0.22); border: none;
+      }
+      .map-wrap h2 { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.45rem; margin: 0 0 2px; color: #4a2c00; text-align: center; text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+      .map-wrap .map-sub { text-align: center; font-weight: 800; color: #17384a; margin: 0 0 6px; font-size: 0.92rem; }
+      .map-area { position: relative; }
+      .map-path { position: absolute; left: 0; top: 0; z-index: 1; }
+      .map-node {
+        position: absolute; width: 52px; height: 52px; margin: -26px 0 0 -26px; z-index: 2;
+        border-radius: 50%; border: 3px solid #ffffff; cursor: pointer; padding: 0;
+        background: radial-gradient(circle at 32% 28%, #7fe3ff, #2a9db8 58%, #0d5a74);
+        color: #ffffff; font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.05rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.35), inset 0 -4px 8px rgba(0,0,0,0.28), inset 0 3px 5px rgba(255,255,255,0.5);
+      }
+      .map-node.done { background: radial-gradient(circle at 32% 28%, #ffe98a, #ffc93c 58%, #e89b0c); color: #4a2c00; }
+      .map-node.locked { background: radial-gradient(circle at 32% 28%, #c3d2d9, #7d939e 58%, #546e7a); cursor: default; font-size: 0.95rem; }
+      .map-node.current { border-color: var(--gold); animation: nodePulse 0.9s ease-in-out infinite alternate; }
+      @keyframes nodePulse { from { transform: scale(1); } to { transform: scale(1.15); } }
+      .map-node .stars {
+        position: absolute; left: 50%; transform: translateX(-50%); bottom: -14px;
+        font-size: 0.6rem; letter-spacing: 1px; color: #ffb300; white-space: nowrap;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.65);
+      }
+      .map-mascot { position: absolute; width: 56px; height: 56px; object-fit: contain; z-index: 3; pointer-events: none; transform: translate(-38%, -92%); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+      /* ---------- Candy Land beach map skin (Option A art; B banked as map-bg-b.jpg) ---------- */
+      .map-wrap {
+        position: relative; overflow: hidden;
+        background: linear-gradient(180deg, #ffe9f4 0%, #ffd9ec 30%, #a8e2f2 100%);
+      }
+      .map-wrap::before {
+        content: ""; position: absolute; left: 0; right: 0; top: 0; height: 15px; z-index: 1;
+        background: repeating-linear-gradient(90deg, #ff8fb8 0 20px, #fff8ea 20px 40px);
+        box-shadow: 0 2px 5px rgba(90, 30, 60, 0.25);
+      }
+      .map-wrap h2 { position: relative; z-index: 2; margin-top: 10px; }
+      .map-wrap .map-sub { position: relative; z-index: 2; }
+      .map-area {
+        border-radius: 16px; overflow: hidden;
+        background: #ffd9ec url("crush3d/map-bg-a.jpg") center 38% / cover no-repeat;
+        box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.65), inset 0 6px 18px rgba(90, 30, 60, 0.18);
+      }
+      .map-wrap.board2 { margin-top: 20px; }
+      .map-area.board2 {
+        background: #f7e3c8 url("crush3d/map-bg-b.jpg") center 30% / cover no-repeat;
+      }
+      .map-wrap.board3 { margin-top: 20px; }
+      .map-area.board3 {
+        background: #bfeef5 url("crush3d/map-bg-c.jpg") center 30% / cover no-repeat;
+      }
+      .map-wrap.board4 { margin-top: 20px; }
+      .map-area.board4 {
+        background: #ffe3f4 url("crush3d/map-bg-d.jpg") center 30% / cover no-repeat;
+      }
+      .map-node {
+        border: 3px solid #ffffff;
+        box-shadow: 0 5px 12px rgba(60, 20, 50, 0.4), inset 0 -4px 8px rgba(0,0,0,0.22), inset 0 3px 5px rgba(255,255,255,0.55);
+        text-shadow: 0 1px 2px rgba(4, 40, 56, 0.35);
+      }
+      .map-node.done {
+        background: radial-gradient(circle at 32% 28%, #fff3b0, #ffc93c 55%, #e89b0c);
+        color: #4a2c00; text-shadow: 0 1px 0 rgba(255,255,255,0.55);
+      }
+      .map-node.locked {
+        background: radial-gradient(circle at 32% 28%, #eaf6fb, #a9c6d2 58%, #7d9dab);
+        color: #ffffff;
+      }
+      .map-node.current {
+        background:
+          radial-gradient(circle at 50% 50%, #fff8ea 0 50%, rgba(255,248,234,0) 54%),
+          repeating-conic-gradient(from -10deg, #ff5f8f 0deg 26deg, #ffffff 26deg 52deg);
+        color: #17384a; border-color: #ffffff; text-shadow: none;
+      }
+
+      .map-crab { position: absolute; width: 48px; height: 36px; object-fit: cover; border-radius: 50%; border: 2px solid #ffffff; z-index: 3; pointer-events: none; transform: translate(-62%, -118%); box-shadow: 0 3px 8px rgba(0,0,0,0.35); }
+      /* ---------- Winner card extras ---------- */
+      .wc-mascot { width: 96px; height: 96px; object-fit: contain; display: block; margin: 0 auto; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
+      .wc-stars { font-size: 2rem; letter-spacing: 8px; margin-top: 4px; min-height: 2.4rem; }
+      .wc-stars .star { display: inline-block; opacity: 0.15; filter: grayscale(1); }
+      .wc-stars .star.lit { opacity: 1; filter: none; animation: starPop 0.35s ease; }
+      @keyframes starPop { 0% { transform: scale(0.3) rotate(-30deg); } 60% { transform: scale(1.4) rotate(8deg); } 100% { transform: scale(1); } }
+      .winner-card .wc-host { font-weight: 800; opacity: 0.95; margin: 10px 0 0; }
+
+      /* ---------- Juice pass (Nov 24): floating scores, bursts, bubblier praise ---------- */
+      /* No cabinet (Kim, Nov 24: "I just don't like them") — the board
+         floats on the world it belongs to: each board's own map art
+         glows around it, changing with the section you're playing. */
+      .board-frame {
+        border: none;
+        box-shadow: none;
+        padding: 12px;
+        background: #ffe9f6 center 30% / cover no-repeat;
+      }
+      .board-frame.theme-1 { background-image: linear-gradient(rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.20)), url("crush3d/map-bg-a.jpg"); }
+      .board-frame.theme-2 { background-image: linear-gradient(rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.20)), url("crush3d/map-bg-b.jpg"); }
+      .board-frame.theme-3 { background-image: linear-gradient(rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.20)), url("crush3d/map-bg-c.jpg"); }
+      .board-frame.theme-4 { background-image: linear-gradient(rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.38)), url("crush3d/map-bg-d.jpg"); }
+      .board-frame.bounce { animation: frameBounce 0.5s ease; }
+      @keyframes frameBounce {
+        0% { transform: scale(1); }
+        30% { transform: scale(1.018) rotate(0.4deg); }
+        55% { transform: scale(0.995); }
+        100% { transform: scale(1); }
+      }
+      .side-btn { background: linear-gradient(180deg, #7fd4e6, #4aa8c0); }
+      .tile.pop { animation: tilePop 0.22s ease-in forwards; }
+      @keyframes tilePop {
+        0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+        35% { transform: scale(1.3); opacity: 1; filter: brightness(1.9); }
+        100% { transform: scale(0.45); opacity: 0; filter: brightness(1.4); }
+      }
+      .tile.drop-in { animation: tileDrop 0.32s cubic-bezier(0.28, 0.84, 0.42, 1) both; }
+      @keyframes tileDrop {
+        0% { transform: translateY(-36%) scale(1.05); opacity: 0.25; }
+        55% { transform: translateY(3%) scale(0.95, 1.05); opacity: 1; }
+        76% { transform: translateY(-2%) scale(1.04, 0.96); }
+        100% { transform: translateY(0) scale(1); opacity: 1; }
+      }
+      .praise img { width: 86px; height: 86px; }
+      .praise .word {
+        font-size: clamp(2.4rem, 11.5vw, 4.2rem);
+        background: linear-gradient(180deg, #fff6c8 5%, #ffd93c 48%, #ff9f2e 95%);
+        -webkit-background-clip: text; background-clip: text;
+        color: transparent; -webkit-text-fill-color: transparent; text-shadow: none;
+        filter: drop-shadow(0 3px 0 #a85e00) drop-shadow(0 9px 18px rgba(0, 0, 0, 0.5));
+      }
+      @keyframes praisePop {
+        0% { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+        16% { transform: scale(1.32) rotate(3deg); opacity: 1; }
+        28% { transform: scale(0.94) rotate(-1deg); }
+        40% { transform: scale(1.07) rotate(0deg); }
+        55% { transform: scale(1); }
+        80% { opacity: 1; }
+        100% { transform: scale(1.09) translateY(-14px); opacity: 0; }
+      }
+      .fxlayer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 5; }
+      .fx-score {
+        position: absolute; transform: translate(-50%, -50%); white-space: nowrap;
+        font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 1.3rem; color: #fff;
+        text-shadow: 0 2px 0 #b96a00, 0 4px 10px rgba(0, 0, 0, 0.5);
+        animation: fxRise 0.85s ease-out forwards;
+      }
+      .fx-score.big { font-size: 2.1rem; color: #ffd93c; text-shadow: 0 2px 0 #b96a00, 0 0 18px rgba(255, 201, 60, 0.8), 0 5px 12px rgba(0, 0, 0, 0.5); }
+      @keyframes fxRise {
+        0% { opacity: 0; transform: translate(-50%, -30%) scale(0.5) rotate(var(--tilt, 0deg)); }
+        16% { opacity: 1; transform: translate(-50%, -62%) scale(1.18) rotate(var(--tilt, 0deg)); }
+        30% { transform: translate(-50%, -70%) scale(1) rotate(var(--tilt, 0deg)); }
+        100% { opacity: 0; transform: translate(-50%, -200%) scale(1) rotate(var(--tilt, 0deg)); }
+      }
+      .fx-p { position: absolute; width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 6px rgba(255, 255, 255, 0.65); animation: fxFly 0.6s ease-out forwards; }
+      @keyframes fxFly { to { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.2); opacity: 0; } }
+      @media (prefers-reduced-motion: reduce) {
+        .tile.pop, .tile.shake, .tile.drop-in, .tile.bomb img.candy-img, .map-node.current, .crush-banner span, .fx-score, .fx-p, .board-frame.bounce { animation: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="top-row">
+        <a class="cove-back-btn" href="../index.html">← Back to Cove</a>
+        <button class="sound-btn" id="soundBtn" type="button" aria-pressed="false" aria-label="Toggle sound">🔊 Sound on</button>
+      </div>
+      <section class="machine" id="gameSection" aria-label="Cove Crush game">
+        <div class="marquee">
+          <h1>COVE CRUSH</h1>
+          <p>Creator's Cove · Match 3</p>
+        </div>
+
+        <div class="display" id="display" role="status" aria-live="polite">Swap tiles to match 3 or more!</div>
+
+        <div class="readouts" id="readouts">
+          <div class="meter">
+            <div class="lbl">Level</div>
+            <div class="val" id="levelVal">1</div>
+          </div>
+          <div class="meter">
+            <div class="lbl">Score</div>
+            <div class="val"><span id="scoreVal">0</span> <small>/ <span id="targetVal">500</span></small></div>
+          </div>
+          <div class="meter">
+            <div class="lbl">Moves</div>
+            <div class="val" id="movesVal">20</div>
+          </div>
+          <div class="meter" id="jellyMeter" style="display:none">
+            <div class="lbl">Jelly</div>
+            <div class="val"><span class="jelly-ico" aria-hidden="true"></span><span id="jellyVal">0</span> <small>left</small></div>
+          </div>
+        </div>
+        <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+
+        <div class="board-frame" id="boardFrame">
+          <div class="board" id="board" role="grid" aria-label="Cove Crush board, 8 by 8"></div>
+          <div class="fxlayer" id="fxLayer"></div>
+          <div class="praise" id="praise"><div class="praise-inner"><img src="crush3d/sprocket.png" alt="Sprocket" /><span class="word" id="praiseWord">Sweet!</span></div></div>
+          <div class="confetti" id="confetti"></div>
+          <div class="crush-banner" id="crushBanner"><span>🐚 SHELL CRUSH!</span></div>
+        </div>
+
+        <div class="controls">
+          <button class="side-btn" id="shuffleBtn" type="button">🔀 Shuffle</button>
+          <button class="side-btn" id="hintBtn" type="button">💡 Hint</button>
+          <button class="side-btn" id="mapBtn" type="button">🗺️ Map</button>
+          <button class="side-btn gold" id="newGameBtn" type="button">↻ New Game</button>
+        </div>
+      </section>
+
+      <section class="map-wrap" id="mapSection" style="display:none" aria-label="Level map">
+        <h2>🗺️ The Boardwalk Path</h2>
+        <p class="map-sub">Sprocket walks the path with you — tap a level to play it!</p>
+        <div class="map-area" id="mapArea"></div>
+      </section>
+
+      <section class="map-wrap board2" id="mapSection2" style="display:none" aria-label="Board 2 level map">
+        <h2>🍬 Board 2 · The Gingerbread Boardwalk</h2>
+        <p class="map-sub">You finished the Boardwalk Path — the trail climbs into gingerbread country. Same Sprocket, steeper hills!</p>
+        <div class="map-area board2" id="mapArea2"></div>
+      </section>
+
+      <section class="map-wrap board3" id="mapSection3" style="display:none" aria-label="Board 3 level map">
+        <h2>🏖️ Board 3 · The Beach</h2>
+        <p class="map-sub">The boardwalk ends at the sand! The trail runs up the shore to the lighthouse — and every stretch you clear opens up more of your own Beach in Village 2.</p>
+        <div class="map-area board3" id="mapArea3"></div>
+      </section>
+
+      <section class="map-wrap board4" id="mapSection4" style="display:none" aria-label="Board 4 level map">
+        <h2>🌈 Board 4 · Rainbow Land</h2>
+        <p class="map-sub">Past the beach, the path turns to sparkles — welcome to unicorn country! The trail winds up the rainbow meadow to the Rainbow Castle.</p>
+        <div class="map-area board4" id="mapArea4"></div>
+      </section>
+
+      <section class="panel" aria-label="Your session">
+        <h2>Your session</h2>
+        <p>Best score this visit: <strong id="bestVal">0</strong> &nbsp;·&nbsp; Levels cleared: <strong id="levelsVal">0</strong> &nbsp;·&nbsp; Biggest chain: <strong id="chainVal">0</strong> &nbsp;·&nbsp; Trophy shells: <strong id="shellsVal">🐚 0</strong></p>
+      </section>
+
+      <section class="panel" aria-label="How to play">
+        <h2>How to play</h2>
+        <p>Tap a tile, then tap a tile next to it to swap them. If the swap makes a match of <strong>3 or more of the same tile in a row</strong>, they pop, the tiles above fall down, and new tiles drop in — chains can keep matching all on their own!</p>
+        <p><strong>Match 4</strong> in a row and you get a striped tile — match it and it clears its whole row or column. <strong>Smash two striped tiles together</strong> — any two, whatever they are — and both fire at once, each clearing the line it faces. Make an <strong>L or T shape</strong> and you get a <strong>wrapped candy</strong> — match it and it blows up the 3×3 around it, then blows up again! <strong>Match 5</strong> and you get a <strong>Sprinkle Bomb</strong> — swap it with any tile and it zaps every tile of that type at once. <strong>Smash two Sprinkle Bombs together</strong> and the whole board goes — every last candy.</p>
+        <p><strong>Wrapped candies</strong> (from L and T matches) pop big: smash one into a <strong>striped tile</strong> and the stripe goes giant — three rows and three columns at once. Smash <strong>two wrapped together</strong> for a double mega-blast.</p>
+        <p>Some levels ask you to <strong>clear the jelly</strong> instead of chasing points — match candies sitting on the blue jelly squares to melt it away before your moves run out. Win with moves to spare and Sprocket spends them on a <strong>Shell Crush</strong> bonus round of free blasts!</p>
+        <p>🎵 The <strong>Cove Crush tune</strong> plays while you play — and it dips down on its own whenever Sprocket talks, so you never miss a word of his bragging.</p>
+        <p>🏆 <strong>Crush Rewards:</strong> clearing levels earns candy decorations for your cottage or shop lot in <strong>Village 2</strong> — a Lollipop Tree at level 3, a Candy Awning at 12, all the way up to the Candy Cottage at 18. Find them at the top of Build &amp; Decorate on your lot. They're free — you earned them.</p>
+        <p>🐚 <strong>Trophy shells:</strong> every star you earn on a level pays a trophy shell — barely pass for 1, crush it for 3. They are a collection to fill (216 in all), just for the glory — they never touch your farm shells.</p>
+        <p>🍬 <strong>Board 2:</strong> finish all 18 levels and the map keeps going — 18 more levels up the <strong>Gingerbread Boardwalk</strong>, with thicker jelly and steeper targets.</p>
+        <p>Reach the target before you run out of moves to clear the level. Follow the <strong>Boardwalk Path</strong> on the map to replay any level you have unlocked. If there are no moves left, tap <strong>Shuffle</strong> to mix the board up.</p>
+        <div class="legend">
+          <div><span class="emoji">🐚</span> Shell</div>
+          <div><span class="emoji">⭐</span> Starfish</div>
+          <div><span class="emoji">⚪</span> Pearl</div>
+          <div><span class="emoji">🎨</span> Paint Palette</div>
+          <div><span class="emoji">⚓</span> Anchor</div>
+          <div><span class="emoji">🌊</span> Cove Wave</div>
+        </div>
+        <p class="note" style="margin-top:10px;">Just for fun — your best score lives right here on this device.</p>
+      </section>
+    </main>
+
+    <div id="celebrate" aria-hidden="true"></div>
+
+    <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Level result">
+      <div class="overlay-wrap">
+        <div class="winner-card" id="winnerCard"></div>
+        <div class="close-row" style="display:flex; gap:10px;"><button class="close-btn" id="overlayBtn" type="button">Next level</button><button class="close-btn" id="overlayMapBtn" type="button" style="flex:0 0 38%;">🗺️ Map</button></div>
+      </div>
+    </div>
+
+    <script>
+      "use strict";
+      /* ================= Cove Crush — match 3 =================
+         8x8 board, 6 Cove tile types. Swap adjacent tiles; only
+         swaps that make a match of 3+ (or use a rainbow) go through.
+         Match 4 = striped tile (clears a row or column when matched).
+         Match 5 = rainbow Cove Wave tile (clears all of one type). */
+
+      var ROWS = 8, COLS = 8;
+      var TYPES = [
+        { emoji: "🐚", name: "Shell" },
+        { emoji: "⭐", name: "Starfish" },
+        { emoji: "⚪", name: "Pearl" },
+        { emoji: "🎨", name: "Paint Palette" },
+        { emoji: "⚓", name: "Anchor" },
+        { emoji: "🌊", name: "Cove Wave" }
+      ];
+      var RAINBOW_EMOJI = "🌈";
+
+      /* ---- Pure board logic (no DOM) ---- */
+      var CANDY_IMG = ["crush3d/candy-shell.jpg", "crush3d/candy-starfish.jpg", "crush3d/candy-pearl.jpg", "crush3d/candy-palette.jpg", "crush3d/candy-anchor.jpg", "crush3d/candy-wave.jpg"];
+      var BOMB_IMG = "crush3d/candy-bomb.jpg";
+      var RAINBOW_IMG = "crush3d/candy-rainbow.jpg";
+
+      function newTile(type) { return { type: type, special: null }; }
+      function blockedTile() { return { type: -1, special: null, blocked: true }; }
+      function randType() { return Math.floor(Math.random() * TYPES.length); }
+
+      /* Shaped-level board masks: sets of "r,c" cells that hold no candy. */
+      function maskSet(list) { var s = {}; for (var i = 0; i < list.length; i++) s[list[i]] = true; return s; }
+      var MASKS = {
+        cross: maskSet(["0,0","0,1","0,6","0,7","1,0","1,1","1,6","1,7","6,0","6,1","6,6","6,7","7,0","7,1","7,6","7,7"]),
+        diamond: maskSet(["0,0","0,1","0,2","0,5","0,6","0,7","1,0","1,1","1,6","1,7","2,0","2,7","5,0","5,7","6,0","6,1","6,6","6,7","7,0","7,1","7,2","7,5","7,6","7,7"]),
+        heart: maskSet(["0,0","0,7","4,0","4,7","5,0","5,1","5,6","5,7","6,0","6,1","6,2","6,5","6,6","6,7","7,0","7,1","7,2","7,5","7,6","7,7"])
+      };
+
+      function makeBoard(mask) {
+        var b = [];
+        for (var r = 0; r < ROWS; r++) {
+          b.push([]);
+          for (var c = 0; c < COLS; c++) {
+            if (mask && mask[key(r, c)]) { b[r].push(blockedTile()); continue; }
+            var t;
+            do {
+              t = randType();
+            } while (
+              (c >= 2 && b[r][c - 1].type === t && b[r][c - 2].type === t) ||
+              (r >= 2 && b[r - 1][c].type === t && b[r - 2][c].type === t)
+            );
+            b[r].push(newTile(t));
+          }
+        }
+        return b;
+      }
+
+      function key(r, c) { return r + "," + c; }
+
+      /* Find all runs of 3+ in a row or column.
+         Returns { cells: Set of keys, runs: [{cells:[{r,c}], dir:'h'|'v', type}] } */
+      function findMatches(b) {
+        var cells = {};
+        var runs = [];
+        var r, c, start, len, type;
+        for (r = 0; r < ROWS; r++) {
+          c = 0;
+          while (c < COLS) {
+            type = b[r][c] ? b[r][c].type : -1;
+            if (type < 0 || b[r][c].special === "rainbow" || b[r][c].special === "bomb") { c++; continue; }
+            start = c; len = 0;
+            while (c < COLS && b[r][c] && b[r][c].type === type && b[r][c].special !== "rainbow" && b[r][c].special !== "bomb") { c++; len++; }
+            if (len >= 3) {
+              var run = { cells: [], dir: "h", type: type };
+              for (var i = start; i < start + len; i++) { run.cells.push({ r: r, c: i }); cells[key(r, i)] = true; }
+              runs.push(run);
+            }
+          }
+        }
+        for (c = 0; c < COLS; c++) {
+          r = 0;
+          while (r < ROWS) {
+            type = b[r][c] ? b[r][c].type : -1;
+            if (type < 0 || b[r][c].special === "rainbow" || b[r][c].special === "bomb") { r++; continue; }
+            start = r; len = 0;
+            while (r < ROWS && b[r][c] && b[r][c].type === type && b[r][c].special !== "rainbow" && b[r][c].special !== "bomb") { r++; len++; }
+            if (len >= 3) {
+              var run2 = { cells: [], dir: "v", type: type };
+              for (var j = start; j < start + len; j++) { run2.cells.push({ r: j, c: c }); cells[key(j, c)] = true; }
+              runs.push(run2);
+            }
+          }
+        }
+        return { cells: cells, runs: runs };
+      }
+
+      function hasMatch(b) { return findMatches(b).runs.length > 0; }
+
+      /* Expand a matched set with special-tile effects.
+         Striped tiles clear their whole row/column; wrapped tiles blow
+         up the 3x3 around them (blocked cells are never added). */
+      function expandWithSpecials(b, cells) {
+        var out = {};
+        var k;
+        for (k in cells) out[k] = true;
+        var changed = true;
+        while (changed) {
+          changed = false;
+          for (var r = 0; r < ROWS; r++) {
+            for (var c = 0; c < COLS; c++) {
+              if (!out[key(r, c)] || !b[r][c]) continue;
+              var sp = b[r][c].special;
+              if (sp === "row") {
+                for (var cc = 0; cc < COLS; cc++) { if (!out[key(r, cc)]) { out[key(r, cc)] = true; changed = true; } }
+              } else if (sp === "col") {
+                for (var rr = 0; rr < ROWS; rr++) { if (!out[key(rr, c)]) { out[key(rr, c)] = true; changed = true; } }
+              } else if (sp === "wrapped") {
+                for (var dr = -1; dr <= 1; dr++) {
+                  for (var dc = -1; dc <= 1; dc++) {
+                    var wr = r + dr, wc = c + dc;
+                    if (wr >= 0 && wr < ROWS && wc >= 0 && wc < COLS && b[wr][wc] && !b[wr][wc].blocked && !out[key(wr, wc)]) {
+                      out[key(wr, wc)] = true; changed = true;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        return out;
+      }
+
+      function swapCells(b, r1, c1, r2, c2) {
+        var tmp = b[r1][c1]; b[r1][c1] = b[r2][c2]; b[r2][c2] = tmp;
+      }
+
+      function isAdjacent(r1, c1, r2, c2) {
+        return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
+      }
+
+      /* Does swapping (r1,c1) with (r2,c2) create a match, or use a bomb/rainbow? */
+      function swapCreatesMatch(b, r1, c1, r2, c2) {
+        if (!b[r1][c1] || !b[r2][c2] || b[r1][c1].blocked || b[r2][c2].blocked) return false;
+        if (b[r1][c1].special === "rainbow" || b[r2][c2].special === "rainbow") return true;
+        if (b[r1][c1].special === "bomb" || b[r2][c2].special === "bomb") return true;
+        var sa = b[r1][c1].special, sb = b[r2][c2].special;
+        if ((sa === "row" || sa === "col") && (sb === "row" || sb === "col")) return true;
+        if (sa === "wrapped" && (sb === "wrapped" || sb === "row" || sb === "col")) return true;
+        if (sb === "wrapped" && (sa === "row" || sa === "col")) return true;
+        swapCells(b, r1, c1, r2, c2);
+        var ok = hasMatch(b);
+        swapCells(b, r1, c1, r2, c2);
+        return ok;
+      }
+
+      function hasPossibleMove(b) {
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            if (c + 1 < COLS && swapCreatesMatch(b, r, c, r, c + 1)) return true;
+            if (r + 1 < ROWS && swapCreatesMatch(b, r, c, r + 1, c)) return true;
+          }
+        }
+        return false;
+      }
+
+      function findHint(b) {
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            if (c + 1 < COLS && swapCreatesMatch(b, r, c, r, c + 1)) return { r1: r, c1: c, r2: r, c2: c + 1 };
+            if (r + 1 < ROWS && swapCreatesMatch(b, r, c, r + 1, c)) return { r1: r, c1: c, r2: r + 1, c2: c };
+          }
+        }
+        return null;
+      }
+
+      /* Gravity that respects shaped boards: each column is compacted
+         within the segments between blocked cells. */
+      function applyGravity(b) {
+        for (var c = 0; c < COLS; c++) {
+          var r = ROWS - 1;
+          while (r >= 0) {
+            if (b[r][c] && b[r][c].blocked) { r--; continue; }
+            var segBottom = r;
+            var seg = [];
+            while (r >= 0 && !(b[r][c] && b[r][c].blocked)) {
+              if (b[r][c]) seg.push(b[r][c]);
+              r--;
+            }
+            var w = segBottom;
+            for (var i = 0; i < seg.length; i++) { b[w][c] = seg[i]; w--; }
+            while (w > r) { b[w][c] = null; w--; }
+          }
+        }
+      }
+
+      function refillBoard(b) {
+        var filled = {};
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            if (!b[r][c]) { b[r][c] = newTile(randType()); filled[key(r, c)] = true; }
+          }
+        }
+        return filled;
+      }
+
+      function shuffleBoard(b) {
+        var flat = [];
+        for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) if (b[r][c] && !b[r][c].blocked) flat.push(b[r][c]);
+        function deal() {
+          var k = 0;
+          for (var rr = 0; rr < ROWS; rr++) for (var cc = 0; cc < COLS; cc++) if (!b[rr][cc].blocked) b[rr][cc] = flat[k++];
+        }
+        for (var tries = 0; tries < 60; tries++) {
+          for (var i = flat.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var tmp = flat[i]; flat[i] = flat[j]; flat[j] = tmp;
+          }
+          deal();
+          if (!hasMatch(b) && hasPossibleMove(b)) break;
+        }
+      }
+
+      /* ================= Sound — Web Audio only, no audio files =================
+         All music and effects are synthesized in the browser, so there is
+         nothing to download and nothing copyrighted. The AudioContext is
+         created lazily on the first user tap (browsers block autoplay
+         before any interaction) and resumed on later taps if suspended. */
+      var audioCtx = null, musicGain = null, sfxGain = null;
+      var soundOn = true;
+      var musicTimer = null, musicStep = 0, nextNoteTime = 0;
+
+      function ac() {
+        if (typeof window === "undefined") return null;
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        if (!audioCtx) {
+          audioCtx = new AC();
+          musicGain = audioCtx.createGain(); musicGain.gain.value = 0.5; musicGain.connect(audioCtx.destination);
+          sfxGain = audioCtx.createGain(); sfxGain.gain.value = 0.9; sfxGain.connect(audioCtx.destination);
+        }
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        return audioCtx;
+      }
+
+      /* One synthesized note, scheduled at an exact time. */
+      function playNoteAt(freq, t0, dur, type, vol, dest) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = type; o.frequency.setValueAtTime(freq, t0);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        o.connect(g); g.connect(dest); o.start(t0); o.stop(t0 + dur + 0.05);
+      }
+
+      /* Quick one-shot tone, right now (plus an optional delay). */
+      function playTone(freq, dur, type, vol, delay) {
+        if (!soundOn) return;
+        var ctx = ac();
+        if (!ctx) return;
+        playNoteAt(freq, ctx.currentTime + (delay || 0), dur, type || "sine", vol || 0.2, sfxGain);
+      }
+
+      /* ---- Sound effects ---- */
+      function sfxSwap() {
+        if (!soundOn) return;
+        var ctx = ac();
+        if (!ctx) return;
+        var t0 = ctx.currentTime;
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sine";
+        o.frequency.setValueAtTime(320, t0);
+        o.frequency.exponentialRampToValueAtTime(620, t0 + 0.09);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.1);
+        o.connect(g); g.connect(sfxGain); o.start(t0); o.stop(t0 + 0.12);
+      }
+      function sfxPop(chain) {
+        /* Bright pop/chime — pitch climbs with the chain, like Candy Crush. */
+        var base = 523.25 * Math.pow(2, (Math.min(chain || 1, 8) - 1) * 2 / 12);
+        playTone(base, 0.18, "triangle", 0.25);
+        playTone(base * 1.5, 0.22, "sine", 0.18, 0.05);
+      }
+      function sfxInvalid() {
+        playTone(140, 0.18, "triangle", 0.22);
+        playTone(90, 0.2, "sine", 0.18, 0.02);
+      }
+      function sfxClick() { playTone(880, 0.06, "sine", 0.12); }
+      function sfxWin() {
+        var n = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+        for (var i = 0; i < n.length; i++) playTone(n[i], 0.28, "triangle", 0.22, i * 0.11);
+      }
+      function sfxFail() {
+        var n = [392, 329.63, 261.63];
+        for (var i = 0; i < n.length; i++) playTone(n[i], 0.3, "sine", 0.18, i * 0.16);
+      }
+
+      /* ---- Juicy sound pass: bigger plays sound bigger ---- */
+      function sfxArpeggio() {
+        var n = [659.25, 783.99, 987.77, 1318.5];
+        for (var i = 0; i < n.length; i++) playTone(n[i], 0.2, "triangle", 0.16, i * 0.05);
+      }
+      function sfxPowerUp() {
+        var n = [440, 554.37, 659.25, 880];
+        for (var i = 0; i < n.length; i++) playTone(n[i], 0.16, "square", 0.06, i * 0.055);
+        playTone(1318.5, 0.3, "sine", 0.13, 0.24);
+      }
+      function sfxBoom() {
+        playTone(95, 0.4, "sine", 0.3);
+        playTone(58, 0.48, "triangle", 0.26, 0.02);
+        playTone(220, 0.1, "square", 0.07);
+      }
+      function sfxBombZap() {
+        if (!soundOn) return;
+        var ctx = ac();
+        if (!ctx) return;
+        var t0 = ctx.currentTime;
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sawtooth";
+        o.frequency.setValueAtTime(1500, t0);
+        o.frequency.exponentialRampToValueAtTime(110, t0 + 0.32);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
+        o.connect(g); g.connect(sfxGain); o.start(t0); o.stop(t0 + 0.36);
+        playTone(1567.98, 0.25, "sine", 0.12, 0.06);
+        playTone(2093, 0.3, "sine", 0.1, 0.14);
+      }
+      var PRAISE_WORDS = ["Sweet!", "Splashy!", "Golden!", "Legendary!"];
+      var PRAISE_CHORDS = [
+        [523.25, 659.25],
+        [523.25, 659.25, 783.99],
+        [523.25, 659.25, 783.99, 1046.5],
+        [523.25, 659.25, 783.99, 1046.5, 1318.5]
+      ];
+      function sfxPraise(tier) {
+        var notes = PRAISE_CHORDS[Math.max(0, Math.min(3, tier))];
+        for (var i = 0; i < notes.length; i++) playTone(notes[i], 0.3, "triangle", 0.15, i * 0.045);
+      }
+      var PRAISE_VOICE = ["crush3d/voice/praise-sweet.mp3", "crush3d/voice/praise-splashy.mp3", "crush3d/voice/praise-golden.mp3", "crush3d/voice/praise-legendary.mp3"];
+      var praiseAudio = [];
+      function duckTune() {
+        if (tuneAudio && !tuneAudio.paused) {
+          tuneAudio.volume = 0.12;
+          var dk = ++tuneDuckToken;
+          setTimeout(function () { if (dk === tuneDuckToken && tuneAudio) tuneAudio.volume = 0.42; }, 1700);
+        }
+      }
+      var shoutAudio = null;
+      function sfxShout() {
+        if (!soundOn) return;
+        duckTune();
+        try {
+          if (!shoutAudio) { shoutAudio = new Audio("crush3d/voice/cove-crush.mp3"); shoutAudio.preload = "auto"; }
+          shoutAudio.currentTime = 0;
+          var p = shoutAudio.play();
+          if (p && p.catch) p.catch(function () {});
+        } catch (e) {}
+      }
+      function sfxVoice(tier) {
+        if (!soundOn) return;
+        duckTune();
+        try {
+          if (!praiseAudio[tier]) { praiseAudio[tier] = new Audio(PRAISE_VOICE[tier]); praiseAudio[tier].preload = "auto"; }
+          var au = praiseAudio[tier];
+          au.currentTime = 0;
+          var p = au.play();
+          if (p && p.catch) p.catch(function () {});
+        } catch (e) {}
+      }
+      function sfxStar(i) {
+        playTone(880 + i * 220, 0.28, "sine", 0.2);
+        playTone(1320 + i * 220, 0.2, "triangle", 0.1, 0.05);
+      }
+
+      /* ---- Background music: a cheerful C-major loop, quiet and bouncy ----
+         16 eighth-note steps (~130 BPM), chords C – Am – F – G, with a soft
+         bass note at the start of each bar. A lookahead scheduler keeps the
+         loop seamless. */
+      var NOTE = { C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880.00, C3: 130.81, A2: 110.00, F2: 87.31, G2: 98.00 };
+      var MELODY = ["C5", "E5", "G5", "E5", "A5", "G5", "E5", "C5", "D5", "F5", "A5", "F5", "G5", "E5", "D5", "C5"];
+      var BASS = ["C3", "A2", "F2", "G2"];
+      var STEP_DUR = 0.23;
+
+      function scheduleMusic() {
+        var ctx = audioCtx;
+        if (!ctx || !soundOn) return;
+        while (nextNoteTime < ctx.currentTime + 0.25) {
+          var s = musicStep % 16;
+          var m = MELODY[s];
+          if (m) playNoteAt(NOTE[m], nextNoteTime, STEP_DUR * 0.9, "triangle", 0.05, musicGain);
+          if (s % 4 === 0) playNoteAt(NOTE[BASS[s / 4]], nextNoteTime, STEP_DUR * 3.6, "sine", 0.08, musicGain);
+          nextNoteTime += STEP_DUR;
+          musicStep++;
+        }
+      }
+      var tuneAudio = null, tuneDuckToken = 0;
+      function getTune() {
+        if (!tuneAudio) {
+          tuneAudio = new Audio("crush3d/tune.wav");
+          tuneAudio.loop = true;
+          tuneAudio.volume = 0.42;
+          tuneAudio.preload = "auto";
+        }
+        return tuneAudio;
+      }
+      function startMusic() {
+        var ctx = ac();
+        if (!ctx) return;
+        var t = getTune();
+        if (t.paused) { var p = t.play(); if (p && p.catch) p.catch(function () {}); }
+      }
+      function stopMusic() {
+        if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+        if (tuneAudio) tuneAudio.pause();
+      }
+
+      /* Stop audio when the page is hidden (app closed / switched away) —
+         Android Chrome keeps the page alive in the background, so without
+         this the music keeps playing after the app is closed. iOS suspends
+         it on its own. Resume only if sound is on and audio was already
+         unlocked by a tap (audioCtx exists). */
+      function suspendAudio() {
+        if (audioCtx && audioCtx.state === "running") { try { audioCtx.suspend(); } catch (e) {} }
+        stopMusic();
+      }
+      function resumeAudio() {
+        if (!soundOn || !audioCtx) return;
+        if (audioCtx.state === "suspended") { try { audioCtx.resume(); } catch (e) {} }
+        if (!musicTimer) startMusic();
+      }
+      if (typeof document !== "undefined" && document.addEventListener) {
+        document.addEventListener("visibilitychange", function () {
+          if (document.hidden) suspendAudio(); else resumeAudio();
+        });
+        if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("pagehide", suspendAudio);
+      }
+
+
+      /* Mute toggle — silences music AND effects at once. Per-visit only. */
+      function toggleSound() {
+        soundOn = !soundOn;
+        var b = $("soundBtn");
+        if (b) {
+          b.textContent = soundOn ? "🔊 Sound on" : "🔇 Muted";
+          b.setAttribute("aria-pressed", soundOn ? "false" : "true");
+        }
+        if (soundOn) { ac(); startMusic(); } else { stopMusic(); }
+        return soundOn;
+      }
+      function firstTap() {
+        ac();
+        if (soundOn) startMusic();
+      }
+
+      /* ---- Levels & saved progress ----
+         Progress (unlocked levels + best stars) lives in localStorage
+         under its own key. Older versions of Cove Crush kept no saved
+         progress at all, so there is nothing to migrate: the shape is
+         { unlocked: number, stars: { level: 0-3 } } and any missing or
+         unreadable value falls back to a fresh start at level 1. */
+      var LEVELS = [
+        { target: 500, moves: 20 },
+        { target: 900, moves: 22 },
+        { objective: "jelly", jelly: 10, moves: 22, target: 1200 },
+        { target: 1300, moves: 20 },
+        { target: 1700, moves: 24, mask: "cross" },
+        { objective: "jelly", jelly: 14, moves: 24, target: 1800 },
+        { target: 2100, moves: 22 },
+        { target: 2500, moves: 24, mask: "diamond" },
+        { objective: "jelly", jelly: 18, moves: 26, target: 2400 },
+        { target: 2900, moves: 22 },
+        { target: 3300, moves: 26, mask: "heart" },
+        { objective: "jelly", jelly: 22, moves: 26, target: 3000 },
+        { target: 3700, moves: 24 },
+        { objective: "jelly", jelly: 16, moves: 24, target: 3400, mask: "cross" },
+        { target: 4100, moves: 26 },
+        { target: 4500, moves: 28, mask: "diamond" },
+        { objective: "jelly", jelly: 26, moves: 28, target: 4200 },
+        { target: 5200, moves: 28, mask: "heart" },
+        { target: 5600, moves: 28 },
+        { objective: "jelly", jelly: 28, moves: 28, target: 4600 },
+        { target: 6000, moves: 28, mask: "cross" },
+        { objective: "jelly", jelly: 30, moves: 30, target: 5000, mask: "diamond" },
+        { target: 6800, moves: 28 },
+        { objective: "jelly", jelly: 24, moves: 26, target: 5400, mask: "heart" },
+        { target: 7400, moves: 28, mask: "diamond" },
+        { objective: "jelly", jelly: 30, moves: 30, target: 5800 },
+        { target: 7800, moves: 28, mask: "cross" },
+        { objective: "jelly", jelly: 28, moves: 28, target: 6200, mask: "cross" },
+        { target: 8600, moves: 28 },
+        { objective: "jelly", jelly: 32, moves: 30, target: 6600, mask: "heart" },
+        { target: 9200, moves: 28, mask: "heart" },
+        { objective: "jelly", jelly: 34, moves: 30, target: 7000, mask: "diamond" },
+        { target: 9400, moves: 28, mask: "cross" },
+        { objective: "jelly", jelly: 36, moves: 32, target: 7400 },
+        { target: 10200, moves: 30, mask: "diamond" },
+        { objective: "jelly", jelly: 36, moves: 34, target: 7600, mask: "heart" },
+        { target: 10600, moves: 30 },
+        { objective: "jelly", jelly: 32, moves: 30, target: 8000 },
+        { target: 11200, moves: 30, mask: "cross" },
+        { objective: "jelly", jelly: 34, moves: 35, target: 8400, mask: "diamond" },
+        { target: 11800, moves: 30 },
+        { objective: "jelly", jelly: 30, moves: 30, target: 8800, mask: "heart" },
+        { target: 12400, moves: 30, mask: "diamond" },
+        { objective: "jelly", jelly: 36, moves: 32, target: 9200 },
+        { target: 8000, moves: 30, mask: "cross" },
+        { objective: "jelly", jelly: 34, moves: 32, target: 9600, mask: "heart" },
+        { target: 13600, moves: 32 },
+        { objective: "jelly", jelly: 38, moves: 34, target: 10000, mask: "diamond" },
+        { target: 14200, moves: 32, mask: "heart" },
+        { objective: "jelly", jelly: 36, moves: 32, target: 10400, mask: "cross" },
+        { target: 14800, moves: 32 },
+        { objective: "jelly", jelly: 40, moves: 34, target: 10800 },
+        { target: 15400, moves: 34, mask: "diamond" },
+        { objective: "jelly", jelly: 38, moves: 36, target: 11000, mask: "heart" },
+        { target: 16000, moves: 30 },
+        { objective: "jelly", jelly: 36, moves: 32, target: 11400, mask: "cross" },
+        { target: 16600, moves: 30, mask: "diamond" },
+        { objective: "jelly", jelly: 38, moves: 32, target: 11800 },
+        { target: 17200, moves: 32, mask: "heart" },
+        { objective: "jelly", jelly: 36, moves: 32, target: 12200, mask: "diamond" },
+        { target: 17800, moves: 32 },
+        { objective: "jelly", jelly: 40, moves: 34, target: 12600, mask: "cross" },
+        { target: 18400, moves: 32, mask: "diamond" },
+        { objective: "jelly", jelly: 38, moves: 34, target: 13000, mask: "heart" },
+        { target: 19000, moves: 34 },
+        { objective: "jelly", jelly: 42, moves: 34, target: 13400, mask: "diamond" },
+        { target: 19600, moves: 34, mask: "cross" },
+        { objective: "jelly", jelly: 40, moves: 36, target: 13800 },
+        { target: 20200, moves: 34, mask: "heart" },
+        { objective: "jelly", jelly: 44, moves: 36, target: 14200, mask: "cross" },
+        { target: 20800, moves: 36, mask: "diamond" },
+        { objective: "jelly", jelly: 42, moves: 38, target: 14600, mask: "heart" }
+      ];
+      var SAVE_KEY = "cove-crush-progress-v1";
+      var progress = { unlocked: 1, stars: {}, shells: 0 };
+      function starSum() { var n = 0; for (var k in progress.stars) n += progress.stars[k] || 0; return n; }
+      function loadProgress() {
+        try {
+          var raw = window.localStorage.getItem(SAVE_KEY);
+          if (!raw) return;
+          var p = JSON.parse(raw);
+          if (p && typeof p.unlocked === "number" && isFinite(p.unlocked)) {
+            progress.unlocked = Math.max(1, Math.min(LEVELS.length + 1, Math.floor(p.unlocked)));
+            if (p.stars && typeof p.stars === "object") {
+              for (var k in p.stars) {
+                var v = parseInt(p.stars[k], 10);
+                if (v >= 1 && v <= 3) progress.stars[k] = v;
+              }
+            }
+            progress.shells = (typeof p.shells === "number" && isFinite(p.shells)) ? Math.max(0, Math.floor(p.shells)) : starSum();
+          }
+        } catch (e) { /* storage unavailable — progress just won't persist */ }
+      }
+      function saveProgress() {
+        try { window.localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); } catch (e) { /* ignore */ }
+        backupProgress();
+      }
+
+      /* ---- Shelf safety net: progress backs up under the farm Save Code,
+         so a deleted home-screen icon or a new browser never wipes it.
+         A fresh start never overwrites a real backup, and a restore only
+         ever adopts a shelf copy that holds more than the phone's. ---- */
+      var SHELF_URL = "https://enabled-platypus-167183.upstash.io";
+      var SHELF_KEY = "gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg";
+      function shelfCode() { try { return localStorage.getItem("cove-farm-savecode"); } catch (e) { return null; } }
+      function shelfApi(cmd) {
+        return fetch(SHELF_URL, { method: "POST", headers: { "Authorization": "Bearer " + SHELF_KEY, "Content-Type": "application/json" }, body: JSON.stringify(cmd) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { return j ? j.result : null; });
+      }
+      function progressCleared(p) { var n = 0; for (var k in (p.stars || {})) n++; return n; }
+      function progressFresh(p) { return (!p || p.unlocked <= 1) && progressCleared(p) === 0; }
+      var crushBackupTimer = null;
+      function backupProgress() {
+        var code = shelfCode();
+        if (!code || progressFresh(progress)) return;
+        clearTimeout(crushBackupTimer);
+        crushBackupTimer = setTimeout(function () {
+          shelfApi(["SET", "crush:" + code, JSON.stringify(progress)]).catch(function () {});
+        }, 1500);
+      }
+      function restoreProgress() {
+        var code = shelfCode();
+        if (!code || !progressFresh(progress)) return Promise.resolve(false);
+        return shelfApi(["GET", "crush:" + code]).then(function (r) {
+          if (!r) return false;
+          try {
+            var p = JSON.parse(r);
+            if (!p || typeof p.unlocked !== "number" || progressCleared(p) <= 0) return false;
+            progress.unlocked = Math.max(1, Math.min(LEVELS.length + 1, Math.floor(p.unlocked)));
+            progress.stars = {};
+            for (var k in (p.stars || {})) { var v = parseInt(p.stars[k], 10); if (v >= 1 && v <= 3) progress.stars[k] = v; }
+            progress.shells = (typeof p.shells === "number" && isFinite(p.shells)) ? Math.max(0, Math.floor(p.shells)) : starSum();
+            saveProgress();
+            return true;
+          } catch (e) { return false; }
+        }).catch(function () { return false; });
+      }
+      function levelConfig(l) {
+        if (l >= 1 && l <= LEVELS.length) return LEVELS[l - 1];
+        var n = Math.max(1, l - LEVELS.length);
+        return { target: 5200 + n * 600, moves: 28 };
+      }
+
+      /* ---- Game state ---- */
+      var board = null;
+      var level = 1, score = 0, moves = 20, target = 500;
+      var objective = "score", jelly = null, jellyLeft = 0, jellyTotal = 0, curMask = null;
+      var bestScore = 0, levelsCleared = 0, bestChain = 0;
+      var selected = null, busy = false, over = false;
+      var lastSwap = null, crushing = false, crushSkip = false, finalLevel = false;
+
+      function sleep(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+
+      /* Jelly layout for a level: a seeded shuffle of the playable cells,
+         so every visit to a level gets the same jelly. Every 4th jelly
+         cell carries a second, thicker layer. */
+      function makeJelly(l, cfg, mask) {
+        var grid = [], r, c;
+        for (r = 0; r < ROWS; r++) { grid.push([]); for (c = 0; c < COLS; c++) grid[r].push(0); }
+        if (!cfg || cfg.objective !== "jelly") return grid;
+        var cells = [];
+        for (r = 0; r < ROWS; r++) for (c = 0; c < COLS; c++) if (!(mask && mask[key(r, c)])) cells.push({ r: r, c: c });
+        var seed = l * 987654 + 12345;
+        function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+        for (var i = cells.length - 1; i > 0; i--) {
+          var j = Math.floor(rnd() * (i + 1));
+          var t = cells[i]; cells[i] = cells[j]; cells[j] = t;
+        }
+        var n = Math.min(cfg.jelly || 10, cells.length);
+        for (var k = 0; k < n; k++) grid[cells[k].r][cells[k].c] = (k % 4 === 3) ? 2 : 1;
+        return grid;
+      }
+      function jellySum(grid) {
+        var s = 0;
+        for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) s += grid[r][c];
+        return s;
+      }
+      function hitJelly(cells) {
+        if (!jelly) return;
+        for (var k in cells) {
+          var p = k.split(",");
+          var r = parseInt(p[0], 10), c = parseInt(p[1], 10);
+          if (jelly[r] && jelly[r][c] > 0) { jelly[r][c]--; jellyLeft--; }
+        }
+      }
+
+      /* ---- DOM layer (guarded so the logic can be tested without a DOM) ---- */
+      var el = {};
+      function $(id) { return (typeof document !== "undefined") ? document.getElementById(id) : null; }
+
+      function initDom() {
+        el.display = $("display"); el.board = $("board");
+        el.scoreVal = $("scoreVal"); el.targetVal = $("targetVal");
+        el.movesVal = $("movesVal"); el.levelVal = $("levelVal");
+        el.progressBar = $("progressBar"); el.bestVal = $("bestVal");
+        el.levelsVal = $("levelsVal"); el.chainVal = $("chainVal"); el.shellsVal = $("shellsVal");
+        el.overlay = $("overlay"); el.winnerCard = $("winnerCard");
+        el.overlayBtn = $("overlayBtn");
+        el.readouts = $("readouts"); el.jellyMeter = $("jellyMeter"); el.jellyVal = $("jellyVal");
+        el.gameSection = $("gameSection"); el.mapSection = $("mapSection"); el.mapArea = $("mapArea"); el.mapSection2 = $("mapSection2"); el.mapArea2 = $("mapArea2"); el.mapSection3 = $("mapSection3"); el.mapArea3 = $("mapArea3"); el.mapSection4 = $("mapSection4"); el.mapArea4 = $("mapArea4");
+        el.praise = $("praise"); el.praiseWord = $("praiseWord");
+        el.confetti = $("confetti"); el.crushBanner = $("crushBanner");
+        el.fxLayer = $("fxLayer");
+        el.boardFrame = $("boardFrame");
+        if (el.board) {
+          var suppressClickUntil = 0;
+          el.board.addEventListener("click", function (e) {
+            if (Date.now() < suppressClickUntil) return;
+            var t = e.target.closest ? e.target.closest(".tile") : null;
+            if (!t) return;
+            onTileClick(parseInt(t.dataset.r, 10), parseInt(t.dataset.c, 10));
+          });
+          /* Slide a candy toward its neighbor to swap — a plain tap still selects, as before. */
+          var dragStart = null, dragFired = false;
+          el.board.addEventListener("pointerdown", function (e) {
+            var t = e.target.closest ? e.target.closest(".tile") : null;
+            if (!t || t.classList.contains("blocked")) { dragStart = null; return; }
+            dragStart = { r: parseInt(t.dataset.r, 10), c: parseInt(t.dataset.c, 10), x: e.clientX, y: e.clientY };
+            dragFired = false;
+          });
+          el.board.addEventListener("pointermove", function (e) {
+            if (!dragStart || dragFired || busy || over) return;
+            var dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
+            if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+            var r2 = dragStart.r, c2 = dragStart.c;
+            if (Math.abs(dx) > Math.abs(dy)) c2 += dx > 0 ? 1 : -1; else r2 += dy > 0 ? 1 : -1;
+            if (r2 < 0 || r2 >= ROWS || c2 < 0 || c2 >= COLS) return;
+            if (!board[r2] || !board[r2][c2] || board[r2][c2].blocked) return;
+            dragFired = true;
+            suppressClickUntil = Date.now() + 400;
+            selected = { r: dragStart.r, c: dragStart.c };
+            onTileClick(r2, c2);
+          });
+          el.board.addEventListener("pointerup", function () { dragStart = null; });
+          el.board.addEventListener("pointercancel", function () { dragStart = null; });
+        }
+        if (el.boardFrame) {
+          el.boardFrame.addEventListener("pointerdown", function () { if (crushing) crushSkip = true; });
+        }
+        var sh = $("shuffleBtn"); if (sh) sh.addEventListener("click", onShuffle);
+        var hi = $("hintBtn"); if (hi) hi.addEventListener("click", onHint);
+        var ng = $("newGameBtn"); if (ng) ng.addEventListener("click", function () { sfxClick(); startLevel(1); });
+        var mb = $("mapBtn"); if (mb) mb.addEventListener("click", function () { if (busy) return; sfxClick(); showScreen("map"); });
+        var omb = $("overlayMapBtn"); if (omb) omb.addEventListener("click", function () {
+          sfxClick();
+          if (el.overlay) el.overlay.classList.remove("open");
+          showScreen("map");
+        });
+        var snd = $("soundBtn"); if (snd) snd.addEventListener("click", function () { toggleSound(); sfxClick(); });
+        if (el.overlayBtn) el.overlayBtn.addEventListener("click", onOverlayButton);
+        /* First tap anywhere unlocks audio (browsers block it before interaction). */
+        if (typeof document !== "undefined" && document.addEventListener) {
+          document.addEventListener("pointerdown", firstTap);
+        }
+      }
+
+      var tileEls = null, tileImg = null, tileJelly = null, tileGloss = null;
+      function buildBoardDom() {
+        if (!el.board) return;
+        while (el.board.firstChild) el.board.removeChild(el.board.firstChild);
+        tileEls = []; tileImg = []; tileJelly = []; tileGloss = [];
+        for (var r = 0; r < ROWS; r++) {
+          tileEls.push([]); tileImg.push([]); tileJelly.push([]); tileGloss.push([]);
+          for (var c = 0; c < COLS; c++) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.setAttribute("role", "gridcell");
+            btn.className = "tile";
+            btn.dataset.r = r;
+            btn.dataset.c = c;
+            var jd = document.createElement("div");
+            jd.className = "jelly";
+            jd.style.display = "none";
+            var im = document.createElement("img");
+            im.className = "candy-img";
+            im.alt = "";
+            im.draggable = false;
+            var gl = document.createElement("div");
+            gl.className = "gloss";
+            btn.appendChild(jd);
+            btn.appendChild(im);
+            btn.appendChild(gl);
+            el.board.appendChild(btn);
+            tileEls[r].push(btn);
+            tileImg[r].push(im);
+            tileJelly[r].push(jd);
+            tileGloss[r].push(gl);
+          }
+        }
+      }
+
+      function render() {
+        if (!el.board) return;
+        if (!tileEls) buildBoardDom();
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            var t = board[r][c];
+            /* Defensive: a playable cell must never render blank. */
+            if (!t) { t = board[r][c] = newTile(randType()); }
+            var btn = tileEls[r][c], im = tileImg[r][c], jd = tileJelly[r][c], gl = tileGloss[r][c];
+            if (t.blocked) {
+              btn.className = "tile blocked";
+              im.removeAttribute("src");
+              im.style.display = "none";
+              jd.style.display = "none";
+              gl.style.display = "none";
+              btn.setAttribute("aria-label", "Blocked cell");
+              continue;
+            }
+            im.style.display = "";
+            gl.style.display = "";
+            var cls = "tile", src = CANDY_IMG[t.type], label = TYPES[t.type].name;
+            if (t.special !== "bomb" && t.special !== "rainbow") cls += " t" + t.type;
+            if (t.special === "row") cls += " striped-row";
+            else if (t.special === "col") cls += " striped-col";
+            else if (t.special === "wrapped") { cls += " wrapped"; label = "Wrapped " + label; }
+            else if (t.special === "bomb") { cls += " bomb"; src = BOMB_IMG; label = "Sprinkle Bomb"; }
+            else if (t.special === "rainbow") { cls += " rainbow"; src = RAINBOW_IMG; label = "Rainbow Cove Wave"; }
+            if (selected && selected.r === r && selected.c === c) cls += " selected";
+            btn.className = cls;
+            if (im.getAttribute("src") !== src) im.setAttribute("src", src);
+            im.alt = label;
+            btn.setAttribute("aria-label", label + " tile, row " + (r + 1) + " column " + (c + 1));
+            var jl = jelly ? jelly[r][c] : 0;
+            if (jl > 0) { jd.style.display = "block"; jd.className = "jelly" + (jl >= 2 ? " j2" : ""); btn.classList.add("onjelly"); }
+            else jd.style.display = "none";
+          }
+        }
+        el.scoreVal.textContent = score;
+        el.targetVal.textContent = target;
+        el.movesVal.textContent = moves;
+        el.levelVal.textContent = level;
+        el.progressBar.style.width = (objective === "jelly" && jellyTotal > 0)
+          ? Math.round((jellyTotal - jellyLeft) / jellyTotal * 100) + "%"
+          : Math.min(100, Math.round(score / target * 100)) + "%";
+        if (el.jellyMeter) {
+          if (objective === "jelly") {
+            el.jellyMeter.style.display = "";
+            if (lastJellyShown !== null && jellyLeft < lastJellyShown) {
+              el.jellyMeter.classList.remove("melt-pop");
+              void el.jellyMeter.offsetWidth;
+              el.jellyMeter.classList.add("melt-pop");
+            }
+            lastJellyShown = jellyLeft;
+            el.jellyMeter.classList.toggle("almost", jellyLeft <= 3 && jellyLeft > 0);
+            el.jellyVal.textContent = jellyLeft;
+            if (el.readouts) el.readouts.classList.add("jelly-on");
+          } else {
+            el.jellyMeter.style.display = "none";
+            lastJellyShown = null;
+            el.jellyMeter.classList.remove("almost");
+            if (el.readouts) el.readouts.classList.remove("jelly-on");
+          }
+        }
+        el.bestVal.textContent = bestScore;
+        el.levelsVal.textContent = levelsCleared;
+        el.chainVal.textContent = bestChain;
+        if (el.shellsVal) el.shellsVal.textContent = "🐚 " + (progress.shells || 0) + " / " + (LEVELS.length * 3);
+      }
+
+      function setDisplay(msg, big) {
+        if (!el.display) return;
+        el.display.textContent = msg;
+        el.display.classList.toggle("big", !!big);
+      }
+
+      function markTiles(keys, cls) {
+        if (!el.board) return;
+        var cells = el.board.querySelectorAll(".tile");
+        for (var i = 0; i < cells.length; i++) {
+          var t = cells[i];
+          if (keys[key(parseInt(t.dataset.r, 10), parseInt(t.dataset.c, 10))]) t.classList.add(cls);
+        }
+      }
+
+      /* ---- Screens: the Boardwalk Path map and the game itself ---- */
+      function showScreen(which) {
+        if (el.gameSection) el.gameSection.style.display = which === "game" ? "" : "none";
+        if (el.mapSection) el.mapSection.style.display = which === "map" ? "" : "none";
+        if (el.mapSection2) el.mapSection2.style.display = which === "map" ? "" : "none";
+        if (el.mapSection3) el.mapSection3.style.display = which === "map" ? "" : "none";
+        if (el.mapSection4) el.mapSection4.style.display = which === "map" ? "" : "none";
+        if (which === "map") buildMap();
+      }
+
+      function buildMap() {
+        renderMapInto(el.mapArea, 1, 18);
+        renderMapInto(el.mapArea2, 19, 36);
+        renderMapInto(el.mapArea3, 37, 54);
+        renderMapInto(el.mapArea4, 55, LEVELS.length);
+        var cur = document.querySelector(".map-node.current");
+        if (cur && el.mapSection && el.mapSection.style.display !== "none") {
+          setTimeout(function () { try { cur.scrollIntoView({ block: "center" }); } catch (e) {} }, 60);
+        }
+      }
+      function renderMapInto(area, fromLv, toLv) {
+        if (!area) return;
+        area.innerHTML = "";
+        var N = toLv - fromLv + 1;
+        var perRow = 4, rows = Math.ceil(N / perRow), rowH = 98;
+        var H = rows * rowH + 26;
+        area.style.height = H + "px";
+        var W = area.clientWidth || 340;
+        function nodePos(i) {
+          var row = Math.floor(i / perRow), idx = i % perRow;
+          var xs = (row % 2 === 0) ? [0.14, 0.38, 0.62, 0.86] : [0.86, 0.62, 0.38, 0.14];
+          return { x: xs[idx] * W, y: H - (row * rowH + 62) };
+        }
+        var pts = [];
+        for (var i = 0; i < N; i++) pts.push(nodePos(i));
+        var d = "M " + pts.map(function (p) { return p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" L ");
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "map-path");
+        svg.setAttribute("width", String(W));
+        svg.setAttribute("height", String(H));
+        var CANDY_DOTS = ["#ff5f8f", "#ffc93c", "#3ec3dc", "#7ed491", "#c39bff", "#ff9f68"];
+        var dotsHtml = "";
+        for (var s2 = 0; s2 + 1 < pts.length; s2++) {
+          var ax = pts[s2].x, ay = pts[s2].y, bx = pts[s2 + 1].x, by = pts[s2 + 1].y;
+          var segLen = Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
+          var steps = Math.max(1, Math.floor(segLen / 17));
+          for (var st = 1; st < steps; st++) {
+            var fx = ax + (bx - ax) * (st / steps), fy = ay + (by - ay) * (st / steps);
+            dotsHtml += '<circle cx="' + fx.toFixed(1) + '" cy="' + fy.toFixed(1) + '" r="5.2" fill="' + CANDY_DOTS[(s2 * 3 + st) % CANDY_DOTS.length] + '" stroke="rgba(255,255,255,0.85)" stroke-width="1.4"/>';
+          }
+        }
+        svg.innerHTML = '<path d="' + d + '" fill="none" stroke="rgba(255,248,234,0.75)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>' + dotsHtml;
+        area.appendChild(svg);
+        var current = Math.min(progress.unlocked, LEVELS.length);
+        for (var n = 0; n < N; n++) {
+          (function (n) {
+            var lv = fromLv + n, p = pts[n];
+            var b = document.createElement("button");
+            b.type = "button";
+            var unlocked = lv <= progress.unlocked;
+            var stars = progress.stars[lv] || 0;
+            b.className = "map-node" + (stars > 0 ? " done" : "") + (!unlocked ? " locked" : "") + (lv === current ? " current" : "");
+            b.style.left = p.x + "px";
+            b.style.top = p.y + "px";
+            b.innerHTML = (unlocked ? String(lv) : "🔒") + '<span class="stars">' + (stars > 0 ? "★★★".slice(0, stars) : "") + '</span>';
+            b.setAttribute("aria-label", "Level " + lv + (unlocked ? (stars ? ", " + stars + " of 3 stars earned" : "") : ", locked"));
+            if (unlocked) b.addEventListener("click", function () { sfxClick(); startLevel(lv); });
+            area.appendChild(b);
+          })(n);
+        }
+        /* Sprocket stands beside the level you're on. */
+        if (current >= fromLv && current <= toLv) {
+          var sp = document.createElement("img");
+          sp.src = "crush3d/sprocket.png";
+          sp.alt = "Sprocket";
+          sp.className = "map-mascot";
+          sp.style.left = pts[current - fromLv].x + "px";
+          sp.style.top = pts[current - fromLv].y + "px";
+          area.appendChild(sp);
+        }
+        /* The Cove crab sits on the next locked level, keeping it safe. */
+        var crabLv = current + 1;
+        if (current < LEVELS.length && crabLv >= fromLv && crabLv <= toLv) {
+          var crab = document.createElement("img");
+          crab.src = "crush3d/crab.jpg";
+          crab.alt = "Cove crab";
+          crab.className = "map-crab";
+          crab.style.left = pts[crabLv - fromLv].x + "px";
+          crab.style.top = pts[crabLv - fromLv].y + "px";
+          area.appendChild(crab);
+        }
+      }
+
+      /* ---- Praise callouts & confetti ---- */
+      var praiseTimer = null, lastPraiseAt = 0;
+      var lastJellyShown = null;
+      function showPraise(tier) {
+        tier = Math.max(0, Math.min(3, tier));
+        sfxPraise(tier);
+        if (!el.praise) return;
+        var now = Date.now();
+        if (now - lastPraiseAt < 500) return;
+        lastPraiseAt = now;
+        sfxVoice(tier);
+        el.praiseWord.textContent = PRAISE_WORDS[tier];
+        el.praise.style.display = "grid";
+        el.praise.classList.remove("show");
+        void el.praise.offsetWidth;
+        el.praise.classList.add("show");
+        if (el.boardFrame) {
+          el.boardFrame.classList.remove("bounce");
+          void el.boardFrame.offsetWidth;
+          el.boardFrame.classList.add("bounce");
+        }
+        if (praiseTimer) clearTimeout(praiseTimer);
+        praiseTimer = setTimeout(function () {
+          el.praise.style.display = "none";
+          el.praise.classList.remove("show");
+        }, 1250);
+      }
+
+      var CONFETTI_COLORS = ["#ff6f61", "#ffc93c", "#3d9970", "#2a9db8", "#ff9ff3", "#ffe9a8"];
+      function burstConfetti(n) {
+        if (!el.confetti) return;
+        for (var i = 0; i < n; i++) {
+          var piece = document.createElement("i");
+          piece.style.left = (Math.random() * 100) + "%";
+          piece.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+          piece.style.animationDuration = (0.9 + Math.random() * 0.8) + "s";
+          piece.style.animationDelay = (Math.random() * 0.25) + "s";
+          el.confetti.appendChild(piece);
+          (function (p) {
+            setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 2300);
+          })(piece);
+        }
+      }
+
+      var FX_COLORS = ["#ff9d7a", "#ffb02e", "#ffe3f1", "#c77dff", "#8fd0ff", "#2ee6a8"];
+      function fxClear(cells, pts) {
+        if (!el.fxLayer || !el.board) return;
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        var br = el.board.getBoundingClientRect();
+        var fr = el.fxLayer.getBoundingClientRect();
+        if (!br.width) return;
+        var cw = br.width / COLS, ch = br.height / ROWS;
+        var ox = br.left - fr.left, oy = br.top - fr.top;
+        var keys = Object.keys(cells);
+        if (!keys.length) return;
+        var sr = 0, sc = 0, i, k, p, r, c;
+        for (i = 0; i < keys.length; i++) { p = keys[i].split(","); sr += +p[0]; sc += +p[1]; }
+        var cx = ox + (sc / keys.length + 0.5) * cw, cy = oy + (sr / keys.length + 0.5) * ch;
+        if (pts > 0) {
+          var s = document.createElement("div");
+          s.className = "fx-score" + (pts >= 600 ? " big" : "");
+          s.textContent = "+" + pts;
+          s.style.left = cx + "px"; s.style.top = cy + "px";
+          s.style.setProperty("--tilt", (Math.random() * 10 - 5) + "deg");
+          el.fxLayer.appendChild(s);
+          setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 900);
+        }
+        var step = keys.length > 26 ? Math.ceil(keys.length / 26) : 1;
+        for (i = 0; i < keys.length; i += step) {
+          p = keys[i].split(","); r = +p[0]; c = +p[1];
+          var t = board[r] && board[r][c];
+          var col = FX_COLORS[t && typeof t.type === "number" ? t.type : (i % 6)];
+          for (var j = 0; j < 3; j++) {
+            var d = document.createElement("i");
+            d.className = "fx-p";
+            d.style.background = col;
+            d.style.left = (ox + (c + 0.5) * cw + (Math.random() * 10 - 5)) + "px";
+            d.style.top = (oy + (r + 0.5) * ch + (Math.random() * 10 - 5)) + "px";
+            var ang = Math.random() * Math.PI * 2, dist = 14 + Math.random() * 30;
+            d.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+            d.style.setProperty("--dy", (Math.sin(ang) * dist - 12) + "px");
+            el.fxLayer.appendChild(d);
+            (function (node) { setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 650); })(d);
+          }
+        }
+      }
+
+      /* The coming-at-you explosion for wrapped combos and the Sprinkle
+         Bomb (Kim, Nov 24: "like coming at u explosion"). */
+      function bigBoom(r, c) {
+        if (!el.fxLayer || !el.board) return;
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        var br = el.board.getBoundingClientRect();
+        var fr = el.fxLayer.getBoundingClientRect();
+        if (!br.width || !fr.width) return;
+        var cw = br.width / COLS, ch = br.height / ROWS;
+        var x = br.left - fr.left + (c + 0.5) * cw, y = br.top - fr.top + (r + 0.5) * ch;
+        var flash = document.createElement("div");
+        flash.className = "boom-flash";
+        flash.style.setProperty("--fx", (x / fr.width * 100) + "%");
+        flash.style.setProperty("--fy", (y / fr.height * 100) + "%");
+        el.fxLayer.appendChild(flash);
+        setTimeout(function () { if (flash.parentNode) flash.parentNode.removeChild(flash); }, 480);
+        var boom = document.createElement("div");
+        boom.className = "big-boom";
+        var size = Math.max(cw, ch) * 2.4;
+        boom.style.width = size + "px"; boom.style.height = size + "px";
+        boom.style.left = x + "px"; boom.style.top = y + "px";
+        el.fxLayer.appendChild(boom);
+        setTimeout(function () { if (boom.parentNode) boom.parentNode.removeChild(boom); }, 640);
+        var frame = el.boardFrame || el.board;
+        if (frame) {
+          frame.classList.remove("board-shake");
+          void frame.offsetWidth;
+          frame.classList.add("board-shake");
+          setTimeout(function () { frame.classList.remove("board-shake"); }, 460);
+        }
+      }
+
+      function startLevel(l) {
+        if (busy) return;
+        level = l;
+        var themeCls = "theme-" + (l <= 18 ? 1 : l <= 36 ? 2 : l <= 54 ? 3 : 4);
+        if (el.boardFrame) {
+          el.boardFrame.classList.remove("theme-1", "theme-2", "theme-3", "theme-4");
+          el.boardFrame.classList.add(themeCls);
+        }
+        if (el.gameSection) {
+          el.gameSection.classList.remove("theme-1", "theme-2", "theme-3", "theme-4");
+          el.gameSection.classList.add(themeCls);
+        }
+        var cfg = levelConfig(l);
+        target = cfg.target; moves = cfg.moves; score = 0;
+        objective = cfg.objective || "score";
+        curMask = cfg.mask ? (MASKS[cfg.mask] || null) : null;
+        var tries = 0;
+        do {
+          board = makeBoard(curMask);
+          tries++;
+        } while ((hasMatch(board) || !hasPossibleMove(board)) && tries < 40);
+        jelly = makeJelly(l, cfg, curMask);
+        jellyTotal = jellySum(jelly);
+        jellyLeft = jellyTotal;
+        selected = null; busy = false; over = false; lastSwap = null; finalLevel = false;
+        if (el.overlay) el.overlay.classList.remove("open");
+        showScreen("game");
+        if (objective === "jelly") setDisplay("Level " + l + " — clear all the jelly in " + moves + " moves!");
+        else setDisplay("Level " + l + " — " + target + " pts in " + moves + " moves!");
+        sfxShout();
+        render();
+      }
+
+      function newGame() { level = 1; levelsCleared = 0; bestChain = 0; startLevel(1); }
+
+      async function onTileClick(r, c) {
+        if (busy || over || !board[r][c] || board[r][c].blocked) return;
+        if (!selected) { selected = { r: r, c: c }; sfxClick(); render(); return; }
+        if (selected.r === r && selected.c === c) { selected = null; sfxClick(); render(); return; }
+        if (!isAdjacent(selected.r, selected.c, r, c)) { selected = { r: r, c: c }; sfxClick(); render(); return; }
+        var r1 = selected.r, c1 = selected.c, r2 = r, c2 = c;
+        selected = null;
+        await attemptSwap(r1, c1, r2, c2);
+      }
+
+      async function attemptSwap(r1, c1, r2, c2) {
+        if (busy || over) return false;
+        var a = board[r1][c1], b = board[r2][c2];
+        if (!a || !b || a.blocked || b.blocked) return false;
+        var spA = a.special === "rainbow" || a.special === "bomb";
+        var spB = b.special === "rainbow" || b.special === "bomb";
+        var usesSpecial = spA || spB;
+        var stripeCombo = (a.special === "row" || a.special === "col") && (b.special === "row" || b.special === "col");
+        var wrappedCombo = (a.special === "wrapped" && (b.special === "wrapped" || b.special === "row" || b.special === "col")) ||
+          (b.special === "wrapped" && (a.special === "row" || a.special === "col"));
+        if (!usesSpecial && !stripeCombo && !swapCreatesMatch(board, r1, c1, r2, c2)) {
+          sfxInvalid();
+          render();
+          markTiles((function () { var o = {}; o[key(r1, c1)] = true; o[key(r2, c2)] = true; return o; })(), "shake");
+          setDisplay("No match — try another swap!");
+          return false;
+        }
+        busy = true;
+        moves--;
+        lastSwap = { r1: r1, c1: c1, r2: r2, c2: c2 };
+        swapCells(board, r1, c1, r2, c2);
+        sfxSwap();
+        render();
+        await sleep(180);
+        if (stripeCombo) {
+          /* Two striped tiles smashed together — types don't matter.
+             Each one fires the line it faces, from its new home. */
+          var cleared2 = {};
+          cleared2[key(r1, c1)] = true;
+          cleared2[key(r2, c2)] = true;
+          var spots = [[r1, c1], [r2, c2]];
+          for (var si = 0; si < spots.length; si++) {
+            var sr = spots[si][0], sc = spots[si][1];
+            var stile = board[sr][sc];
+            if (!stile) continue;
+            if (stile.special === "row") { for (var cc2 = 0; cc2 < COLS; cc2++) cleared2[key(sr, cc2)] = true; }
+            else if (stile.special === "col") { for (var rr2 = 0; rr2 < ROWS; rr2++) cleared2[key(rr2, sc)] = true; }
+          }
+          cleared2 = expandWithSpecials(board, cleared2);
+          var gained2 = Object.keys(cleared2).length * 20;
+          score += gained2;
+          if (score > bestScore) bestScore = score;
+          sfxBombZap();
+          setDisplay("💥 Double Stripe! +" + gained2, true);
+          showPraise(2);
+          await clearCells(cleared2, gained2);
+          await cascade(1);
+        } else if (wrappedCombo) {
+          /* A wrapped candy smashed into a striped one — or into another
+             wrapped — always pops, match or no match (Kim's call, Nov 24). */
+          var wPos = board[r1][c1] && board[r1][c1].special === "wrapped" ? [r1, c1] : [r2, c2];
+          var oPos = (wPos[0] === r1 && wPos[1] === c1) ? [r2, c2] : [r1, c1];
+          var oTile = board[oPos[0]][oPos[1]];
+          var live = function (rr, cc) { return rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && board[rr][cc] && !board[rr][cc].blocked; };
+          if (oTile && oTile.special === "wrapped") {
+            /* Double wrapped: a 5x5 mega blast, then the second pop a
+               wrapped always gets — a 3x3 on whatever has landed there. */
+            var blast1 = {};
+            for (var br = -2; br <= 2; br++) for (var bc = -2; bc <= 2; bc++) if (live(oPos[0] + br, oPos[1] + bc)) blast1[key(oPos[0] + br, oPos[1] + bc)] = true;
+            blast1 = expandWithSpecials(board, blast1);
+            var gainedW = Object.keys(blast1).length * 20;
+            score += gainedW;
+            sfxBoom(); bigBoom(oPos[0], oPos[1]);
+            setDisplay("💥💥 Double Wrapped! +" + gainedW, true);
+            showPraise(3);
+            await clearCells(blast1, gainedW);
+            var blast2 = {};
+            for (var br2 = -1; br2 <= 1; br2++) for (var bc2 = -1; bc2 <= 1; bc2++) if (live(oPos[0] + br2, oPos[1] + bc2)) blast2[key(oPos[0] + br2, oPos[1] + bc2)] = true;
+            if (Object.keys(blast2).length) {
+              blast2 = expandWithSpecials(board, blast2);
+              var gainedW2 = Object.keys(blast2).length * 20;
+              score += gainedW2;
+              sfxBoom();
+              await clearCells(blast2, gainedW2);
+            }
+            if (score > bestScore) bestScore = score;
+            await cascade(1);
+          } else {
+            /* Wrapped + striped: the stripe goes giant — three rows and
+               three columns straight through the wrapped candy. */
+            var cross = {};
+            for (var dr = -1; dr <= 1; dr++) { var rr3 = wPos[0] + dr; if (rr3 >= 0 && rr3 < ROWS) for (var cc3 = 0; cc3 < COLS; cc3++) if (live(rr3, cc3)) cross[key(rr3, cc3)] = true; }
+            for (var dc = -1; dc <= 1; dc++) { var cc4 = wPos[1] + dc; if (cc4 >= 0 && cc4 < COLS) for (var rr4 = 0; rr4 < ROWS; rr4++) if (live(rr4, cc4)) cross[key(rr4, cc4)] = true; }
+            cross[key(r1, c1)] = true; cross[key(r2, c2)] = true;
+            cross = expandWithSpecials(board, cross);
+            var gainedX = Object.keys(cross).length * 20;
+            score += gainedX;
+            if (score > bestScore) bestScore = score;
+            sfxBombZap(); sfxBoom(); bigBoom(wPos[0], wPos[1]);
+            setDisplay("💥 Wrapped Stripe! +" + gainedX, true);
+            showPraise(3);
+            await clearCells(cross, gainedX);
+            await cascade(1);
+          }
+        } else if (usesSpecial) {
+          var bombInvolved = a.special === "bomb" || b.special === "bomb";
+          var bothBombs = a.special === "bomb" && b.special === "bomb";
+          var other = spA ? b : a;
+          var typesToClear = {};
+          if (other.special === "rainbow" || other.special === "bomb") {
+            typesToClear[randType()] = true;
+            typesToClear[randType()] = true;
+          } else {
+            typesToClear[other.type] = true;
+          }
+          var cleared = {};
+          for (var r = 0; r < ROWS; r++) {
+            for (var c = 0; c < COLS; c++) {
+              var cell = board[r][c];
+              if (cell && !cell.blocked && (bothBombs || typesToClear[cell.type])) cleared[key(r, c)] = true;
+            }
+          }
+          cleared[key(r1, c1)] = true;
+          cleared[key(r2, c2)] = true;
+          var gained = Object.keys(cleared).length * (bombInvolved ? 30 : 20);
+          score += gained;
+          if (score > bestScore) bestScore = score;
+          if (bombInvolved) {
+            sfxBombZap();
+            bigBoom(board[r1][c1] && board[r1][c1].special === "bomb" ? r1 : r2, board[r1][c1] && board[r1][c1].special === "bomb" ? c1 : c2);
+            setDisplay(bothBombs ? "💣💣 DOUBLE BOMB! +" + gained : "💣 Sprinkle Bomb! +" + gained, true);
+            showPraise(bothBombs ? 3 : 2);
+          } else {
+            sfxPop(6);
+            setDisplay("🌈 Rainbow wave! +" + gained, true);
+          }
+          await clearCells(cleared, gained);
+          await cascade(1);
+        } else {
+          await cascade(1);
+        }
+        lastSwap = null;
+        busy = false;
+        render();
+        endTurnCheck();
+        return true;
+      }
+
+      /* Resolve all matches on the board, chain after chain. Returns the chain count. */
+      async function cascade(chain) {
+        var chains = 0;
+        while (true) {
+          var found = findMatches(board);
+          if (found.runs.length === 0) break;
+          chains++;
+          var chainNow = chain + chains - 1;
+          if (chainNow > bestChain) bestChain = chainNow;
+          var i, j;
+          var maxRun = 0;
+          for (i = 0; i < found.runs.length; i++) maxRun = Math.max(maxRun, found.runs[i].cells.length);
+          /* Special creation: a 5+ run makes a Sprinkle Bomb; a cell shared
+             by a horizontal and a vertical run (an L or T) makes a wrapped
+             candy; a plain 4-run makes a striped tile. The new special is
+             anchored on the tile the player just swapped when possible. */
+          function anchorFor(run) {
+            if (lastSwap) {
+              for (var q = 0; q < run.cells.length; q++) {
+                var cell = run.cells[q];
+                if ((cell.r === lastSwap.r1 && cell.c === lastSwap.c1) || (cell.r === lastSwap.r2 && cell.c === lastSwap.c2)) return cell;
+              }
+            }
+            return run.cells[Math.floor(run.cells.length / 2)];
+          }
+          var create = null;
+          for (i = 0; i < found.runs.length; i++) {
+            if (found.runs[i].cells.length >= 5) {
+              create = { cell: anchorFor(found.runs[i]), special: "bomb", type: found.runs[i].type };
+              break;
+            }
+          }
+          if (!create) {
+            var crossCount = {};
+            for (i = 0; i < found.runs.length; i++) {
+              for (j = 0; j < found.runs[i].cells.length; j++) {
+                var kk = key(found.runs[i].cells[j].r, found.runs[i].cells[j].c);
+                crossCount[kk] = (crossCount[kk] || 0) + 1;
+              }
+            }
+            for (var kx in crossCount) {
+              if (crossCount[kx] >= 2) {
+                var kp = kx.split(",");
+                var kr = parseInt(kp[0], 10), kc = parseInt(kp[1], 10);
+                create = { cell: { r: kr, c: kc }, special: "wrapped", type: board[kr][kc].type };
+                break;
+              }
+            }
+          }
+          if (!create) {
+            for (i = 0; i < found.runs.length; i++) {
+              if (found.runs[i].cells.length === 4) {
+                create = { cell: anchorFor(found.runs[i]), special: found.runs[i].dir === "h" ? "row" : "col", type: found.runs[i].type };
+                break;
+              }
+            }
+          }
+          var cells = expandWithSpecials(board, found.cells);
+          var wrappedPops = [];
+          for (var k3 in cells) {
+            var p3 = k3.split(",");
+            var r3 = parseInt(p3[0], 10), c3 = parseInt(p3[1], 10);
+            if (board[r3][c3] && board[r3][c3].special === "wrapped" && !(create && create.cell.r === r3 && create.cell.c === c3)) {
+              wrappedPops.push({ r: r3, c: c3 });
+            }
+          }
+          var gained = Object.keys(cells).length * 20 * chainNow;
+          if (maxRun >= 4) gained += 100;
+          score += gained;
+          if (score > bestScore) bestScore = score;
+          setDisplay("Match! +" + gained + (chains > 1 ? " — chain ×" + chainNow + "!" : ""), chains > 1);
+          sfxPop(chainNow);
+          if (maxRun === 4) sfxArpeggio();
+          if (maxRun >= 5 || (create && create.special === "wrapped")) sfxPowerUp();
+          if (wrappedPops.length) sfxBoom();
+          if (maxRun >= 4 || chainNow >= 3) {
+            var tier = (maxRun >= 5 ? 2 : 0) + (chainNow >= 3 ? 1 : 0) + (chainNow >= 5 ? 1 : 0);
+            showPraise(tier);
+          }
+          markTiles(cells, "pop");
+          fxClear(cells, gained);
+          await sleep(180);
+          hitJelly(cells);
+          for (var k in cells) {
+            var parts = k.split(",");
+            var br = parseInt(parts[0], 10), bc = parseInt(parts[1], 10);
+            if (board[br][bc] && !board[br][bc].blocked) board[br][bc] = null;
+          }
+          if (create) board[create.cell.r][create.cell.c] = { type: create.type, special: create.special };
+          applyGravity(board);
+          var fresh = refillBoard(board);
+          render();
+          markTiles(fresh, "drop-in");
+          await sleep(200);
+          /* A wrapped candy blows twice: the same 3x3 goes off again on
+             whatever has fallen into it. */
+          if (wrappedPops.length) {
+            var again = {};
+            for (i = 0; i < wrappedPops.length; i++) {
+              for (var dr = -1; dr <= 1; dr++) {
+                for (var dc = -1; dc <= 1; dc++) {
+                  var ar = wrappedPops[i].r + dr, ac = wrappedPops[i].c + dc;
+                  if (ar >= 0 && ar < ROWS && ac >= 0 && ac < COLS && board[ar][ac] && !board[ar][ac].blocked) again[key(ar, ac)] = true;
+                }
+              }
+            }
+            again = expandWithSpecials(board, again);
+            var gained2 = Object.keys(again).length * 20 * chainNow;
+            score += gained2;
+            if (score > bestScore) bestScore = score;
+            setDisplay("💥 Wrapped blast — again! +" + gained2, true);
+            sfxBoom();
+            markTiles(again, "pop");
+            fxClear(again, gained2);
+            await sleep(200);
+            hitJelly(again);
+            for (var k4 in again) {
+              var p4 = k4.split(",");
+              var xr = parseInt(p4[0], 10), xc = parseInt(p4[1], 10);
+              if (board[xr][xc] && !board[xr][xc].blocked) board[xr][xc] = null;
+            }
+            applyGravity(board);
+            var fresh2 = refillBoard(board);
+            render();
+            markTiles(fresh2, "drop-in");
+            await sleep(200);
+          }
+        }
+        return chains;
+      }
+
+      async function clearCells(cells, pts) {
+        markTiles(cells, "pop");
+        fxClear(cells, pts || Object.keys(cells).length * 20);
+        await sleep(180);
+        hitJelly(cells);
+        for (var k in cells) {
+          var parts = k.split(",");
+          var rr = parseInt(parts[0], 10), cc = parseInt(parts[1], 10);
+          if (board[rr][cc] && !board[rr][cc].blocked) board[rr][cc] = null;
+        }
+        applyGravity(board);
+        var fresh = refillBoard(board);
+        render();
+        markTiles(fresh, "drop-in");
+        await sleep(200);
+      }
+
+      /* ---- Shell Crush: spare moves become bonus blasts ---- */
+      async function shellCrush() {
+        crushing = true;
+        crushSkip = false;
+        busy = true;
+        if (el.crushBanner) el.crushBanner.style.display = "grid";
+        setDisplay("🐚 SHELL CRUSH! Sprocket is spending your spare moves — tap the board to skip!", true);
+        sfxWin();
+        burstConfetti(36);
+        var blasts = 0;
+        while (moves > 0 && !crushSkip && blasts < 5) {
+          moves--;
+          blasts++;
+          var spots = [];
+          for (var r = 0; r < ROWS; r++) {
+            for (var c = 0; c < COLS; c++) {
+              var t = board[r][c];
+              if (t && !t.blocked && !t.special) spots.push({ r: r, c: c });
+            }
+          }
+          if (!spots.length) break;
+          var pick = spots[Math.floor(Math.random() * spots.length)];
+          board[pick.r][pick.c] = { type: board[pick.r][pick.c].type, special: Math.random() < 0.5 ? "row" : "col" };
+          render();
+          sfxPowerUp();
+          await sleep(170);
+          if (crushSkip) break;
+          var cells = {};
+          cells[key(pick.r, pick.c)] = true;
+          cells = expandWithSpecials(board, cells);
+          var gained = Object.keys(cells).length * 30;
+          score += gained;
+          if (score > bestScore) bestScore = score;
+          setDisplay("🐚 Shell Crush blast! +" + gained, true);
+          sfxPop(3 + blasts);
+          burstConfetti(10);
+          await clearCells(cells, gained);
+          await cascade(1);
+          render();
+          await sleep(120);
+        }
+        if (moves > 0) {
+          var bonus = moves * 25;
+          score += bonus;
+          if (score > bestScore) bestScore = score;
+          moves = 0;
+          render();
+          setDisplay("🐚 Shell Crush bonus: +" + bonus + " for the spare moves!", true);
+          await sleep(450);
+        }
+        if (el.crushBanner) el.crushBanner.style.display = "none";
+        crushing = false;
+        busy = false;
+      }
+
+      function starsForLevel() {
+        if (objective === "jelly") {
+          if (score >= Math.round(target * 1.3)) return 3;
+          if (score >= Math.round(target * 0.7)) return 2;
+          return 1;
+        }
+        if (score >= Math.round(target * 1.9)) return 3;
+        if (score >= Math.round(target * 1.45)) return 2;
+        return 1;
+      }
+
+      var WIN_LINES = [
+        "Wrapped it up nicely.",
+        "Every shell in its place. Good work.",
+        "The board did not stand a chance.",
+        "I counted every point. Twice."
+      ];
+      var LOSE_LINES = [
+        "One more try. The jelly is nervous.",
+        "So close. Rematch?",
+        "That board is tricky. Go again.",
+        "I will hold your place right here."
+      ];
+
+      function endTurnCheck() {
+        var won = objective === "jelly" ? jellyLeft <= 0 : score >= target;
+        if (won) {
+          over = true;
+          levelsCleared++;
+          var stars = starsForLevel();
+          var prevStars = progress.stars[level] || 0;
+          var award = Math.max(0, stars - prevStars);
+          if (stars > prevStars) progress.stars[level] = stars;
+          if (award > 0) {
+            progress.shells = (progress.shells || 0) + award;
+            if (el.shellsVal) el.shellsVal.textContent = "🐚 " + progress.shells + " / " + (LEVELS.length * 3);
+          }
+          if (level + 1 > progress.unlocked) progress.unlocked = Math.min(LEVELS.length + 1, level + 1);
+          saveProgress();
+          finalLevel = level >= LEVELS.length;
+          if (moves > 0) {
+            var spareMoves = moves;
+            shellCrush().then(function () { showWinPanel(stars, spareMoves, award); });
+          } else {
+            showWinPanel(stars, 0, award);
+          }
+          return;
+        }
+        if (moves <= 0) {
+          over = true;
+          showLosePanel();
+          return;
+        }
+        if (!hasPossibleMove(board)) {
+          shuffleBoard(board);
+          render();
+          setDisplay("No moves left — board shuffled!");
+        } else if (objective === "jelly") {
+          setDisplay("Keep crushing! " + jellyLeft + " jelly left, " + moves + " moves.");
+        } else {
+          setDisplay("Keep crushing! " + moves + " moves left.");
+        }
+      }
+
+      var SPROCKET_QUIPS = [
+        "Well.. well well... look who knows what they're doing.",
+        "Oh sure. Just clear the WHOLE board. Show-off.",
+        "I saw that. I'm telling Gladys.",
+        "Somebody's been practicing...",
+        "Wrapped that win up myself. You're welcome.",
+        "Hmph. Even I couldn't have done it better. Much.",
+        "That was... actually impressive. Don't let it go to your head."
+      ];
+      function celebrateWin() {
+        var layer = document.getElementById("celebrate");
+        if (!layer) return;
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        layer.innerHTML = "";
+        var kinds = [], i;
+        for (i = 0; i < 10; i++) kinds.push("pearl");
+        for (i = 0; i < 8; i++) kinds.push("star");
+        for (i = 0; i < 14; i++) kinds.push("bub");
+        for (i = kinds.length - 1; i > 0; i--) {
+          var n = Math.floor(Math.random() * (i + 1)), tmp = kinds[i]; kinds[i] = kinds[n]; kinds[n] = tmp;
+        }
+        kinds.forEach(function (kind, idx) {
+          var node;
+          if (kind === "bub") { node = document.createElement("div"); node.className = "cp bub"; }
+          else {
+            node = document.createElement("img"); node.className = "cp"; node.alt = "";
+            node.src = kind === "pearl" ? "crush3d/candy-pearl.jpg" : "crush3d/candy-starfish.jpg";
+          }
+          var size = kind === "bub" ? 12 + Math.random() * 18 : 26 + Math.random() * 18;
+          node.style.width = size + "px"; node.style.height = size + "px";
+          node.style.left = "calc(50% + " + Math.round((Math.random() - 0.5) * 90) + "px)";
+          node.style.setProperty("--dx", Math.round((Math.random() - 0.5) * 340) + "px");
+          node.style.setProperty("--dy", Math.round(-(90 + Math.random() * 260)) + "px");
+          node.style.setProperty("--rot", Math.round((Math.random() - 0.5) * 260) + "deg");
+          node.style.setProperty("--dur", (1.6 + Math.random() * 1.1).toFixed(2) + "s");
+          node.style.animationDelay = (idx * 0.018) + "s";
+          layer.appendChild(node);
+        });
+        var pop = document.createElement("div");
+        pop.className = "sprocket-pop";
+        pop.innerHTML = '<img src="crush3d/sprocket.png" alt="Sprocket" /><div class="bubble">' + SPROCKET_QUIPS[Math.floor(Math.random() * SPROCKET_QUIPS.length)] + "</div>";
+        layer.appendChild(pop);
+        setTimeout(function () { layer.innerHTML = ""; }, 4200);
+      }
+
+      function shellBurst(card, award) {
+        if (!card) return;
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        var n = 10 + award * 5;
+        for (var i = 0; i < n; i++) {
+          var s = document.createElement("span");
+          s.className = "fx-shell";
+          s.textContent = "\uD83D\uDC1A";
+          s.style.left = (6 + Math.random() * 86) + "%";
+          s.style.fontSize = (1 + Math.random() * 0.9).toFixed(2) + "rem";
+          s.style.animationDelay = (Math.random() * 0.3).toFixed(2) + "s";
+          card.appendChild(s);
+        }
+        setTimeout(function () {
+          var shells = card.querySelectorAll(".fx-shell");
+          for (var j = 0; j < shells.length; j++) shells[j].remove();
+        }, 2400);
+      }
+
+      function showWinPanel(stars, spareMoves, award) {
+        sfxWin();
+        burstConfetti(stars >= 3 ? 70 : 30);
+        celebrateWin();
+        if (el.winnerCard) {
+          var starHtml = "";
+          for (var i = 0; i < 3; i++) starHtml += '<span class="star">⭐</span>';
+          el.winnerCard.innerHTML =
+            '<img class="wc-mascot" src="crush3d/sprocket.png" alt="Sprocket" />' +
+            '<p class="sub">Cove Crush</p><h2>🎉 Level ' + level + ' cleared!</h2>' +
+            '<div class="wc-stars">' + starHtml + '</div>' +
+            '<div class="wc-amount">' + score + ' points</div>' +
+            (award > 0
+              ? '<p class="wc-shells">\uD83D\uDC1A +' + award + ' trophy shell' + (award > 1 ? 's' : '') + '!</p>' +
+                '<p class="wc-detail">Trophy shells: \uD83D\uDC1A ' + (progress.shells || 0) + ' of ' + (LEVELS.length * 3) + ' — pure glory, not farm money.</p>'
+              : '<p class="wc-detail">No new trophy shells — beat your own stars on this level to earn more.</p>') +
+            '<p class="wc-detail">' + (objective === "jelly" ? "All the jelly is gone" : "Target was " + target) + (spareMoves > 0 ? ' — Shell Crush turned your ' + spareMoves + ' spare moves into bonus blasts!' : ' — cleared right down to the last move!') + '</p>' +
+            '<p class="wc-host">Sprocket: &ldquo;' + WIN_LINES[level % WIN_LINES.length] + '&rdquo;</p>' +
+            '<p class="wc-detail">That clear is just for you — enjoy it!</p>';
+          var starEls = el.winnerCard.querySelectorAll(".star");
+          for (var s = 0; s < stars; s++) {
+            (function (idx) {
+              setTimeout(function () {
+                if (starEls[idx]) { starEls[idx].classList.add("lit"); sfxStar(idx); }
+              }, 350 + idx * 380);
+            })(s);
+          }
+        }
+        if (award > 0) setTimeout(function () { shellBurst(el.winnerCard, award); }, 1450);
+        if (el.overlayBtn) el.overlayBtn.textContent = finalLevel ? "🗺️ Back to map" : "Next level";
+        if (el.overlay) el.overlay.classList.add("open");
+        setDisplay("🎉 Level " + level + " cleared!", true);
+      }
+
+      function showLosePanel() {
+        sfxFail();
+        if (el.winnerCard) {
+          el.winnerCard.innerHTML =
+            '<img class="wc-mascot" src="crush3d/sprocket.png" alt="Sprocket" />' +
+            '<p class="sub">Cove Crush</p><h2>Out of moves!</h2>' +
+            '<div class="wc-amount">' + (objective === "jelly" ? jellyLeft + ' jelly left' : score + ' / ' + target) + '</div>' +
+            '<p class="wc-detail">' + (objective === "jelly" ? "The jelly held on this time — give Level " + level + " another go!" : "So close — give Level " + level + " another go!") + '</p>' +
+            '<p class="wc-host">Sprocket: &ldquo;' + LOSE_LINES[level % LOSE_LINES.length] + '&rdquo;</p>';
+        }
+        if (el.overlayBtn) el.overlayBtn.textContent = "Try again";
+        if (el.overlay) el.overlay.classList.add("open");
+        setDisplay("Out of moves — try again!", true);
+      }
+
+      function onOverlayButton() {
+        if (!el.overlay) return;
+        sfxClick();
+        el.overlay.classList.remove("open");
+        var won = objective === "jelly" ? jellyLeft <= 0 : score >= target;
+        if (won && !finalLevel) startLevel(level + 1);
+        else if (won) showScreen("map");
+        else startLevel(level);
+      }
+
+      function onShuffle() {
+        if (busy || over) return;
+        sfxClick();
+        shuffleBoard(board);
+        render();
+        setDisplay("Board shuffled — fresh moves!");
+      }
+
+      function onHint() {
+        if (busy || over) return;
+        sfxClick();
+        var h = findHint(board);
+        if (!h) { setDisplay("No moves right now — tap Shuffle!"); return; }
+        render();
+        var o = {};
+        o[key(h.r1, h.c1)] = true; o[key(h.r2, h.c2)] = true;
+        markTiles(o, "selected");
+        setDisplay("💡 Try swapping those two tiles!");
+      }
+
+      /* ---- Boot ---- */
+      if (typeof document !== "undefined") {
+        initDom();
+        loadProgress();
+        var bootDone = false;
+        var bootNow = function () {
+          if (bootDone) return; bootDone = true;
+          startLevel(Math.min(progress.unlocked, LEVELS.length));
+          showScreen("map");
+        };
+        setTimeout(bootNow, 2000);
+        restoreProgress().then(function () { bootNow(); });
+      }
+      if (typeof window !== "undefined") {
+        window.CoveCrush = {
+          TYPES: TYPES, ROWS: ROWS, COLS: COLS, LEVELS: LEVELS, MASKS: MASKS,
+          makeBoard: makeBoard, findMatches: findMatches, hasMatch: hasMatch,
+          swapCreatesMatch: swapCreatesMatch, hasPossibleMove: hasPossibleMove,
+          findHint: findHint, applyGravity: applyGravity, refillBoard: refillBoard,
+          shuffleBoard: shuffleBoard, levelConfig: levelConfig,
+          getBoard: function () { return board; },
+          getJelly: function () { return jelly; },
+          getJellyLeft: function () { return jellyLeft; },
+          getProgress: function () { return progress; },
+          showMap: function () { showScreen("map"); },
+          showPraise: showPraise,
+          startLevel: startLevel, attemptSwap: attemptSwap,
+          isSoundOn: function () { return soundOn; },
+          toggleSound: toggleSound, ensureAudio: ac,
+          sfxPop: sfxPop, sfxSwap: sfxSwap, sfxInvalid: sfxInvalid,
+          sfxWin: sfxWin, sfxFail: sfxFail, sfxClick: sfxClick,
+          sfxArpeggio: sfxArpeggio, sfxPowerUp: sfxPowerUp, sfxBoom: sfxBoom,
+          sfxBombZap: sfxBombZap, sfxPraise: sfxPraise,
+          startMusic: startMusic, stopMusic: stopMusic,
+          getState: function () { return { level: level, score: score, moves: moves, target: target, over: over, objective: objective, jellyLeft: jellyLeft }; }
+        };
+      }
+
+    </script>
+  
+<script>
+/* Cove traffic tally - counts page opens per day, never who */
+(function () {
+  try {
+    var d = new Date();
+    var day = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    var H = { "Authorization": "Bearer gQAAAAAAAo0PAAIgcDFmYTI0MDY1YzdmNzY0MGRlYjllYzZhNTgzNWRhZmE4Yg", "Content-Type": "application/json" };
+    fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "cove-crush", 1]), keepalive: true }).catch(function () {});
+    fetch("https://enabled-platypus-167183.upstash.io", { method: "POST", headers: H, body: JSON.stringify(["HINCRBY", "traffic:" + day, "_total", 1]), keepalive: true }).catch(function () {});
+  } catch (e) { /* counting is never worth breaking a game */ }
+})();
+</script>
+</body>
+</html>
