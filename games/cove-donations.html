@@ -90,7 +90,7 @@
   var DONORS = ["Laurie Farrar", "Connie Wilson Craven", "Aimee Michon", "Lisa Spain Makowski", "Janine Rogers", "Wanda Michelle Rodriguez", "Yvonne Davenport Sparhawk", "Susan Mercer", "Glenda Bailey", "Sharon Bennett", "Alesha Moore", "Rock Inman Inspirations"];
   var TYPES = ["Cash", "Prize", "Supplies", "Shipping"];
   var COLORS = { Cash: "#2fbf71", Prize: "#3b82f6", Supplies: "#f5b301", Shipping: "#a259e6" };
-  var KEY = "cove-donations-v1";
+  var KEY = "cove-donations-v2";
   function load() { try { var s = JSON.parse(window.localStorage.getItem(KEY) || "null"); if (s) return s; } catch (e) {} return { entries: [] }; }
   function save(s) { try { window.localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
   var state = load();
